@@ -1,89 +1,104 @@
 import {redirect, useLoaderData} from 'react-router';
 import type {Route} from './+types/collections.$handle';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {Analytics, getPaginationVariables} from '@shopify/hydrogen';
+import {CollectionHeader} from '~/components/collection/CollectionHeader';
+import {ProductListing} from '~/components/collection/ProductListing';
+import {
+  COLLECTION_FILTER_FRAGMENT,
+  COLLECTION_SORT_OPTIONS,
+  getProductFilters,
+  getSortVariables,
+} from '~/lib/collectionFilters';
+import {PRODUCT_CARD_FRAGMENT} from '~/lib/fragments';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {ProductItem} from '~/components/ProductItem';
-import type {ProductItemFragment} from 'storefrontapi.generated';
+import {DEFAULT_DESCRIPTION} from '~/root';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
+  const collection = data?.collection;
+  const title = `${collection?.seo?.title || collection?.title || 'Collection'} | Mellow`;
+  const description =
+    collection?.seo?.description ||
+    collection?.description ||
+    DEFAULT_DESCRIPTION;
+  const image = collection?.image?.url;
+  return [
+    {title},
+    {name: 'description', content: description},
+    {property: 'og:title', content: title},
+    {property: 'og:description', content: description},
+    {property: 'og:type', content: 'website'},
+    ...(image?.startsWith('https://')
+      ? [{property: 'og:image', content: image}]
+      : []),
+    {
+      tagName: 'link',
+      rel: 'canonical',
+      href: `/collections/${collection?.handle ?? ''}`,
+    },
+  ];
 };
 
 export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
+  return {...criticalData};
 }
 
 /**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
+ * The collection with its (filtered, sorted, paginated) products is the only
+ * critical data of this route. Filters and sort order are read from the URL,
+ * see app/lib/collectionFilters.ts for the parameter conventions.
  */
 async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {handle} = params;
   const {storefront} = context;
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
-  });
 
   if (!handle) {
     throw redirect('/collections');
   }
 
+  const url = new URL(request.url);
+  const paginationVariables = getPaginationVariables(request, {pageBy: 12});
+  const filters = getProductFilters(url.searchParams);
+  const {sortKey, reverse} = getSortVariables(
+    url.searchParams,
+    COLLECTION_SORT_OPTIONS,
+  );
+
   const [{collection}] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
-      variables: {handle, ...paginationVariables},
-      // Add other queries here, so that they are loaded in parallel
+      variables: {handle, filters, sortKey, reverse, ...paginationVariables},
     }),
   ]);
 
   if (!collection) {
-    throw new Response(`Collection ${handle} not found`, {
-      status: 404,
-    });
+    throw new Response(`Collection ${handle} not found`, {status: 404});
   }
 
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
 
-  return {
-    collection,
-  };
-}
-
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
+  return {collection};
 }
 
 export default function Collection() {
   const {collection} = useLoaderData<typeof loader>();
+  const currencyCode =
+    collection.products.nodes[0]?.priceRange.minVariantPrice.currencyCode;
 
   return (
-    <div className="collection">
-      <h1>{collection.title}</h1>
-      <p className="collection-description">{collection.description}</p>
-      <PaginatedResourceSection<ProductItemFragment>
+    <div className="collection-page container">
+      <CollectionHeader
+        eyebrow="Collection"
+        title={collection.title}
+        description={collection.description}
+        image={collection.image}
+      />
+      <ProductListing
         connection={collection.products}
-        resourcesClassName="products-grid"
-      >
-        {({node: product, index}) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 8 ? 'eager' : undefined}
-          />
-        )}
-      </PaginatedResourceSection>
+        filters={collection.products.filters}
+        sortOptions={COLLECTION_SORT_OPTIONS}
+        currencyCode={currencyCode}
+      />
       <Analytics.CollectionView
         data={{
           collection: {
@@ -96,36 +111,8 @@ export default function Collection() {
   );
 }
 
-const PRODUCT_ITEM_FRAGMENT = `#graphql
-  fragment MoneyProductItem on MoneyV2 {
-    amount
-    currencyCode
-  }
-  fragment ProductItem on Product {
-    id
-    handle
-    title
-    featuredImage {
-      id
-      altText
-      url
-      width
-      height
-    }
-    priceRange {
-      minVariantPrice {
-        ...MoneyProductItem
-      }
-      maxVariantPrice {
-        ...MoneyProductItem
-      }
-    }
-  }
-` as const;
-
-// NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
+// NOTE: https://shopify.dev/docs/api/storefront/latest/objects/collection
 const COLLECTION_QUERY = `#graphql
-  ${PRODUCT_ITEM_FRAGMENT}
   query Collection(
     $handle: String!
     $country: CountryCode
@@ -134,20 +121,40 @@ const COLLECTION_QUERY = `#graphql
     $last: Int
     $startCursor: String
     $endCursor: String
+    $filters: [ProductFilter!]
+    $sortKey: ProductCollectionSortKeys
+    $reverse: Boolean
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       id
       handle
       title
       description
+      image {
+        id
+        url
+        altText
+        width
+        height
+      }
+      seo {
+        title
+        description
+      }
       products(
         first: $first,
         last: $last,
         before: $startCursor,
-        after: $endCursor
+        after: $endCursor,
+        filters: $filters,
+        sortKey: $sortKey,
+        reverse: $reverse
       ) {
         nodes {
-          ...ProductItem
+          ...ProductCard
+        }
+        filters {
+          ...CollectionFilter
         }
         pageInfo {
           hasPreviousPage
@@ -158,4 +165,6 @@ const COLLECTION_QUERY = `#graphql
       }
     }
   }
+  ${PRODUCT_CARD_FRAGMENT}
+  ${COLLECTION_FILTER_FRAGMENT}
 ` as const;

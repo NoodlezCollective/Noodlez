@@ -3,6 +3,10 @@ import type {Route} from './+types/search';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
+import {Button} from '~/components/ui/Button';
+import {SearchIcon} from '~/components/ui/Icons';
+import {pluralize} from '~/lib/collectionFilters';
+import {PRODUCT_CARD_FRAGMENT} from '~/lib/fragments';
 import {
   type RegularSearchReturn,
   type PredictiveSearchReturn,
@@ -13,8 +17,20 @@ import type {
   PredictiveSearchQuery,
 } from 'storefrontapi.generated';
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Search`}];
+export const meta: Route.MetaFunction = ({data}) => {
+  const term = data?.type === 'regular' ? data.term : '';
+  const title = term
+    ? `Search results for “${term}” | Mellow`
+    : 'Search | Mellow';
+  return [
+    {title},
+    {
+      name: 'description',
+      content:
+        'Search Mellow pillows, comforters, bath essentials and bundles.',
+    },
+    {name: 'robots', content: 'noindex'},
+  ];
 };
 
 export async function loader({request, context}: Route.LoaderArgs) {
@@ -40,34 +56,60 @@ export default function SearchPage() {
   const {type, term, result, error} = useLoaderData<typeof loader>();
   if (type === 'predictive') return null;
 
+  const total = result?.total ?? 0;
+
   return (
-    <div className="search">
-      <h1>Search</h1>
-      <SearchForm>
-        {({inputRef}) => (
-          <>
-            <input
-              defaultValue={term}
-              name="q"
-              placeholder="Search…"
-              ref={inputRef}
-              type="search"
-            />
-            &nbsp;
-            <button type="submit">Search</button>
-          </>
-        )}
-      </SearchForm>
-      {error && <p style={{color: 'red'}}>{error}</p>}
-      {!term || !result?.total ? (
-        <SearchResults.Empty />
+    <div className="search-page container">
+      <header className="page-header page-header--center search-header">
+        <p className="eyebrow page-header__eyebrow">Search</p>
+        <h1>Search</h1>
+        <SearchForm className="search-form">
+          {({inputRef}) => (
+            <div className="search-form__field">
+              <label className="sr-only" htmlFor="search-page-input">
+                Search products, pages and articles
+              </label>
+              <SearchIcon className="search-form__icon" size={22} />
+              <input
+                id="search-page-input"
+                defaultValue={term}
+                name="q"
+                placeholder="Search pillows, comforters, bundles…"
+                ref={inputRef}
+                type="search"
+                autoComplete="off"
+              />
+              <Button type="submit">Search</Button>
+            </div>
+          )}
+        </SearchForm>
+      </header>
+
+      {error ? (
+        <p className="search-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      {term && total ? (
+        <p className="search-summary" aria-live="polite">
+          {pluralize(total, 'result')} for <q>{term}</q>
+        </p>
+      ) : null}
+
+      {!term || !total ? (
+        <SearchResults.Empty term={term} />
       ) : (
         <SearchResults result={result} term={term}>
           {({articles, pages, products, term}) => (
-            <div>
+            <div className="search-results">
               <SearchResults.Products products={products} term={term} />
-              <SearchResults.Pages pages={pages} term={term} />
-              <SearchResults.Articles articles={articles} term={term} />
+              {pages?.nodes.length || articles?.nodes.length ? (
+                <div className="search-results__secondary">
+                  <SearchResults.Pages pages={pages} term={term} />
+                  <SearchResults.Articles articles={articles} term={term} />
+                </div>
+              ) : null}
             </div>
           )}
         </SearchResults>
@@ -84,41 +126,9 @@ export default function SearchPage() {
 const SEARCH_PRODUCT_FRAGMENT = `#graphql
   fragment SearchProduct on Product {
     __typename
-    handle
-    id
+    ...ProductCard
     publishedAt
-    title
     trackingParameters
-    vendor
-    selectedOrFirstAvailableVariant(
-      selectedOptions: []
-      ignoreUnknownOptions: true
-      caseInsensitiveMatch: true
-    ) {
-      id
-      image {
-        url
-        altText
-        width
-        height
-      }
-      price {
-        amount
-        currencyCode
-      }
-      compareAtPrice {
-        amount
-        currencyCode
-      }
-      selectedOptions {
-        name
-        value
-      }
-      product {
-        handle
-        title
-      }
-    }
   }
 ` as const;
 
@@ -139,6 +149,9 @@ const SEARCH_ARTICLE_FRAGMENT = `#graphql
     id
     title
     trackingParameters
+    blog {
+      handle
+    }
   }
 ` as const;
 
@@ -165,7 +178,7 @@ export const SEARCH_QUERY = `#graphql
     articles: search(
       query: $term,
       types: [ARTICLE],
-      first: $first,
+      first: 10,
     ) {
       nodes {
         ...on Article {
@@ -176,7 +189,7 @@ export const SEARCH_QUERY = `#graphql
     pages: search(
       query: $term,
       types: [PAGE],
-      first: $first,
+      first: 10,
     ) {
       nodes {
         ...on Page {
@@ -204,6 +217,7 @@ export const SEARCH_QUERY = `#graphql
       }
     }
   }
+  ${PRODUCT_CARD_FRAGMENT}
   ${SEARCH_PRODUCT_FRAGMENT}
   ${SEARCH_PAGE_FRAGMENT}
   ${SEARCH_ARTICLE_FRAGMENT}
@@ -222,8 +236,8 @@ async function regularSearch({
 >): Promise<RegularSearchReturn> {
   const {storefront} = context;
   const url = new URL(request.url);
-  const variables = getPaginationVariables(request, {pageBy: 8});
-  const term = String(url.searchParams.get('q') || '');
+  const variables = getPaginationVariables(request, {pageBy: 12});
+  const term = String(url.searchParams.get('q') || '').trim();
 
   // Search articles, pages, and products for the `q` term
   const {
@@ -319,6 +333,10 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
         height
       }
       price {
+        amount
+        currencyCode
+      }
+      compareAtPrice {
         amount
         currencyCode
       }
