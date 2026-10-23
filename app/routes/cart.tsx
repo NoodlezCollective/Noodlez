@@ -1,11 +1,11 @@
 import {useLoaderData, data, type HeadersFunction} from 'react-router';
 import type {Route} from './+types/cart';
 import type {CartQueryDataReturn} from '@shopify/hydrogen';
-import {CartForm} from '@shopify/hydrogen';
-import {CartMain} from '~/components/CartMain';
+import {CartForm, useOptimisticCart} from '@shopify/hydrogen';
+import {CartMain, formatItemCount} from '~/components/CartMain';
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Cart`}];
+  return [{title: 'Cart | Mellow'}, {name: 'robots', content: 'noindex'}];
 };
 
 export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
@@ -75,7 +75,7 @@ export async function action({request, context}: Route.ActionArgs) {
 
   const cartId = result?.cart?.id;
   const headers = cartId ? cart.setCartId(result.cart.id) : new Headers();
-  const {cart: cartResult, errors, warnings} = result;
+  const {cart: cartResult, errors, userErrors, warnings} = result;
 
   const redirectTo = formData.get('redirectTo') ?? null;
   if (typeof redirectTo === 'string') {
@@ -87,6 +87,7 @@ export async function action({request, context}: Route.ActionArgs) {
     {
       cart: cartResult,
       errors,
+      userErrors,
       warnings,
       analytics: {
         cartId,
@@ -102,12 +103,22 @@ export async function loader({context}: Route.LoaderArgs) {
 }
 
 export default function Cart() {
-  const cart = useLoaderData<typeof loader>();
+  const originalCart = useLoaderData<typeof loader>();
+  const cart = useOptimisticCart(originalCart);
+  const count = cart?.totalQuantity ?? 0;
 
   return (
-    <div className="cart">
-      <h1>Cart</h1>
-      <CartMain layout="page" cart={cart} />
+    <div className="container cart-page">
+      <header className="page-header cart-page__header">
+        <p className="eyebrow page-header__eyebrow">Mellow</p>
+        <h1>
+          Your cart
+          {count > 0 ? (
+            <span className="cart-page__count"> {formatItemCount(count)}</span>
+          ) : null}
+        </h1>
+      </header>
+      <CartMain layout="page" cart={originalCart} />
     </div>
   );
 }

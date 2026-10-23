@@ -1,10 +1,17 @@
-import {useLoaderData} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs.$blogHandle.$articleHandle';
 import {Image} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {Button} from '~/components/ui/Button';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.article.title ?? ''} article`}];
+  const title = data?.article?.seo?.title || data?.article?.title;
+  const description = data?.article?.seo?.description;
+  return [
+    {title: title ? `${title} | Mellow` : 'Journal | Mellow'},
+    ...(description ? [{name: 'description', content: description}] : []),
+    {property: 'og:type', content: 'article'},
+  ];
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -53,7 +60,7 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
 
   const article = blog.articleByHandle;
 
-  return {article};
+  return {article, blogHandle: blog.handle};
 }
 
 /**
@@ -65,9 +72,16 @@ function loadDeferredData({context}: Route.LoaderArgs) {
   return {};
 }
 
+/** "sleep-tips" → "Sleep tips" */
+function titleFromHandle(handle: string) {
+  const text = handle.replace(/[-_]+/g, ' ').trim();
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export default function Article() {
-  const {article} = useLoaderData<typeof loader>();
+  const {article, blogHandle} = useLoaderData<typeof loader>();
   const {title, image, contentHtml, author} = article;
+  const blogTitle = titleFromHandle(blogHandle);
 
   const publishedDate = new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
@@ -76,21 +90,51 @@ export default function Article() {
   }).format(new Date(article.publishedAt));
 
   return (
-    <div className="article">
-      <h1>
-        {title}
-        <div>
-          <time dateTime={article.publishedAt}>{publishedDate}</time> &middot;{' '}
-          <address>{author?.name}</address>
-        </div>
-      </h1>
+    <article className="content-page article container container--text">
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <Link to="/blogs" prefetch="intent">
+          Journal
+        </Link>
+        <span aria-hidden="true">/</span>
+        <Link to={`/blogs/${blogHandle}`} prefetch="intent">
+          {blogTitle}
+        </Link>
+      </nav>
 
-      {image && <Image data={image} sizes="90vw" loading="eager" />}
+      <header className="article__header">
+        <p className="article__meta">
+          <time dateTime={article.publishedAt}>{publishedDate}</time>
+          {author?.name ? <> &middot; By {author.name}</> : null}
+        </p>
+        <h1>{title}</h1>
+      </header>
+
+      {image ? (
+        <figure className="article__hero">
+          <Image
+            alt={image.altText || title}
+            aspectRatio="16/9"
+            data={image}
+            loading="eager"
+            sizes="(min-width: 64em) 760px, 100vw"
+          />
+        </figure>
+      ) : null}
+
       <div
+        className="prose article__body"
         dangerouslySetInnerHTML={{__html: contentHtml}}
-        className="article"
       />
-    </div>
+
+      <footer className="article__footer">
+        <Button to={`/blogs/${blogHandle}`} variant="outline" size="sm">
+          More from {blogTitle}
+        </Button>
+        <Button to="/collections/all" variant="ghost" size="sm">
+          Shop best sellers
+        </Button>
+      </footer>
+    </article>
   );
 }
 

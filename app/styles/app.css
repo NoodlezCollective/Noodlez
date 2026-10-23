@@ -771,7 +771,7 @@ html:has(.overlay.expanded) {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: var(--drawer-padding);
   display: flex;
   flex-direction: column;
 }

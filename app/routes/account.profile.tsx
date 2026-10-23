@@ -8,7 +8,9 @@ import {
   useNavigation,
   useOutletContext,
 } from 'react-router';
+import {useId} from 'react';
 import type {Route} from './+types/account.profile';
+import {Button} from '~/components/ui/Button';
 
 export type ActionResponse = {
   error: string | null;
@@ -16,7 +18,7 @@ export type ActionResponse = {
 };
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: 'Profile'}];
+  return [{title: 'Profile | Mellow'}];
 };
 
 export async function loader({context}: Route.LoaderArgs) {
@@ -84,49 +86,68 @@ export default function AccountProfile() {
   const {state} = useNavigation();
   const action = useActionData<ActionResponse>();
   const customer = action?.customer ?? account?.customer;
+  const firstNameId = useId();
+  const lastNameId = useId();
+  const saving = state !== 'idle';
+  const saved = Boolean(action && !action.error && action.customer);
 
   return (
-    <div className="account-profile">
-      <h2>My profile</h2>
-      <br />
-      <Form method="PUT">
-        <legend>Personal information</legend>
-        <fieldset>
-          <label htmlFor="firstName">First name</label>
-          <input
-            id="firstName"
-            name="firstName"
-            type="text"
-            autoComplete="given-name"
-            placeholder="First name"
-            aria-label="First name"
-            defaultValue={customer.firstName ?? ''}
-            minLength={2}
-          />
-          <label htmlFor="lastName">Last name</label>
-          <input
-            id="lastName"
-            name="lastName"
-            type="text"
-            autoComplete="family-name"
-            placeholder="Last name"
-            aria-label="Last name"
-            defaultValue={customer.lastName ?? ''}
-            minLength={2}
-          />
+    <div className="account-section account-profile">
+      <header className="account-section__header">
+        <h2>Profile</h2>
+        <p className="text-muted">
+          The name we use on your orders, receipts and deliveries.
+        </p>
+      </header>
+
+      <Form method="PUT" className="account-card account-form">
+        <fieldset className="account-form__fieldset">
+          <legend className="account-card__subtitle">
+            Personal information
+          </legend>
+          <div className="account-form__grid">
+            <div className="field">
+              <label htmlFor={firstNameId}>First name</label>
+              <input
+                id={firstNameId}
+                name="firstName"
+                type="text"
+                autoComplete="given-name"
+                placeholder="First name"
+                defaultValue={customer.firstName ?? ''}
+                minLength={2}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor={lastNameId}>Last name</label>
+              <input
+                id={lastNameId}
+                name="lastName"
+                type="text"
+                autoComplete="family-name"
+                placeholder="Last name"
+                defaultValue={customer.lastName ?? ''}
+                minLength={2}
+              />
+            </div>
+          </div>
         </fieldset>
-        {action?.error ? (
-          <p>
-            <mark>
-              <small>{action.error}</small>
-            </mark>
-          </p>
-        ) : (
-          <br />
-        )}
-        <button type="submit" disabled={state !== 'idle'}>
-          {state !== 'idle' ? 'Updating' : 'Update'}
-        </button>
+
+        <div className="account-form__footer">
+          <div className="account-form__messages" aria-live="polite">
+            {action?.error ? (
+              <p className="form-message form-message--error">{action.error}</p>
+            ) : null}
+            {saved ? (
+              <p className="form-message form-message--success">
+                Your profile has been updated.
+              </p>
+            ) : null}
+          </div>
+          <Button type="submit" loading={saving}>
+            Save changes
+          </Button>
+        </div>
       </Form>
     </div>
   );

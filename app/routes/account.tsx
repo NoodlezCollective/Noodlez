@@ -3,17 +3,30 @@ import {
   Form,
   NavLink,
   Outlet,
+  redirect,
   useLoaderData,
 } from 'react-router';
 import type {Route} from './+types/account';
 import {CUSTOMER_DETAILS_QUERY} from '~/graphql/customer-account/CustomerDetailsQuery';
+import {isCustomerAccountConfigured} from '~/components/account/AccountUnavailable';
 
 export function shouldRevalidate() {
   return true;
 }
 
+export const meta: Route.MetaFunction = () => {
+  return [{title: 'My account | Mellow'}];
+};
+
 export async function loader({context}: Route.LoaderArgs) {
   const {customerAccount} = context;
+
+  // Without the Customer Account API configuration the login route explains
+  // what is missing (503) instead of attempting a sign-in.
+  if (!isCustomerAccountConfigured(context.env)) {
+    throw redirect('/account/login');
+  }
+
   const {data, errors} = await customerAccount.query(CUSTOMER_DETAILS_QUERY, {
     variables: {
       language: customerAccount.i18n.language,
@@ -45,44 +58,43 @@ export default function AccountLayout() {
 
   return (
     <div className="account">
-      <h1>{heading}</h1>
-      <br />
-      <AccountMenu />
-      <br />
-      <br />
-      <Outlet context={{customer}} />
+      <header className="account-header">
+        <div className="container">
+          <p className="eyebrow">My account</p>
+          <h1 className="account-header__title">{heading}</h1>
+          <AccountMenu />
+        </div>
+      </header>
+      <div className="container account-content">
+        <Outlet context={{customer}} />
+      </div>
     </div>
   );
 }
 
-function AccountMenu() {
-  function isActiveStyle({
-    isActive,
-    isPending,
-  }: {
-    isActive: boolean;
-    isPending: boolean;
-  }) {
-    return {
-      fontWeight: isActive ? 'bold' : undefined,
-      color: isPending ? 'grey' : 'black',
-    };
-  }
+const ACCOUNT_LINKS = [
+  {to: '/account/orders', label: 'Orders'},
+  {to: '/account/profile', label: 'Profile'},
+  {to: '/account/addresses', label: 'Addresses'},
+];
 
+function AccountMenu() {
   return (
-    <nav role="navigation">
-      <NavLink to="/account/orders" style={isActiveStyle}>
-        Orders &nbsp;
-      </NavLink>
-      &nbsp;|&nbsp;
-      <NavLink to="/account/profile" style={isActiveStyle}>
-        &nbsp; Profile &nbsp;
-      </NavLink>
-      &nbsp;|&nbsp;
-      <NavLink to="/account/addresses" style={isActiveStyle}>
-        &nbsp; Addresses &nbsp;
-      </NavLink>
-      &nbsp;|&nbsp;
+    <nav className="account-tabs" aria-label="Account">
+      {ACCOUNT_LINKS.map((link) => (
+        <NavLink
+          className={({isActive, isPending}) =>
+            `account-tab ${isActive ? 'is-active' : ''} ${
+              isPending ? 'is-pending' : ''
+            }`.trim()
+          }
+          key={link.to}
+          prefetch="intent"
+          to={link.to}
+        >
+          {link.label}
+        </NavLink>
+      ))}
       <Logout />
     </nav>
   );
@@ -90,8 +102,14 @@ function AccountMenu() {
 
 function Logout() {
   return (
-    <Form className="account-logout" method="POST" action="/account/logout">
-      &nbsp;<button type="submit">Sign out</button>
+    <Form
+      className="account-tabs__logout"
+      method="POST"
+      action="/account/logout"
+    >
+      <button className="account-tab account-tab--button" type="submit">
+        Sign out
+      </button>
     </Form>
   );
 }

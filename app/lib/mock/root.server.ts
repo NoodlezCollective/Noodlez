@@ -37,13 +37,13 @@ export function createRootValue(catalog: MockCatalog, origin: string): GqlObject
     mutate: (cart: StoredCart) => StoredCart,
   ) => cartPayload(mutate(ensureCart(cartId)));
 
-  const unsupported = (cartId: string, feature: string) =>
+  const unsupported = (cartId: string, message: string) =>
     cartPayload(ensureCart(cartId), [
       {
         __typename: 'CartUserError',
         code: 'INVALID',
         field: null,
-        message: `${feature} is not supported by the development mock.`,
+        message: `${message} by the development mock.`,
       },
     ]);
 
@@ -232,12 +232,12 @@ export function createRootValue(catalog: MockCatalog, origin: string): GqlObject
     cartDeliveryAddressesUpdate: ({cartId}: {cartId: string}) => withCart(cartId, (cart) => cart),
     cartDeliveryAddressesReplace: ({cartId}: {cartId: string}) => withCart(cartId, (cart) => cart),
     cartBillingAddressUpdate: ({cartId}: {cartId: string}) => withCart(cartId, (cart) => cart),
-    cartGiftCardCodesAdd: ({cartId}: {cartId: string}) => unsupported(cartId, 'Gift cards'),
-    cartGiftCardCodesRemove: ({cartId}: {cartId: string}) => unsupported(cartId, 'Gift cards'),
-    cartGiftCardCodesUpdate: ({cartId}: {cartId: string}) => unsupported(cartId, 'Gift cards'),
+    cartGiftCardCodesAdd: ({cartId}: {cartId: string}) => unsupported(cartId, 'Gift cards are not supported'),
+    cartGiftCardCodesRemove: ({cartId}: {cartId: string}) => unsupported(cartId, 'Gift cards are not supported'),
+    cartGiftCardCodesUpdate: ({cartId}: {cartId: string}) => unsupported(cartId, 'Gift cards are not supported'),
     cartMetafieldsSet: () => ({metafields: [], userErrors: []}),
     cartMetafieldDelete: () => ({deletedId: null, userErrors: []}),
-    cartPaymentUpdate: ({cartId}: {cartId: string}) => unsupported(cartId, 'Payment'),
+    cartPaymentUpdate: ({cartId}: {cartId: string}) => unsupported(cartId, 'Payment updates are not supported'),
     cartPrepareForCompletion: () => ({result: null, userErrors: []}),
     cartSubmitForCompletion: () => ({result: null, userErrors: []}),
     cartRemovePersonalData: ({cartId}: {cartId: string}) => withCart(cartId, (cart) => cart),

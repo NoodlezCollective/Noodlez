@@ -3,7 +3,12 @@ import type {Route} from './+types/pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.page.title ?? ''}`}];
+  const title = data?.page?.seo?.title || data?.page?.title;
+  const description = data?.page?.seo?.description;
+  return [
+    {title: title ? `${title} | Mellow` : 'Mellow'},
+    ...(description ? [{name: 'description', content: description}] : []),
+  ];
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -58,12 +63,13 @@ export default function Page() {
   const {page} = useLoaderData<typeof loader>();
 
   return (
-    <div className="page">
-      <header>
+    <article className="content-page container container--text">
+      <header className="page-header">
+        <p className="eyebrow page-header__eyebrow">Mellow</p>
         <h1>{page.title}</h1>
       </header>
-      <main dangerouslySetInnerHTML={{__html: page.body}} />
-    </div>
+      <div className="prose" dangerouslySetInnerHTML={{__html: page.body}} />
+    </article>
   );
 }
 
