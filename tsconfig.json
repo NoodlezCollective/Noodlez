@@ -8,7 +8,8 @@
     "*.tsx",
     "*.d.ts",
     ".graphqlrc.ts",
-    ".react-router/types/**/*"
+    ".react-router/types/**/*",
+    "tests/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "build", "packages/**/dist/**/*"],
   "compilerOptions": {
@@ -39,6 +40,8 @@
     "rootDirs": [".", "./.react-router/types"],
     "incremental": true,
     "composite": false,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   }
 }

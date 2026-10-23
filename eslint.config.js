@@ -32,6 +32,10 @@ export default [
       '**/*.generated.d.ts',
       '**/.react-router/',
       '**/packages/hydrogen/dist/',
+      '**/test-results/',
+      '**/playwright-report/',
+      '**/blob-report/',
+      '**/coverage/',
     ],
   },
   ...fixupConfigRules(
@@ -231,11 +235,26 @@ export default [
     plugins: {
       jest,
     },
+    // Unit tests run on Vitest; the jest plugin needs a version to avoid
+    // probing for an installed Jest.
+    settings: {
+      jest: {
+        version: 29,
+        globalPackage: 'vitest',
+      },
+    },
     languageOptions: {
       globals: {
         ...globals.node,
         ...globals.jest,
       },
+    },
+  },
+  {
+    // Playwright fixtures call `use()`, which the hooks plugin mistakes for a React hook.
+    files: ['tests/**/*.ts', 'playwright.config.ts', 'vitest.config.ts'],
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
     },
   },
   {
