@@ -30,6 +30,10 @@ export function ContentImage({
   alt,
 }: ContentImageProps) {
   const altText = alt ?? image.altText ?? '';
+  // React 18 expects the lowercase DOM attribute name for fetch priority.
+  // Both branches forward it: Hydrogen's <Image> passes unknown props on to
+  // the <img>, so a Shopify-hosted hero keeps `fetchpriority="high"`.
+  const priorityAttribute = fetchPriority ? {fetchpriority: fetchPriority} : {};
   if (isShopifyCdnUrl(image.url)) {
     return (
       <Image
@@ -44,11 +48,10 @@ export function ContentImage({
         loading={loading}
         className={className}
         aspectRatio={aspectRatio}
+        {...priorityAttribute}
       />
     );
   }
-  // React 18 expects the lowercase DOM attribute name for fetch priority.
-  const priorityAttribute = fetchPriority ? {fetchpriority: fetchPriority} : {};
   return (
     <img
       src={image.url}

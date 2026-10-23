@@ -1,3 +1,4 @@
+import {useEffect, useRef, useState, type RefObject} from 'react';
 import {Link} from 'react-router';
 import type {CollectionFilterFragment} from 'storefrontapi.generated';
 import {CloseIcon} from '~/components/ui/Icons';
@@ -62,24 +63,57 @@ export function buildFilterChips({
   });
 }
 
+/** What the shopper just activated; focus is restored once the chips update. */
+type PendingFocus = {kind: 'chip'; id: string; index: number} | {kind: 'all'};
+
 export function ActiveFilters({
   chips,
   clearHref,
+  fallbackFocusRef,
 }: {
   chips: FilterChip[];
   clearHref: string;
+  /** Receives focus when the last chip is gone and no chip or control is left. */
+  fallbackFocusRef?: RefObject<HTMLElement | null>;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [pending, setPending] = useState<PendingFocus | null>(null);
+  const chipKey = chips.map((chip) => chip.id).join('\n');
+
+  // Removing a chip unmounts the focused link, which would drop focus to
+  // <body>. Once the chip is gone, focus the next chip, else "Clear all", else
+  // (nothing left) the fallback, e.g. the result count.
+  useEffect(() => {
+    if (!pending) return;
+    const ids = chipKey ? chipKey.split('\n') : [];
+    if (pending.kind === 'chip' ? ids.includes(pending.id) : ids.length) return;
+    setPending(null);
+    const active = document.activeElement;
+    if (active && active !== document.body) return; // the shopper moved on
+    const root = rootRef.current;
+    const nextChip =
+      pending.kind === 'chip'
+        ? root?.querySelectorAll<HTMLElement>('.chip')[pending.index]
+        : null;
+    (
+      nextChip ??
+      root?.querySelector<HTMLElement>('.active-filters__clear') ??
+      fallbackFocusRef?.current
+    )?.focus();
+  }, [chipKey, pending, fallbackFocusRef]);
+
   if (!chips.length) return null;
   return (
-    <div className="active-filters">
+    <div className="active-filters" ref={rootRef}>
       <ul className="active-filters__list" aria-label="Active filters">
-        {chips.map((chip) => (
+        {chips.map((chip, index) => (
           <li key={chip.id}>
             <Link
               className="chip"
               to={chip.href}
               preventScrollReset
               aria-label={`Remove filter: ${chip.label}`}
+              onClick={() => setPending({kind: 'chip', id: chip.id, index})}
             >
               <span>{chip.label}</span>
               <CloseIcon size={14} />
@@ -91,6 +125,7 @@ export function ActiveFilters({
         className="active-filters__clear link"
         to={clearHref}
         preventScrollReset
+        onClick={() => setPending({kind: 'all'})}
       >
         Clear all
       </Link>

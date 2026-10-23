@@ -140,12 +140,16 @@
   transition: background-color var(--duration-fast) ease;
 }
 
-.qty__btn:hover:not(:disabled) {
+.qty__btn:hover:not(:disabled):not([aria-disabled='true']) {
   background: var(--color-lavender-tint);
 }
 
-.qty__btn:disabled {
+/* `aria-disabled` keeps the button focusable (e.g. "decrease" at 1) so keyboard
+   focus is not dropped when it reaches its limit. */
+.qty__btn:disabled,
+.qty__btn[aria-disabled='true'] {
   opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .qty__value {

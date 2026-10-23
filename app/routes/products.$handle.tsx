@@ -191,8 +191,11 @@ export default function Product() {
     ratingCount,
   });
 
+  // Keyed by product so React Router reusing this route element for another
+  // `:handle` remounts the page and resets the quantity, gallery and review
+  // carousel state instead of carrying it over to the next product.
   return (
-    <div className="product-page">
+    <div className="product-page" key={product.id}>
       <div className="container container--narrow product-layout">
         <div className="product-layout__media">
           <ProductGallery

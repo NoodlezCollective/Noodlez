@@ -1,5 +1,5 @@
-import {Await} from 'react-router';
-import {Suspense, useId} from 'react';
+import {Await, useLocation} from 'react-router';
+import {Suspense, useEffect, useId, useRef, useState} from 'react';
 import type {
   CartApiQueryFragment,
   FooterQuery,
@@ -71,8 +71,45 @@ export function PageLayout({
         publicStoreDomain={publicStoreDomain}
         isLoggedIn={isLoggedIn}
       />
+      {/* After the drawers: when a navigation also closes a drawer, the focus
+          the drawer restores to its opener must not win over <main>. */}
+      <RouteAnnouncer />
       {isMockStorefront ? <DevNotice /> : null}
     </Aside.Provider>
+  );
+}
+
+/**
+ * Client-side navigations do not reload the page, so nothing tells a screen
+ * reader user that the page changed and keyboard focus is left on the (now
+ * removed) link. After every pathname change this announces the new document
+ * title and moves focus to <main> (`tabIndex={-1}`, no outline), so the next
+ * Tab continues at the top of the new content. The first render (initial
+ * load) and search-param-only changes (filters, sorting, "Load more", variant
+ * selection) do neither.
+ */
+function RouteAnnouncer() {
+  const {pathname} = useLocation();
+  const previousPathname = useRef(pathname);
+  const [announcement, setAnnouncement] = useState('');
+
+  useEffect(() => {
+    if (previousPathname.current === pathname) return;
+    previousPathname.current = pathname;
+    setAnnouncement(document.title);
+    document.getElementById('main-content')?.focus({preventScroll: true});
+  }, [pathname]);
+
+  return (
+    <div
+      id="route-announcer"
+      className="sr-only"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      {announcement}
+    </div>
   );
 }
 

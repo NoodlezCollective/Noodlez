@@ -19,6 +19,12 @@ export type ProductCardProps = {
   sizes?: string;
   /** Overrides the product URL (e.g. search results add Shopify tracking params). */
   to?: string;
+  /**
+   * Heading level of the product title. Use the level below the section the
+   * card sits in: 3 under a section `h2` (default), 2 directly under the page
+   * `h1` (listing pages).
+   */
+  headingLevel?: 2 | 3 | 4;
 };
 
 export function truncate(text: string | null | undefined, max = 200) {
@@ -43,7 +49,9 @@ export function ProductCard({
   className,
   sizes = '(min-width: 64em) 400px, (min-width: 48em) 50vw, 100vw',
   to,
+  headingLevel = 3,
 }: ProductCardProps) {
+  const Heading = `h${headingLevel}` as const;
   const url = to ?? `/products/${product.handle}`;
   const image = product.featuredImage;
   const rating = parseRating(product.rating);
@@ -84,11 +92,11 @@ export function ProductCard({
         {rating !== null ? (
           <Stars rating={rating} count={ratingCount} size="sm" />
         ) : null}
-        <h3 className="product-card__title">
+        <Heading className="product-card__title">
           <Link to={url} prefetch="intent">
             {product.title}
           </Link>
-        </h3>
+        </Heading>
         {showDescription && description ? (
           <p className="product-card__description">{description}</p>
         ) : null}
@@ -98,7 +106,14 @@ export function ProductCard({
           compareAtPrice={compareAt}
         />
         {showCta ? (
-          <Button to={url} block className="product-card__cta">
+          // The visible label comes first so the name still contains it; the
+          // product title tells the many identical "Shop Now" links apart.
+          <Button
+            to={url}
+            block
+            className="product-card__cta"
+            aria-label={`${ctaLabel}: ${product.title}`}
+          >
             {ctaLabel}
           </Button>
         ) : null}

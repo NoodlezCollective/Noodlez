@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useRef,
   useState,
   type CSSProperties,
   type FormEvent,
@@ -80,6 +81,17 @@ export function FilterPanel({
   const reverse = params.get(REVERSE_PARAM);
   const activeCount = countAppliedFilters(params);
   const clearSearch = clearFilterParams(params).toString();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [clearing, setClearing] = useState(false);
+
+  // "Clear all" unmounts itself once no filter is left, which would drop
+  // focus to <body>: keep it in the panel, on its heading.
+  useEffect(() => {
+    if (!clearing || activeCount > 0) return;
+    setClearing(false);
+    const active = document.activeElement;
+    if (!active || active === document.body) titleRef.current?.focus();
+  }, [clearing, activeCount]);
 
   function submitForm(form: HTMLFormElement) {
     const data = new FormData(form);
@@ -180,7 +192,12 @@ export function FilterPanel({
       onSubmit={handleSubmit}
     >
       <div className="filters__header">
-        <h2 className="filters__title" id={headingId}>
+        <h2
+          className="filters__title"
+          id={headingId}
+          ref={titleRef}
+          tabIndex={-1}
+        >
           Filters
           {activeCount ? (
             <span className="filters__badge">{activeCount}</span>
@@ -192,6 +209,7 @@ export function FilterPanel({
               className="filters__clear link"
               to={{pathname, search: clearSearch ? `?${clearSearch}` : ''}}
               preventScrollReset
+              onClick={() => setClearing(true)}
             >
               Clear all
             </Link>

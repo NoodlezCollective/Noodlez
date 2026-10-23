@@ -25,10 +25,13 @@ export function CartLineItem({
   layout,
   line,
   childrenMap,
+  onRemove,
 }: {
   layout: CartLayout;
   line: CartLine;
   childrenMap: LineItemChildrenMap;
+  /** Called when the shopper activates "remove" (lets the cart restore focus). */
+  onRemove?: (lineId: string) => void;
 }) {
   const {id, merchandise, isOptimistic} = line;
   const {product, title, image, selectedOptions} = merchandise;
@@ -109,6 +112,7 @@ export function CartLineItem({
             lineIds={[id]}
             disabled={!!isOptimistic}
             productTitle={product.title}
+            onRemove={() => onRemove?.(id)}
           />
         </div>
       </div>
@@ -125,6 +129,7 @@ export function CartLineItem({
                 key={childLine.id}
                 line={childLine}
                 layout={layout}
+                onRemove={onRemove}
               />
             ))}
           </ul>
@@ -144,15 +149,23 @@ function CartLineQuantity({line}: {line: CartLine}) {
   const {id: lineId, quantity, isOptimistic} = line;
   const prevQuantity = Number(Math.max(0, quantity - 1).toFixed(0));
   const nextQuantity = Number((quantity + 1).toFixed(0));
+  // Removing is the trash button's job; "decrease" stops at 1. It is
+  // `aria-disabled` rather than `disabled` so the focused button keeps focus
+  // when it reaches 1 (a disabled button drops focus to <body>).
+  const atMinimum = quantity <= 1;
 
   return (
     <div className="qty" role="group" aria-label="Quantity">
       <CartLineUpdateButton lines={[{id: lineId, quantity: prevQuantity}]}>
         <button
           aria-label="Decrease quantity"
+          aria-disabled={atMinimum || undefined}
           className="qty__btn"
-          disabled={quantity <= 1 || !!isOptimistic}
+          disabled={!!isOptimistic}
           name="decrease-quantity"
+          onClick={(event) => {
+            if (atMinimum) event.preventDefault();
+          }}
           type="submit"
           value={prevQuantity}
         >
@@ -188,10 +201,12 @@ function CartLineRemoveButton({
   lineIds,
   disabled,
   productTitle,
+  onRemove,
 }: {
   lineIds: string[];
   disabled: boolean;
   productTitle: string;
+  onRemove?: () => void;
 }) {
   return (
     <CartForm
@@ -204,6 +219,7 @@ function CartLineRemoveButton({
         aria-label={`Remove ${productTitle} from cart`}
         className="icon-btn cart-line__remove"
         disabled={disabled}
+        onClick={onRemove}
         type="submit"
       >
         <TrashIcon size={20} />

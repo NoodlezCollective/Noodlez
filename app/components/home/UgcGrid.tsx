@@ -1,10 +1,10 @@
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router';
 import {ContentImage} from '~/components/ContentImage';
 import {PlayIcon} from '~/components/ui/Icons';
 import {SectionHeading} from '~/components/ui/SectionHeading';
 import type {UgcContent, UgcVideo} from '~/lib/content/types';
-import {toEmbedUrl} from './VideoCard';
+import {CaptionsTrack, toEmbedUrl, type VideoCaptions} from './VideoCard';
 
 export function UgcGrid({content}: {content: UgcContent}) {
   if (!content.videos.length) return null;
@@ -26,10 +26,31 @@ export function UgcGrid({content}: {content: UgcContent}) {
   );
 }
 
-function UgcCard({video}: {video: UgcVideo}) {
+/**
+ * A grid tile: plays inline (native <video> or YouTube/Vimeo iframe, focused
+ * when it replaces the play button), links to the product, or just shows the
+ * poster. A captions track is only offered when `captions` is provided.
+ */
+function UgcCard({
+  video,
+  captions,
+}: {
+  video: UgcVideo;
+  captions?: VideoCaptions | null;
+}) {
   const [playing, setPlaying] = useState(false);
-  const embedUrl = video.video?.externalUrl ? toEmbedUrl(video.video.externalUrl) : null;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const embedUrl = video.video?.externalUrl
+    ? toEmbedUrl(video.video.externalUrl)
+    : null;
   const playable = Boolean(video.video?.sources.length || embedUrl);
+
+  // The play button unmounts when playback starts, which would drop keyboard
+  // focus to <body>: hand it to the player instead.
+  useEffect(() => {
+    if (playing) (videoRef.current ?? frameRef.current)?.focus();
+  }, [playing]);
 
   const poster = video.poster ? (
     <ContentImage
@@ -42,11 +63,19 @@ function UgcCard({video}: {video: UgcVideo}) {
   if (playing && video.video?.sources.length) {
     return (
       <div className="ugc-card">
-        <video controls autoPlay playsInline poster={video.poster?.url} aria-label={video.title}>
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption -- merchant-supplied UGC videos ship no caption track; one is rendered below whenever `captions` is provided */}
+        <video
+          ref={videoRef}
+          controls
+          autoPlay
+          playsInline
+          poster={video.poster?.url}
+          aria-label={video.title}
+        >
           {video.video.sources.map((source) => (
             <source key={source.url} src={source.url} type={source.mimeType} />
           ))}
-          <track kind="captions" />
+          <CaptionsTrack captions={captions} />
         </video>
       </div>
     );
@@ -56,11 +85,18 @@ function UgcCard({video}: {video: UgcVideo}) {
     return (
       <div className="ugc-card">
         <iframe
+          ref={frameRef}
           src={embedUrl}
           title={video.title}
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
-          style={{position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0}}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            border: 0,
+          }}
         />
       </div>
     );

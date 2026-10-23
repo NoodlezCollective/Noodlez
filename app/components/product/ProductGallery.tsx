@@ -105,7 +105,7 @@ export function ProductGallery({
       }, 1000),
     };
     track.scrollTo({left, behavior: scrollBehavior()});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on `active` on purpose: the helpers are re-created every render and only read refs and `count` (a stale count merely bounds the index read back from the scroll position)
   }, [active]);
 
   useEffect(() => {
@@ -117,7 +117,7 @@ export function ProductGallery({
     };
     track.addEventListener('scrollend', onScrollEnd);
     return () => track.removeEventListener('scrollend', onScrollEnd);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-attached whenever `count` changes (the track mounts when it goes 0 -> n); the handler reads only refs and `count`
   }, [count]);
 
   // Keep the active thumbnail visible inside the strip (horizontal only, so

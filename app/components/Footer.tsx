@@ -149,7 +149,10 @@ function FooterContent({
 
       <div className="site-footer__bottom">
         <p>
-          © {year} {header.shop.name}. All rights reserved.
+          {/* The clock can tick over into a new year between the server render
+              and hydration; the year is not worth a hydration mismatch. */}
+          © <span suppressHydrationWarning>{year}</span> {header.shop.name}. All
+          rights reserved.
         </p>
         <ul className="site-footer__policies">
           {policyLinks.length ? (

@@ -8,16 +8,15 @@ import type {PressLogo} from '~/lib/content/types';
  */
 export function PressBar({logos}: {logos: PressLogo[]}) {
   if (!logos.length) return null;
-  // Repeat so the strip is wider than the viewport before the loop restarts.
-  const repeats = Math.max(1, Math.ceil(12 / logos.length));
-  const items = Array.from({length: repeats}).flatMap((_, repeat) =>
-    logos.map((logo) => ({...logo, key: `${repeat}-${logo.id}`})),
-  );
+  // Repeat the logos so each half of the loop is wider than the viewport. Only
+  // the first copy is exposed (the Marquee hides and disables the repeats), so
+  // the logos and their links are read and focusable exactly once.
+  const copies = Math.max(1, Math.ceil(12 / logos.length));
   return (
     <section className="press-bar" aria-label="As seen in">
-      <Marquee duration={40} gap={0}>
-        {items.map((logo) => (
-          <span className="press-bar__item" key={logo.key}>
+      <Marquee duration={40} gap={0} copies={copies}>
+        {logos.map((logo) => (
+          <span className="press-bar__item" key={logo.id}>
             {logo.url ? (
               <a
                 href={logo.url}

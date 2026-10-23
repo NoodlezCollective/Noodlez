@@ -60,21 +60,24 @@ export function NewsletterForm({
           {ctaLabel}
         </Button>
       </div>
-      {data ? (
-        <p
-          id={messageId}
-          className={`form-message ${
-            data.status === 'subscribed'
-              ? 'form-message--success'
-              : data.ok
-                ? ''
-                : 'form-message--error'
-          }`}
-          role="status"
-        >
-          {data.message}
-        </p>
-      ) : null}
+      {/* The live region stays mounted (empty) so screen readers announce the
+          message when its text is swapped in; a region that mounts together
+          with its text is often not announced. */}
+      <div id={messageId} className="newsletter-form__status" role="status">
+        {data ? (
+          <p
+            className={`form-message ${
+              data.status === 'subscribed'
+                ? 'form-message--success'
+                : data.ok
+                  ? ''
+                  : 'form-message--error'
+            }`}
+          >
+            {data.message}
+          </p>
+        ) : null}
+      </div>
     </fetcher.Form>
   );
 }

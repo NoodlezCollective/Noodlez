@@ -3,13 +3,13 @@ import {
   type ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useId,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import {CloseIcon} from '~/components/ui/Icons';
+import {useModalDialog} from '~/lib/useModalDialog';
 
 type AsideType = 'search' | 'cart' | 'mobile' | 'closed';
 type AsideContextValue = {
@@ -18,26 +18,20 @@ type AsideContextValue = {
   close: () => void;
 };
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
-
 /** Page regions made inert while a drawer is open (dialog pattern). */
 const PAGE_REGIONS =
   '.announcement-bar, .site-header, #main-content, .site-footer, .dev-notice';
 
-function getFocusable(root: HTMLElement) {
-  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-    (element) =>
-      element.offsetParent !== null || element === document.activeElement,
-  );
+function getPageRegions() {
+  return Array.from(document.querySelectorAll<HTMLElement>(PAGE_REGIONS));
 }
 
 /**
  * Slide-in drawer with overlay used for the cart, search and mobile menu.
- * Implements the modal dialog pattern: focus moves to the close button when
- * opened, Tab is trapped inside the drawer, the rest of the page is inert,
- * Escape / overlay click close it and focus returns to the element that
- * opened it.
+ * Implements the modal dialog pattern (see `useModalDialog`): focus moves to
+ * the close button when opened, Tab is trapped inside the drawer, the rest of
+ * the page is inert, Escape / overlay click close it and focus returns to the
+ * element that opened it.
  */
 export function Aside({
   children,
@@ -53,65 +47,14 @@ export function Aside({
   const id = useId();
   const asideRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  // Keep the latest close() without re-running the effect on re-renders.
-  const closeRef = useRef(close);
-  closeRef.current = close;
 
-  useEffect(() => {
-    if (!expanded) return;
-
-    const opener =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-    const regions = Array.from(
-      document.querySelectorAll<HTMLElement>(PAGE_REGIONS),
-    );
-    regions.forEach((region) => region.setAttribute('inert', ''));
-
-    // `visibility` only switches once the CSS transition starts, so focus on
-    // the next frame.
-    const frame = requestAnimationFrame(() => closeButtonRef.current?.focus());
-
-    const abortController = new AbortController();
-    document.addEventListener(
-      'keydown',
-      (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          closeRef.current();
-          return;
-        }
-        if (event.key !== 'Tab' || !asideRef.current) return;
-        const focusable = getFocusable(asideRef.current);
-        if (!focusable.length) {
-          event.preventDefault();
-          closeButtonRef.current?.focus();
-          return;
-        }
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        const active = document.activeElement;
-        const inside =
-          active instanceof Node && asideRef.current.contains(active);
-        if (event.shiftKey && (!inside || active === first)) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && (!inside || active === last)) {
-          event.preventDefault();
-          first.focus();
-        }
-      },
-      {signal: abortController.signal},
-    );
-
-    return () => {
-      abortController.abort();
-      cancelAnimationFrame(frame);
-      regions.forEach((region) => region.removeAttribute('inert'));
-      if (opener && document.contains(opener)) opener.focus();
-    };
-  }, [expanded]);
+  useModalDialog({
+    open: expanded,
+    onClose: close,
+    dialogRef: asideRef,
+    initialFocusRef: closeButtonRef,
+    getInertTargets: getPageRegions,
+  });
 
   return (
     <div

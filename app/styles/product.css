@@ -478,12 +478,15 @@
   transition: background-color var(--duration-fast) ease;
 }
 
-.quantity__button:hover:not(:disabled) {
+.quantity__button:hover:not(:disabled):not([aria-disabled='true']) {
   background: var(--color-lavender-tint);
 }
 
-.quantity__button:disabled {
+/* `aria-disabled` keeps the button focusable at its limit (see QuantitySelector). */
+.quantity__button:disabled,
+.quantity__button[aria-disabled='true'] {
   opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .quantity__input {

@@ -12,6 +12,7 @@ import {
   parseAppliedFilters,
   type SortOption,
 } from '~/lib/collectionFilters';
+import {useModalDialog} from '~/lib/useModalDialog';
 import {ActiveFilters, buildFilterChips} from './ActiveFilters';
 import {FilterPanel} from './FilterPanel';
 import {ProductGridSkeleton} from './ProductGridSkeleton';
@@ -40,6 +41,9 @@ type ProductListingProps = {
 
 const CARD_SIZES = '(min-width: 64em) 30vw, (min-width: 40em) 50vw, 100vw';
 
+/** Must match the breakpoint where the sidebar replaces the sheet in collection.css. */
+const DESKTOP_MEDIA_QUERY = '(min-width: 64em)';
+
 function countLabel(count: number, hasNextPage: boolean) {
   const formatted = new Intl.NumberFormat('en-US').format(count);
   const noun = count === 1 && !hasNextPage ? 'product' : 'products';
@@ -62,6 +66,8 @@ export function ProductListing({
   const panelId = useId();
   const headingId = useId();
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const countRef = useRef<HTMLParagraphElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -80,28 +86,37 @@ export function ProductListing({
       })
     : [];
 
+  function closeFilters() {
+    setFiltersOpen(false);
+  }
+
+  // On small screens the filters are a modal sheet: the page behind it is
+  // inert, Tab stays inside, Escape closes it and focus goes back to the
+  // "Filters" button.
+  useModalDialog({
+    open: filtersOpen,
+    onClose: closeFilters,
+    dialogRef: sheetRef,
+    initialFocusRef: closeButtonRef,
+    returnFocusRef: toggleRef,
+  });
+
   useEffect(() => {
     if (!filtersOpen) return;
     const root = document.documentElement;
     root.classList.add('filter-sheet-open');
-    closeButtonRef.current?.focus();
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setFiltersOpen(false);
-        toggleRef.current?.focus();
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown);
+    // The sheet turns into the sidebar on wide screens (resize, rotation):
+    // it is no longer a dialog, so close it instead of leaving the page inert.
+    const desktop = window.matchMedia(DESKTOP_MEDIA_QUERY);
+    const closeOnDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setFiltersOpen(false);
+    };
+    desktop.addEventListener('change', closeOnDesktop);
     return () => {
       root.classList.remove('filter-sheet-open');
-      document.removeEventListener('keydown', handleKeyDown);
+      desktop.removeEventListener('change', closeOnDesktop);
     };
   }, [filtersOpen]);
-
-  function closeFilters() {
-    setFiltersOpen(false);
-    toggleRef.current?.focus();
-  }
 
   const resolvedEmptyState =
     emptyState ??
@@ -135,13 +150,16 @@ export function ProductListing({
       }`.trim()}
     >
       {hasFilters ? (
-        <aside
+        // A <div>: an <aside> cannot take role="dialog". It is the sidebar
+        // landmark on wide screens and the modal dialog while the sheet is open.
+        <div
           id={panelId}
+          ref={sheetRef}
           className={`collection-layout__sidebar ${
             filtersOpen ? 'is-open' : ''
           }`.trim()}
           aria-labelledby={headingId}
-          role={filtersOpen ? 'dialog' : undefined}
+          role={filtersOpen ? 'dialog' : 'complementary'}
           aria-modal={filtersOpen ? true : undefined}
         >
           <FilterPanel
@@ -151,7 +169,7 @@ export function ProductListing({
             onClose={closeFilters}
             closeButtonRef={closeButtonRef}
           />
-        </aside>
+        </div>
       ) : null}
       <div className="collection-layout__main">
         <PaginatedResourceSection<ProductCardFragment>
@@ -163,7 +181,12 @@ export function ProductListing({
           toolbar={({count, hasNextPage}) => (
             <>
               <div className="collection-toolbar">
-                <p className="collection-toolbar__count" aria-live="polite">
+                <p
+                  className="collection-toolbar__count"
+                  aria-live="polite"
+                  ref={countRef}
+                  tabIndex={-1}
+                >
                   {isPending ? 'Updating…' : countLabel(count, hasNextPage)}
                 </p>
                 <div className="collection-toolbar__actions">
@@ -171,6 +194,7 @@ export function ProductListing({
                     <button
                       className="btn btn--outline btn--sm filters-toggle"
                       type="button"
+                      aria-haspopup="dialog"
                       aria-expanded={filtersOpen}
                       aria-controls={panelId}
                       onClick={() => setFiltersOpen(true)}
@@ -189,7 +213,11 @@ export function ProductListing({
                   <SortSelect options={sortOptions} />
                 </div>
               </div>
-              <ActiveFilters chips={chips} clearHref={clearHref} />
+              <ActiveFilters
+                chips={chips}
+                clearHref={clearHref}
+                fallbackFocusRef={countRef}
+              />
             </>
           )}
         >
@@ -199,6 +227,7 @@ export function ProductListing({
               product={product}
               loading={index < 6 ? 'eager' : 'lazy'}
               sizes={CARD_SIZES}
+              headingLevel={2}
             />
           )}
         </PaginatedResourceSection>

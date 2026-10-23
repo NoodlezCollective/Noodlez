@@ -28,6 +28,11 @@ export function QuantitySelector({
 
   const clamp = (next: number) =>
     Math.min(max ?? Number.POSITIVE_INFINITY, Math.max(min, next));
+  // The buttons are `aria-disabled` at the bounds instead of `disabled`: a
+  // disabled button cannot keep focus, so reaching the limit with the keyboard
+  // would drop focus to <body>.
+  const atMinimum = value <= min;
+  const atMaximum = max !== undefined && value >= max;
 
   const commit = (raw: string) => {
     const parsed = Number.parseInt(raw, 10);
@@ -46,8 +51,10 @@ export function QuantitySelector({
           type="button"
           className="quantity__button"
           aria-label="Decrease quantity"
-          disabled={value <= min}
-          onClick={() => onChange(clamp(value - 1))}
+          aria-disabled={atMinimum || undefined}
+          onClick={() => {
+            if (!atMinimum) onChange(clamp(value - 1));
+          }}
         >
           <MinusIcon size={16} />
         </button>
@@ -73,8 +80,10 @@ export function QuantitySelector({
           type="button"
           className="quantity__button"
           aria-label="Increase quantity"
-          disabled={max !== undefined && value >= max}
-          onClick={() => onChange(clamp(value + 1))}
+          aria-disabled={atMaximum || undefined}
+          onClick={() => {
+            if (!atMaximum) onChange(clamp(value + 1));
+          }}
         >
           <PlusIcon size={16} />
         </button>

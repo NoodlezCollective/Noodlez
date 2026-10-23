@@ -95,6 +95,13 @@
   top: 1rem;
 }
 
+/* <main> takes focus after client-side navigations (and from the skip link).
+   It is not a control, so it gets no focus ring. */
+#main-content:focus,
+#main-content:focus-visible {
+  outline: none;
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   position: relative;
@@ -455,7 +462,10 @@
   animation: marquee var(--marquee-duration, 40s) linear infinite;
 }
 
-.marquee--pause:hover .marquee__track {
+/* Pause on hover, while keyboard focus is inside, or on request. */
+.marquee--pause:hover .marquee__track,
+.marquee--pause:focus-within .marquee__track,
+.marquee--paused .marquee__track {
   animation-play-state: paused;
 }
 
@@ -473,13 +483,26 @@
   }
 }
 
+/* Reduced motion: a static, centred row that wraps instead of a scroll area
+   (a scrollable region would need its own keyboard access). */
 @media (prefers-reduced-motion: reduce) {
   .marquee {
-    overflow-x: auto;
+    overflow: visible;
   }
 
   .marquee__track {
+    justify-content: center;
+    width: 100%;
     animation: none;
+  }
+
+  .marquee__group {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0;
+    max-width: 100%;
+    padding-right: 0;
   }
 
   .marquee__group[aria-hidden='true'] {
@@ -528,10 +551,70 @@
   letter-spacing: 0.02em;
 }
 
+.announcement-bar .marquee {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Pause while the pointer is over the bar (including its toggle) or focus is
+   anywhere inside it. */
+.announcement-bar:hover .marquee__track,
+.announcement-bar:focus-within .marquee__track {
+  animation-play-state: paused;
+}
+
 .announcement-bar__item {
   display: inline-flex;
   align-items: center;
   gap: var(--marquee-gap, 48px);
+}
+
+/* Pause / resume control (WCAG 2.2.2). 24px is the minimum target size and
+   still fits the 28px bar. */
+.announcement-bar__toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-inline: 4px 8px;
+  border-radius: var(--radius-pill);
+  color: #fff;
+  opacity: 0.85;
+  transition:
+    opacity var(--duration-fast) ease,
+    background-color var(--duration-fast) ease;
+}
+
+.announcement-bar__toggle:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* The default purple focus ring is invisible on the purple bar. */
+.announcement-bar__toggle:focus-visible {
+  opacity: 1;
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
+/* Nothing moves with reduced motion, so there is nothing to pause; the
+   messages wrap onto extra lines instead of scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  .announcement-bar {
+    height: auto;
+    min-height: var(--announcement-height);
+    padding-block: 2px;
+  }
+
+  .announcement-bar__toggle {
+    display: none;
+  }
+
+  .announcement-bar__item:last-child::after {
+    display: none;
+  }
 }
 
 .announcement-bar__item::after {
@@ -919,6 +1002,16 @@ html:has(.overlay.expanded) {
   box-shadow:
     0 0 0 2px var(--color-surface),
     0 0 0 4px var(--color-primary);
+}
+
+/* Live region of the newsletter form: always in the DOM, but it takes no space
+   (and is not a flex item) while it is empty. */
+.newsletter-form__status:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .form-message {
@@ -1406,6 +1499,14 @@ html:has(.overlay.expanded) .dev-notice {
   align-items: center;
   height: 52px;
   padding-inline: 1.5rem;
+}
+
+/* Reduced motion: the logos wrap onto more rows (see the Marquee section). */
+@media (prefers-reduced-motion: reduce) {
+  .press-bar {
+    height: auto;
+    min-height: 52px;
+  }
 }
 
 .press-bar__item img {

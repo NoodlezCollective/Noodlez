@@ -243,6 +243,18 @@ function CartBadge({count}: {count: number}) {
       className="icon-btn cart-toggle"
       aria-label={`Cart, ${count} ${count === 1 ? 'item' : 'items'}`}
       onClick={(e) => {
+        // Only a plain primary click opens the drawer; Ctrl/Cmd/Shift/Alt
+        // clicks keep the browser's "open /cart in a new tab or window".
+        if (
+          e.defaultPrevented ||
+          e.button !== 0 ||
+          e.metaKey ||
+          e.ctrlKey ||
+          e.shiftKey ||
+          e.altKey
+        ) {
+          return;
+        }
         e.preventDefault();
         open('cart');
         publish('cart_viewed', {

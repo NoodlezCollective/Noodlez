@@ -35,6 +35,19 @@ const DISCOUNT_FETCHER_KEY = 'cart-discount-codes';
 const GIFT_CARD_FETCHER_KEY = 'gift-card-add';
 
 /**
+ * Focuses `element`. When the last code or card was removed its panel
+ * collapses, which hides the code input; focus the panel's summary instead of
+ * losing focus to <body>.
+ */
+function focusInPromo(element: HTMLElement | null | undefined) {
+  if (!element) return;
+  element.focus();
+  if (document.activeElement !== element) {
+    element.closest('details')?.querySelector('summary')?.focus();
+  }
+}
+
+/**
  * Order summary: totals, discount and gift card forms and the checkout call to
  * action. In the drawer it is pinned to the bottom; on the cart page it is a
  * sticky lavender card beside the line items.
@@ -219,10 +232,17 @@ function CartDiscounts({
 }) {
   const fetcher = useFetcher<CartActionData>({key: DISCOUNT_FETCHER_KEY});
   const inputRef = useRef<HTMLInputElement>(null);
+  const chipsRef = useRef<HTMLUListElement>(null);
   const inputId = useId();
+  // The code the shopper is removing and where it sat in the list.
+  const [removedCode, setRemovedCode] = useState<{
+    code: string;
+    index: number;
+  } | null>(null);
   const applied = (discountCodes ?? [])
     .filter((discount) => discount.applicable)
     .map(({code}) => code);
+  const appliedKey = applied.join('\n');
   const rejected = (discountCodes ?? [])
     .filter((discount) => !discount.applicable)
     .map(({code}) => code);
@@ -237,14 +257,37 @@ function CartDiscounts({
     }
   }, [fetcher.state, fetcher.data]);
 
+  // The focused "remove" button disappears with its code, which would drop
+  // focus to <body>. Once the code is gone, focus the one that took its place,
+  // the previous one when the last code was removed, or the code input.
+  useEffect(() => {
+    if (!removedCode || appliedKey.split('\n').includes(removedCode.code)) {
+      return;
+    }
+    setRemovedCode(null);
+    const active = document.activeElement;
+    if (active && active !== document.body) return; // the shopper moved on
+    const buttons =
+      chipsRef.current?.querySelectorAll<HTMLElement>('.cart-chip__remove');
+    focusInPromo(
+      buttons?.length
+        ? buttons[Math.min(removedCode.index, buttons.length - 1)]
+        : inputRef.current,
+    );
+  }, [appliedKey, removedCode]);
+
   return (
     <PromoDetails
       summary="Have a discount code?"
       open={applied.length > 0 || rejected.length > 0}
     >
       {applied.length ? (
-        <ul className="cart-chips" aria-label="Applied discount codes">
-          {applied.map((code) => (
+        <ul
+          className="cart-chips"
+          aria-label="Applied discount codes"
+          ref={chipsRef}
+        >
+          {applied.map((code, index) => (
             <li key={code}>
               <UpdateDiscountForm
                 discountCodes={applied.filter((other) => other !== code)}
@@ -254,6 +297,7 @@ function CartDiscounts({
                   <button
                     aria-label={`Remove discount code ${code}`}
                     className="cart-chip__remove"
+                    onClick={() => setRemovedCode({code, index})}
                     type="submit"
                   >
                     <CloseIcon size={12} />
@@ -337,11 +381,14 @@ function CartGiftCard({
 }) {
   const giftCardCodeInput = useRef<HTMLInputElement>(null);
   const removeButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-  const previousCardIdsRef = useRef<string[]>([]);
   const giftCardAddFetcher = useFetcher<CartActionData>({
     key: GIFT_CARD_FETCHER_KEY,
   });
-  const [removedCardIndex, setRemovedCardIndex] = useState<number | null>(null);
+  // The card the shopper is removing and where it sat in the list.
+  const [removedCard, setRemovedCard] = useState<{
+    id: string;
+    index: number;
+  } | null>(null);
   const inputId = useId();
   const errors = getActionErrors(giftCardAddFetcher.data);
   const hasCards = Boolean(giftCardCodes && giftCardCodes.length > 0);
@@ -354,36 +401,26 @@ function CartGiftCard({
     }
   }, [giftCardAddFetcher.data]);
 
+  // The focused "remove" button disappears with its card, which would drop
+  // focus to <body>. Wait until the card has actually left the list (the
+  // effect also runs when the click only sets `removedCard`, while the card is
+  // still listed), then focus the card that took its place, the previous one
+  // when the last card was removed, or the code input when none is left.
   useEffect(() => {
-    const currentCardIds = giftCardCodes?.map((card) => card.id) || [];
-
-    if (removedCardIndex !== null && giftCardCodes) {
-      const focusTargetIndex = Math.min(
-        removedCardIndex,
-        giftCardCodes.length - 1,
-      );
-      const focusTargetCard = giftCardCodes[focusTargetIndex];
-      const focusButton = focusTargetCard
-        ? removeButtonRefs.current.get(focusTargetCard.id)
-        : null;
-
-      if (focusButton) {
-        focusButton.focus();
-      } else if (giftCardCodeInput.current) {
-        giftCardCodeInput.current.focus();
-      }
-
-      setRemovedCardIndex(null);
-    }
-
-    previousCardIdsRef.current = currentCardIds;
-  }, [giftCardCodes, removedCardIndex]);
+    if (!removedCard) return;
+    const cards = giftCardCodes ?? [];
+    if (cards.some((card) => card.id === removedCard.id)) return;
+    setRemovedCard(null);
+    const active = document.activeElement;
+    if (active && active !== document.body) return; // the shopper moved on
+    const target = cards[Math.min(removedCard.index, cards.length - 1)];
+    const focusButton = target ? removeButtonRefs.current.get(target.id) : null;
+    focusInPromo(focusButton ?? giftCardCodeInput.current);
+  }, [giftCardCodes, removedCard]);
 
   const handleRemoveClick = (cardId: string) => {
-    const index = previousCardIdsRef.current.indexOf(cardId);
-    if (index !== -1) {
-      setRemovedCardIndex(index);
-    }
+    const index = giftCardCodes?.findIndex((card) => card.id === cardId) ?? -1;
+    if (index !== -1) setRemovedCard({id: cardId, index});
   };
 
   return (

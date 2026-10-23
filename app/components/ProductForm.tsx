@@ -39,9 +39,9 @@ export function ProductForm({
         <QuantitySelector value={quantity} onChange={setQuantity} />
         <AddToCartButton
           disabled={!canAdd}
-          onClick={() => {
-            open('cart');
-          }}
+          // Open the drawer once the add succeeded: while it is open the rest
+          // of the page is inert, which would hide the status and any error.
+          onAdded={() => open('cart')}
           lines={
             canAdd && selectedVariant
               ? [
