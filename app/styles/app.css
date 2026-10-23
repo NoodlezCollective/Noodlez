@@ -964,7 +964,7 @@ html:has(.overlay.expanded) {
   position: fixed;
   right: 1rem;
   bottom: 1rem;
-  z-index: 60;
+  z-index: 30;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -984,6 +984,10 @@ html:has(.overlay.expanded) {
   border-radius: 50%;
   background: var(--color-accent);
   flex: none;
+}
+
+html:has(.overlay.expanded) .dev-notice {
+  display: none;
 }
 
 .dev-notice code {

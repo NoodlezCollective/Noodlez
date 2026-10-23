@@ -17,6 +17,8 @@ export type ProductCardProps = {
   className?: string;
   /** Responsive `sizes` attribute for the product image. */
   sizes?: string;
+  /** Overrides the product URL (e.g. search results add Shopify tracking params). */
+  to?: string;
 };
 
 export function truncate(text: string | null | undefined, max = 200) {
@@ -40,8 +42,9 @@ export function ProductCard({
   showCta = true,
   className,
   sizes = '(min-width: 64em) 400px, (min-width: 48em) 50vw, 100vw',
+  to,
 }: ProductCardProps) {
-  const url = `/products/${product.handle}`;
+  const url = to ?? `/products/${product.handle}`;
   const image = product.featuredImage;
   const rating = parseRating(product.rating);
   const ratingCount = parseInteger(product.ratingCount);

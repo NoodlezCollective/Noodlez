@@ -119,7 +119,10 @@ function SearchResultsPages({term, pages}: PartialSearchResult<'pages'>) {
   );
 }
 
-function SearchResultsProducts({products}: PartialSearchResult<'products'>) {
+function SearchResultsProducts({
+  term,
+  products,
+}: PartialSearchResult<'products'>) {
   if (!products?.nodes.length) {
     return null;
   }
@@ -145,6 +148,11 @@ function SearchResultsProducts({products}: PartialSearchResult<'products'>) {
           <ProductCard
             key={product.id}
             product={product}
+            to={urlWithTrackingParams({
+              baseUrl: `/products/${product.handle}`,
+              trackingParams: product.trackingParameters,
+              term,
+            })}
             loading={index < 6 ? 'eager' : 'lazy'}
             sizes={CARD_SIZES}
           />
