@@ -796,6 +796,14 @@ html:has(.overlay.expanded) {
   }
 }
 
+@media (min-width: 48em) and (max-width: 63.99em) {
+  /* On tablets the newsletter block takes its own full-width row. */
+  .site-footer__newsletter {
+    grid-column: 1 / -1;
+    max-width: 480px;
+  }
+}
+
 @media (min-width: 64em) {
   .site-footer__top {
     grid-template-columns: 1.6fr repeat(3, 1fr) 1.4fr;

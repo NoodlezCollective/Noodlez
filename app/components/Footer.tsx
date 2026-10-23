@@ -141,7 +141,7 @@ function FooterContent({
           </nav>
         ))}
 
-        <div>
+        <div className="site-footer__newsletter">
           <h2 className="site-footer__heading" id="footer-newsletter">
             Sleep Smarter. Save More.
           </h2>
