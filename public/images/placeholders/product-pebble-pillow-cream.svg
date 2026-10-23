@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200" role="img" aria-label="Pebble Pillow · Cream">
+<defs>
+<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3ebff"/><stop offset="1" stop-color="#d6cfc1"/></linearGradient>
+<filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="12"/></filter>
+</defs>
+<rect width="1200" height="1200" fill="url(#g)"/>
+<g filter="url(#s)"><ellipse cx="710" cy="394" rx="179" ry="124" fill="#ffffff" transform="rotate(-16 710 394)" opacity="0.92"/>
+<ellipse cx="406" cy="653" rx="293" ry="206" fill="#f7f5ff" transform="rotate(10 406 653)" opacity="0.92"/>
+<ellipse cx="891" cy="742" rx="279" ry="211" fill="#ece9fb" transform="rotate(24 891 742)" opacity="0.92"/></g>
+<text x="72" y="144" font-family="Outfit, Inter, Arial, sans-serif" font-size="84" font-weight="700" fill="#4c4184" letter-spacing="-1">mellow</text>
+<text x="72" y="1104" font-family="Outfit, Inter, Arial, sans-serif" font-size="66" font-weight="600" fill="#4c4184">Pebble Pillow · Cream</text>
+<text x="72" y="1178" font-family="Inter, Arial, sans-serif" font-size="27" fill="#4c4184" opacity="0.7">PLACEHOLDER IMAGE · replace via Shopify</text>
+</svg>

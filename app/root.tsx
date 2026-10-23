@@ -13,11 +13,28 @@ import {
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
+import {SITE_SETTINGS_QUERY} from '~/lib/content/metaobjects';
+import {SHOPIFY_RESOURCES} from '~/lib/content/config';
+import tokenStyles from '~/styles/tokens.css?url';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
+import productStyles from '~/styles/product.css?url';
+import collectionStyles from '~/styles/collection.css?url';
+import cartStyles from '~/styles/cart.css?url';
+import accountStyles from '~/styles/account.css?url';
+import contentStyles from '~/styles/content.css?url';
 import {PageLayout} from './components/PageLayout';
+import {Button} from './components/ui/Button';
 
 export type RootLoader = typeof loader;
+
+const FONTS_URL =
+  'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap';
+
+export const DEFAULT_TITLE =
+  'Mellow | Premium Cooling Comforters & Pillows For Better Sleep';
+export const DEFAULT_DESCRIPTION =
+  'Pillows that align. Comforters that adapt. Smarter sleep essentials, designed for every night. Shop award-winning cooling comforters and ergonomic pillows.';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -42,28 +59,31 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 };
 
 /**
- * The main and reset stylesheets are added in the Layout component
- * to prevent a bug in development HMR updates.
- *
- * This avoids the "failed to execute 'insertBefore' on 'Node'" error
- * that occurs after editing and navigating to another page.
- *
- * It's a temporary fix until the issue is resolved.
- * https://github.com/remix-run/remix/issues/9242
+ * The stylesheets are added in the Layout component (not in `links`) to
+ * prevent a bug in development HMR updates ("failed to execute 'insertBefore'
+ * on 'Node'"). See https://github.com/remix-run/remix/issues/9242
  */
 export function links() {
   return [
+    {rel: 'preconnect', href: 'https://cdn.shopify.com'},
+    {rel: 'preconnect', href: 'https://shop.app'},
+    {rel: 'preconnect', href: 'https://fonts.googleapis.com'},
     {
       rel: 'preconnect',
-      href: 'https://cdn.shopify.com',
+      href: 'https://fonts.gstatic.com',
+      crossOrigin: 'anonymous' as const,
     },
-    {
-      rel: 'preconnect',
-      href: 'https://shop.app',
-    },
+    {rel: 'stylesheet', href: FONTS_URL},
     {rel: 'icon', type: 'image/svg+xml', href: favicon},
   ];
 }
+
+export const meta: Route.MetaFunction = () => [
+  {title: DEFAULT_TITLE},
+  {name: 'description', content: DEFAULT_DESCRIPTION},
+  {property: 'og:site_name', content: 'Mellow'},
+  {property: 'og:type', content: 'website'},
+];
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -78,6 +98,7 @@ export async function loader(args: Route.LoaderArgs) {
     ...deferredData,
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
+    isMockStorefront: import.meta.env.DEV && env.MOCK_STOREFRONT === 'true',
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
@@ -104,7 +125,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     storefront.query(HEADER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
-        headerMenuHandle: 'main-menu', // Adjust to your header menu handle
+        headerMenuHandle: SHOPIFY_RESOURCES.headerMenuHandle,
       },
     }),
     // Add other queries here, so that they are loaded in parallel
@@ -126,7 +147,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
-        footerMenuHandle: 'footer', // Adjust to your footer menu handle
+        footerMenuHandle: SHOPIFY_RESOURCES.footerMenuHandle,
       },
     })
     .catch((error: Error) => {
@@ -134,10 +155,21 @@ function loadDeferredData({context}: Route.LoaderArgs) {
       console.error(error);
       return null;
     });
+
+  // Global storefront settings (announcement bar, trust badges). Optional:
+  // the UI falls back to defaults when the metaobject does not exist yet.
+  const settings = storefront
+    .query(SITE_SETTINGS_QUERY, {cache: storefront.CacheLong()})
+    .catch((error: Error) => {
+      console.error(error);
+      return null;
+    });
+
   return {
     cart: cart.get(),
     isLoggedIn: customerAccount.isLoggedIn(),
     footer,
+    settings,
   };
 }
 
@@ -149,8 +181,15 @@ export function Layout({children}: {children?: React.ReactNode}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="theme-color" content="#4c4184" />
+        <link rel="stylesheet" href={tokenStyles}></link>
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
+        <link rel="stylesheet" href={productStyles}></link>
+        <link rel="stylesheet" href={collectionStyles}></link>
+        <link rel="stylesheet" href={cartStyles}></link>
+        <link rel="stylesheet" href={accountStyles}></link>
+        <link rel="stylesheet" href={contentStyles}></link>
         <Meta />
         <Links />
       </head>
@@ -185,6 +224,7 @@ export default function App() {
 
 export function ErrorBoundary() {
   const error = useRouteError();
+  const rootData = useRouteLoaderData<RootLoader>('root');
   let errorMessage = 'Unknown error';
   let errorStatus = 500;
 
@@ -195,15 +235,41 @@ export function ErrorBoundary() {
     errorMessage = error.message;
   }
 
+  const view = <ErrorView status={errorStatus} message={errorMessage} />;
+
+  if (rootData) {
+    return <PageLayout {...rootData}>{view}</PageLayout>;
+  }
+
+  return view;
+}
+
+export function ErrorView({
+  status,
+  message,
+}: {
+  status: number;
+  message?: string;
+}) {
+  const notFound = status === 404;
   return (
-    <div className="route-error">
-      <h1>Oops</h1>
-      <h2>{errorStatus}</h2>
-      {errorMessage && (
-        <fieldset>
-          <pre>{errorMessage}</pre>
-        </fieldset>
-      )}
-    </div>
+    <section className="route-error container">
+      <p className="route-error__code" aria-hidden="true">
+        {status}
+      </p>
+      <h1>{notFound ? 'We couldn’t find that page' : 'Something went wrong'}</h1>
+      <p className="text-muted" style={{maxWidth: 480}}>
+        {notFound
+          ? 'The page may have moved or the link might be out of date. Let’s get you back to better sleep.'
+          : 'An unexpected error occurred while loading this page. Please try again in a moment.'}
+      </p>
+      <div style={{display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center'}}>
+        <Button to="/">Back to home</Button>
+        <Button to="/collections/all" variant="outline">
+          Shop all
+        </Button>
+      </div>
+      {!notFound && message && import.meta.env.DEV ? <pre>{message}</pre> : null}
+    </section>
   );
 }

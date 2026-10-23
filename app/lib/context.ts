@@ -61,5 +61,15 @@ export async function createHydrogenRouterContext(
     additionalContext,
   );
 
+  /**
+   * Development only: serve Mellow demo data instead of calling Shopify.
+   * `import.meta.env.DEV` is replaced at build time, so production bundles
+   * never include the mock module. See app/lib/mock/README.md.
+   */
+  if (import.meta.env.DEV && env.MOCK_STOREFRONT === 'true') {
+    const {installMockStorefront} = await import('~/lib/mock/install.server');
+    installMockStorefront(hydrogenContext.storefront, request);
+  }
+
   return hydrogenContext;
 }

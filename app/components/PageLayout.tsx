@@ -1,11 +1,14 @@
-import {Await, Link} from 'react-router';
+import {Await} from 'react-router';
 import {Suspense, useId} from 'react';
 import type {
   CartApiQueryFragment,
   FooterQuery,
   HeaderQuery,
+  SiteSettingsQuery,
 } from 'storefrontapi.generated';
 import {Aside} from '~/components/Aside';
+import {AnnouncementBar} from '~/components/AnnouncementBar';
+import {DevNotice} from '~/components/DevNotice';
 import {Footer} from '~/components/Footer';
 import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
@@ -14,13 +17,17 @@ import {
   SearchFormPredictive,
 } from '~/components/SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
+import {Button} from '~/components/ui/Button';
+import {SearchIcon} from '~/components/ui/Icons';
 
-interface PageLayoutProps {
+export interface PageLayoutProps {
   cart: Promise<CartApiQueryFragment | null>;
   footer: Promise<FooterQuery | null>;
   header: HeaderQuery;
   isLoggedIn: Promise<boolean>;
   publicStoreDomain: string;
+  settings: Promise<SiteSettingsQuery | null>;
+  isMockStorefront?: boolean;
   children?: React.ReactNode;
 }
 
@@ -31,12 +38,15 @@ export function PageLayout({
   header,
   isLoggedIn,
   publicStoreDomain,
+  settings,
+  isMockStorefront = false,
 }: PageLayoutProps) {
   return (
     <Aside.Provider>
-      <CartAside cart={cart} />
-      <SearchAside />
-      <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
+      <AnnouncementBar settings={settings} />
       {header && (
         <Header
           header={header}
@@ -45,51 +55,75 @@ export function PageLayout({
           publicStoreDomain={publicStoreDomain}
         />
       )}
-      <main>{children}</main>
+      <main id="main-content" tabIndex={-1}>
+        {children}
+      </main>
       <Footer
         footer={footer}
         header={header}
         publicStoreDomain={publicStoreDomain}
+        settings={settings}
       />
+      <CartAside cart={cart} />
+      <SearchAside />
+      <MobileMenuAside
+        header={header}
+        publicStoreDomain={publicStoreDomain}
+        isLoggedIn={isLoggedIn}
+      />
+      {isMockStorefront ? <DevNotice /> : null}
     </Aside.Provider>
   );
 }
 
 function CartAside({cart}: {cart: PageLayoutProps['cart']}) {
   return (
-    <Aside type="cart" heading="CART">
-      <Suspense fallback={<p>Loading cart ...</p>}>
-        <Await resolve={cart}>
-          {(cart) => {
-            return <CartMain cart={cart} layout="aside" />;
-          }}
+    <Aside type="cart" heading="Your cart">
+      <Suspense fallback={<p className="text-muted">Loading cart…</p>}>
+        <Await resolve={cart} errorElement={<CartLoadError />}>
+          {(cart) => <CartMain cart={cart} layout="aside" />}
         </Await>
       </Suspense>
     </Aside>
   );
 }
 
+function CartLoadError() {
+  return (
+    <div className="empty-state">
+      <p className="empty-state__title">We couldn’t load your cart</p>
+      <p>Please refresh the page and try again.</p>
+    </div>
+  );
+}
+
 function SearchAside() {
   const queriesDatalistId = useId();
   return (
-    <Aside type="search" heading="SEARCH">
+    <Aside type="search" heading="Search">
       <div className="predictive-search">
-        <br />
         <SearchFormPredictive>
           {({fetchResults, goToSearch, inputRef}) => (
-            <>
+            <div className="predictive-search__field">
+              <label className="sr-only" htmlFor="predictive-search-input">
+                Search products
+              </label>
+              <SearchIcon className="predictive-search__icon" size={20} />
               <input
+                id="predictive-search-input"
                 name="q"
                 onChange={fetchResults}
                 onFocus={fetchResults}
-                placeholder="Search"
+                placeholder="Search pillows, comforters, bundles…"
                 ref={inputRef}
                 type="search"
                 list={queriesDatalistId}
+                autoComplete="off"
               />
-              &nbsp;
-              <button onClick={goToSearch}>Search</button>
-            </>
+              <Button size="sm" onClick={goToSearch} type="button">
+                Search
+              </Button>
+            </div>
           )}
         </SearchFormPredictive>
 
@@ -98,7 +132,7 @@ function SearchAside() {
             const {articles, collections, pages, products, queries} = items;
 
             if (state === 'loading' && term.current) {
-              return <div>Loading...</div>;
+              return <p className="predictive-search__status">Searching…</p>;
             }
 
             if (!total) {
@@ -132,15 +166,14 @@ function SearchAside() {
                   term={term}
                 />
                 {term.current && total ? (
-                  <Link
+                  <Button
+                    variant="outline"
+                    block
                     onClick={closeSearch}
-                    to={`${SEARCH_ENDPOINT}?q=${term.current}`}
+                    to={`${SEARCH_ENDPOINT}?q=${encodeURIComponent(term.current)}`}
                   >
-                    <p>
-                      View all results for <q>{term.current}</q>
-                      &nbsp; →
-                    </p>
-                  </Link>
+                    View all results for “{term.current}”
+                  </Button>
                 ) : null}
               </>
             );
@@ -154,19 +187,21 @@ function SearchAside() {
 function MobileMenuAside({
   header,
   publicStoreDomain,
+  isLoggedIn,
 }: {
   header: PageLayoutProps['header'];
   publicStoreDomain: PageLayoutProps['publicStoreDomain'];
+  isLoggedIn: PageLayoutProps['isLoggedIn'];
 }) {
   return (
-    header.menu &&
     header.shop.primaryDomain?.url && (
-      <Aside type="mobile" heading="MENU">
+      <Aside type="mobile" heading="Menu">
         <HeaderMenu
           menu={header.menu}
           viewport="mobile"
           primaryDomainUrl={header.shop.primaryDomain.url}
           publicStoreDomain={publicStoreDomain}
+          isLoggedIn={isLoggedIn}
         />
       </Aside>
     )

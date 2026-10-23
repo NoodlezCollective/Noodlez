@@ -7,6 +7,18 @@ import {
 } from '@shopify/hydrogen';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
+import {Logo} from '~/components/ui/Logo';
+import {
+  CartIcon,
+  MenuIcon,
+  SearchIcon,
+  UserIcon,
+} from '~/components/ui/Icons';
+import {
+  FALLBACK_HEADER_MENU,
+  isExternalUrl,
+  normalizeMenuUrl,
+} from '~/lib/menu';
 
 interface HeaderProps {
   header: HeaderQuery;
@@ -17,6 +29,11 @@ interface HeaderProps {
 
 type Viewport = 'desktop' | 'mobile';
 
+/**
+ * Sticky lavender header: primary navigation (left), wordmark (center) and
+ * account / search / cart actions (right). On small screens the navigation
+ * moves into the mobile drawer behind the menu button.
+ */
 export function Header({
   header,
   isLoggedIn,
@@ -24,18 +41,29 @@ export function Header({
   publicStoreDomain,
 }: HeaderProps) {
   const {shop, menu} = header;
+  const {open} = useAside();
   return (
-    <header className="header">
-      <NavLink prefetch="intent" to="/" style={activeLinkStyle} end>
-        <strong>{shop.name}</strong>
-      </NavLink>
-      <HeaderMenu
-        menu={menu}
-        viewport="desktop"
-        primaryDomainUrl={header.shop.primaryDomain.url}
-        publicStoreDomain={publicStoreDomain}
-      />
-      <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+    <header className="site-header">
+      <div className="container site-header__inner">
+        <button
+          className="icon-btn site-header__mobile-toggle"
+          onClick={() => open('mobile')}
+          aria-label="Open menu"
+          aria-haspopup="dialog"
+        >
+          <MenuIcon />
+        </button>
+        <HeaderMenu
+          menu={menu}
+          viewport="desktop"
+          primaryDomainUrl={shop.primaryDomain.url}
+          publicStoreDomain={publicStoreDomain}
+        />
+        <div className="site-header__logo">
+          <Logo logoUrl={shop.brand?.logo?.image?.url} shopName={shop.name} />
+        </div>
+        <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+      </div>
     </header>
   );
 }
@@ -45,46 +73,93 @@ export function HeaderMenu({
   primaryDomainUrl,
   viewport,
   publicStoreDomain,
+  isLoggedIn,
 }: {
   menu: HeaderProps['header']['menu'];
   primaryDomainUrl: HeaderProps['header']['shop']['primaryDomain']['url'];
   viewport: Viewport;
   publicStoreDomain: HeaderProps['publicStoreDomain'];
+  isLoggedIn?: Promise<boolean>;
 }) {
-  const className = `header-menu-${viewport}`;
-  const {close} = useAside();
+  const {close, open} = useAside();
+  const items = (menu || FALLBACK_HEADER_MENU).items.filter((item) => item.url);
 
-  return (
-    <nav className={className} role="navigation">
-      {viewport === 'mobile' && (
+  if (viewport === 'mobile') {
+    return (
+      <nav className="mobile-nav" aria-label="Primary">
         <NavLink
           end
           onClick={close}
           prefetch="intent"
-          style={activeLinkStyle}
+          className={({isActive}) =>
+            `mobile-nav__link ${isActive ? 'is-active' : ''}`
+          }
           to="/"
         >
           Home
         </NavLink>
-      )}
-      {(menu || FALLBACK_HEADER_MENU).items.map((item) => {
-        if (!item.url) return null;
+        {items.map((item) => {
+          const url = normalizeMenuUrl(item.url!, publicStoreDomain, primaryDomainUrl);
+          return isExternalUrl(url) ? (
+            <a className="mobile-nav__link" href={url} key={item.id} onClick={close}>
+              {item.title}
+            </a>
+          ) : (
+            <NavLink
+              className={({isActive}) =>
+                `mobile-nav__link ${isActive ? 'is-active' : ''}`
+              }
+              end
+              key={item.id}
+              onClick={close}
+              prefetch="intent"
+              to={url}
+            >
+              {item.title}
+            </NavLink>
+          );
+        })}
+        <div className="mobile-nav__footer">
+          <button
+            className="mobile-nav__secondary"
+            onClick={() => open('search')}
+            type="button"
+          >
+            <SearchIcon size={20} /> Search
+          </button>
+          <NavLink className="mobile-nav__secondary" to="/account" onClick={close}>
+            <UserIcon size={20} />
+            {isLoggedIn ? (
+              <Suspense fallback="Sign in">
+                <Await resolve={isLoggedIn} errorElement="Sign in">
+                  {(loggedIn) => (loggedIn ? 'My account' : 'Sign in')}
+                </Await>
+              </Suspense>
+            ) : (
+              'Sign in'
+            )}
+          </NavLink>
+        </div>
+      </nav>
+    );
+  }
 
-        // if the url is internal, we strip the domain
-        const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
-        return (
+  return (
+    <nav className="site-header__nav" aria-label="Primary">
+      {items.map((item) => {
+        const url = normalizeMenuUrl(item.url!, publicStoreDomain, primaryDomainUrl);
+        return isExternalUrl(url) ? (
+          <a className="nav-link" href={url} key={item.id}>
+            {item.title}
+          </a>
+        ) : (
           <NavLink
-            className="header-menu-item"
+            className={({isActive, isPending}) =>
+              `nav-link ${isActive ? 'is-active' : ''} ${isPending ? 'is-pending' : ''}`
+            }
             end
             key={item.id}
-            onClick={close}
             prefetch="intent"
-            style={activeLinkStyle}
             to={url}
           >
             {item.title}
@@ -100,38 +175,42 @@ function HeaderCtas({
   cart,
 }: Pick<HeaderProps, 'isLoggedIn' | 'cart'>) {
   return (
-    <nav className="header-ctas" role="navigation">
-      <HeaderMenuMobileToggle />
-      <NavLink prefetch="intent" to="/account" style={activeLinkStyle}>
-        <Suspense fallback="Sign in">
-          <Await resolve={isLoggedIn} errorElement="Sign in">
-            {(isLoggedIn) => (isLoggedIn ? 'Account' : 'Sign in')}
-          </Await>
-        </Suspense>
-      </NavLink>
+    <nav className="site-header__actions" aria-label="Account and cart">
+      <Suspense fallback={<AccountLink label="Sign in" />}>
+        <Await resolve={isLoggedIn} errorElement={<AccountLink label="Sign in" />}>
+          {(loggedIn) => <AccountLink label={loggedIn ? 'My account' : 'Sign in'} />}
+        </Await>
+      </Suspense>
       <SearchToggle />
       <CartToggle cart={cart} />
     </nav>
   );
 }
 
-function HeaderMenuMobileToggle() {
-  const {open} = useAside();
+function AccountLink({label}: {label: string}) {
   return (
-    <button
-      className="header-menu-mobile-toggle reset"
-      onClick={() => open('mobile')}
+    <NavLink
+      prefetch="intent"
+      to="/account"
+      className="icon-btn site-header__account"
+      aria-label={label}
+      title={label}
     >
-      <h3>☰</h3>
-    </button>
+      <UserIcon />
+    </NavLink>
   );
 }
 
 function SearchToggle() {
   const {open} = useAside();
   return (
-    <button className="reset" onClick={() => open('search')}>
-      Search
+    <button
+      className="icon-btn"
+      onClick={() => open('search')}
+      aria-label="Search"
+      aria-haspopup="dialog"
+    >
+      <SearchIcon />
     </button>
   );
 }
@@ -143,6 +222,8 @@ function CartBadge({count}: {count: number}) {
   return (
     <a
       href="/cart"
+      className="icon-btn cart-toggle"
+      aria-label={`Cart, ${count} ${count === 1 ? 'item' : 'items'}`}
       onClick={(e) => {
         e.preventDefault();
         open('cart');
@@ -154,7 +235,12 @@ function CartBadge({count}: {count: number}) {
         } as CartViewPayload);
       }}
     >
-      Cart <span aria-label={`(items: ${count})`}>{count}</span>
+      <CartIcon />
+      {count > 0 ? (
+        <span className="cart-toggle__count" aria-hidden="true">
+          {count}
+        </span>
+      ) : null}
     </a>
   );
 }
@@ -162,7 +248,7 @@ function CartBadge({count}: {count: number}) {
 function CartToggle({cart}: Pick<HeaderProps, 'cart'>) {
   return (
     <Suspense fallback={<CartBadge count={0} />}>
-      <Await resolve={cart}>
+      <Await resolve={cart} errorElement={<CartBadge count={0} />}>
         <CartBanner />
       </Await>
     </Suspense>
@@ -173,59 +259,4 @@ function CartBanner() {
   const originalCart = useAsyncValue() as CartApiQueryFragment | null;
   const cart = useOptimisticCart(originalCart);
   return <CartBadge count={cart?.totalQuantity ?? 0} />;
-}
-
-const FALLBACK_HEADER_MENU = {
-  id: 'gid://shopify/Menu/199655587896',
-  items: [
-    {
-      id: 'gid://shopify/MenuItem/461609500728',
-      resourceId: null,
-      tags: [],
-      title: 'Collections',
-      type: 'HTTP',
-      url: '/collections',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461609533496',
-      resourceId: null,
-      tags: [],
-      title: 'Blog',
-      type: 'HTTP',
-      url: '/blogs/journal',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461609566264',
-      resourceId: null,
-      tags: [],
-      title: 'Policies',
-      type: 'HTTP',
-      url: '/policies',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461609599032',
-      resourceId: 'gid://shopify/Page/92591030328',
-      tags: [],
-      title: 'About',
-      type: 'PAGE',
-      url: '/pages/about',
-      items: [],
-    },
-  ],
-};
-
-function activeLinkStyle({
-  isActive,
-  isPending,
-}: {
-  isActive: boolean;
-  isPending: boolean;
-}) {
-  return {
-    fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : 'black',
-  };
 }

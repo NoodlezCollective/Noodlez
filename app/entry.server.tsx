@@ -19,6 +19,25 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
+    // Brand typography (Outfit + Inter) is served by Google Fonts.
+    styleSrc: ['https://fonts.googleapis.com'],
+    fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.shopify.com'],
+    // Product/content media comes from the Shopify CDN; local assets are same-origin.
+    imgSrc: [
+      "'self'",
+      'data:',
+      'blob:',
+      'https://cdn.shopify.com',
+      'https://shopify.com',
+    ],
+    mediaSrc: ["'self'", 'blob:', 'https://cdn.shopify.com'],
+    // Editorial videos may be embedded from YouTube or Vimeo (metaobject video_url).
+    frameSrc: [
+      "'self'",
+      'https://www.youtube.com',
+      'https://www.youtube-nocookie.com',
+      'https://player.vimeo.com',
+    ],
   });
 
   const body = await renderToReadableStream(

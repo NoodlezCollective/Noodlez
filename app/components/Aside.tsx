@@ -3,9 +3,11 @@ import {
   type ReactNode,
   useContext,
   useEffect,
+  useId,
+  useRef,
   useState,
 } from 'react';
-import {useId} from 'react';
+import {CloseIcon} from '~/components/ui/Icons';
 
 type AsideType = 'search' | 'cart' | 'mobile' | 'closed';
 type AsideContextValue = {
@@ -15,14 +17,9 @@ type AsideContextValue = {
 };
 
 /**
- * A side bar component with Overlay
- * @example
- * ```jsx
- * <Aside type="search" heading="SEARCH">
- *  <input type="search" />
- *  ...
- * </Aside>
- * ```
+ * Slide-in drawer with overlay used for the cart, search and mobile menu.
+ * Closes on Escape or when the overlay is clicked; focus moves to the close
+ * button when opened.
  */
 export function Aside({
   children,
@@ -36,39 +33,51 @@ export function Aside({
   const {type: activeType, close} = useAside();
   const expanded = type === activeType;
   const id = useId();
-  useEffect(() => {
-    const abortController = new AbortController();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-    if (expanded) {
-      document.addEventListener(
-        'keydown',
-        function handler(event: KeyboardEvent) {
-          if (event.key === 'Escape') {
-            close();
-          }
-        },
-        {signal: abortController.signal},
-      );
-    }
+  useEffect(() => {
+    if (!expanded) return;
+    const abortController = new AbortController();
+    document.addEventListener(
+      'keydown',
+      (event: KeyboardEvent) => {
+        if (event.key === 'Escape') close();
+      },
+      {signal: abortController.signal},
+    );
+    closeButtonRef.current?.focus();
     return () => abortController.abort();
   }, [close, expanded]);
 
   return (
     <div
       aria-modal
+      aria-hidden={!expanded}
       className={`overlay ${expanded ? 'expanded' : ''}`}
       role="dialog"
       aria-labelledby={id}
     >
-      <button className="close-outside" onClick={close} />
-      <aside>
-        <header>
-          <h3 id={id}>{heading}</h3>
-          <button className="close reset" onClick={close} aria-label="Close">
-            &times;
+      <button
+        className="close-outside"
+        onClick={close}
+        aria-label="Close"
+        tabIndex={-1}
+      />
+      <aside className={`drawer drawer--${type}`}>
+        <header className="drawer__header">
+          <h3 id={id} className="drawer__title">
+            {heading}
+          </h3>
+          <button
+            className="icon-btn drawer__close"
+            onClick={close}
+            aria-label="Close"
+            ref={closeButtonRef}
+          >
+            <CloseIcon />
           </button>
         </header>
-        <main>{children}</main>
+        <div className="drawer__body">{children}</div>
       </aside>
     </div>
   );

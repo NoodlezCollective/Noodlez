@@ -1,0 +1,65 @@
+import {Image} from '@shopify/hydrogen';
+import type {ImageContent} from '~/lib/content/types';
+
+type ContentImageProps = {
+  image: ImageContent;
+  sizes?: string;
+  loading?: 'eager' | 'lazy';
+  fetchPriority?: 'high' | 'low' | 'auto';
+  className?: string;
+  aspectRatio?: string;
+  alt?: string;
+};
+
+export function isShopifyCdnUrl(url: string) {
+  return /^https:\/\/cdn\.shopify\.com\//i.test(url);
+}
+
+/**
+ * Renders editorial imagery. Shopify-hosted files use Hydrogen's <Image>
+ * (responsive srcset via the Shopify CDN); any other URL (e.g. the local
+ * placeholder artwork) renders as a plain <img> with intrinsic dimensions.
+ */
+export function ContentImage({
+  image,
+  sizes = '100vw',
+  loading = 'lazy',
+  fetchPriority,
+  className,
+  aspectRatio,
+  alt,
+}: ContentImageProps) {
+  const altText = alt ?? image.altText ?? '';
+  if (isShopifyCdnUrl(image.url)) {
+    return (
+      <Image
+        data={{
+          url: image.url,
+          altText,
+          width: image.width ?? undefined,
+          height: image.height ?? undefined,
+        }}
+        alt={altText}
+        sizes={sizes}
+        loading={loading}
+        className={className}
+        aspectRatio={aspectRatio}
+      />
+    );
+  }
+  // React 18 expects the lowercase DOM attribute name for fetch priority.
+  const priorityAttribute = fetchPriority ? {fetchpriority: fetchPriority} : {};
+  return (
+    <img
+      src={image.url}
+      alt={altText}
+      width={image.width ?? undefined}
+      height={image.height ?? undefined}
+      loading={loading}
+      decoding="async"
+      className={className}
+      style={aspectRatio ? {aspectRatio} : undefined}
+      {...priorityAttribute}
+    />
+  );
+}

@@ -3,6 +3,2014 @@
 /* eslint-disable */
 import type * as StorefrontAPI from '@shopify/hydrogen/storefront-api-types';
 
+type MellowReference_Article_Model3d_ProductVariant_Fragment = {
+  __typename: 'Article' | 'Model3d' | 'ProductVariant';
+};
+
+type MellowReference_Collection_Fragment = {__typename: 'Collection'} & Pick<
+  StorefrontAPI.Collection,
+  'id' | 'handle' | 'title'
+>;
+
+type MellowReference_GenericFile_Fragment = {__typename: 'GenericFile'} & Pick<
+  StorefrontAPI.GenericFile,
+  'id' | 'url' | 'mimeType'
+>;
+
+type MellowReference_MediaImage_Fragment = {__typename: 'MediaImage'} & Pick<
+  StorefrontAPI.MediaImage,
+  'id'
+> & {
+    image?: StorefrontAPI.Maybe<
+      Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
+    >;
+  };
+
+type MellowReference_Metaobject_Fragment = {__typename: 'Metaobject'} & Pick<
+  StorefrontAPI.Metaobject,
+  'id' | 'handle' | 'type'
+> & {
+    fields: Array<
+      Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+        reference?: StorefrontAPI.Maybe<
+          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+              image?: StorefrontAPI.Maybe<
+                Pick<
+                  StorefrontAPI.Image,
+                  'url' | 'altText' | 'width' | 'height'
+                >
+              >;
+            })
+          | Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title'>
+          | (Pick<StorefrontAPI.Video, 'id'> & {
+              sources: Array<
+                Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+              >;
+              previewImage?: StorefrontAPI.Maybe<
+                Pick<
+                  StorefrontAPI.Image,
+                  'url' | 'altText' | 'width' | 'height'
+                >
+              >;
+            })
+        >;
+      }
+    >;
+  };
+
+type MellowReference_Page_Fragment = {__typename: 'Page'} & Pick<
+  StorefrontAPI.Page,
+  'id' | 'handle' | 'title'
+>;
+
+type MellowReference_Product_Fragment = {__typename: 'Product'} & Pick<
+  StorefrontAPI.Product,
+  'id' | 'handle' | 'title'
+>;
+
+type MellowReference_Video_Fragment = {__typename: 'Video'} & Pick<
+  StorefrontAPI.Video,
+  'id'
+> & {
+    sources: Array<Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>>;
+    previewImage?: StorefrontAPI.Maybe<
+      Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
+    >;
+  };
+
+export type MellowReferenceFragment =
+  | MellowReference_Article_Model3d_ProductVariant_Fragment
+  | MellowReference_Collection_Fragment
+  | MellowReference_GenericFile_Fragment
+  | MellowReference_MediaImage_Fragment
+  | MellowReference_Metaobject_Fragment
+  | MellowReference_Page_Fragment
+  | MellowReference_Product_Fragment
+  | MellowReference_Video_Fragment;
+
+export type MellowMetaobjectFragment = Pick<
+  StorefrontAPI.Metaobject,
+  'id' | 'handle' | 'type'
+> & {
+  fields: Array<
+    Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+      reference?: StorefrontAPI.Maybe<
+        | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+        | ({__typename: 'Collection'} & Pick<
+            StorefrontAPI.Collection,
+            'id' | 'handle' | 'title'
+          >)
+        | ({__typename: 'GenericFile'} & Pick<
+            StorefrontAPI.GenericFile,
+            'id' | 'url' | 'mimeType'
+          >)
+        | ({__typename: 'MediaImage'} & Pick<StorefrontAPI.MediaImage, 'id'> & {
+              image?: StorefrontAPI.Maybe<
+                Pick<
+                  StorefrontAPI.Image,
+                  'url' | 'altText' | 'width' | 'height'
+                >
+              >;
+            })
+        | ({__typename: 'Metaobject'} & Pick<
+            StorefrontAPI.Metaobject,
+            'id' | 'handle' | 'type'
+          > & {
+              fields: Array<
+                Pick<
+                  StorefrontAPI.MetaobjectField,
+                  'key' | 'type' | 'value'
+                > & {
+                  reference?: StorefrontAPI.Maybe<
+                    | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                        image?: StorefrontAPI.Maybe<
+                          Pick<
+                            StorefrontAPI.Image,
+                            'url' | 'altText' | 'width' | 'height'
+                          >
+                        >;
+                      })
+                    | Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title'>
+                    | (Pick<StorefrontAPI.Video, 'id'> & {
+                        sources: Array<
+                          Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                        >;
+                        previewImage?: StorefrontAPI.Maybe<
+                          Pick<
+                            StorefrontAPI.Image,
+                            'url' | 'altText' | 'width' | 'height'
+                          >
+                        >;
+                      })
+                  >;
+                }
+              >;
+            })
+        | ({__typename: 'Page'} & Pick<
+            StorefrontAPI.Page,
+            'id' | 'handle' | 'title'
+          >)
+        | ({__typename: 'Product'} & Pick<
+            StorefrontAPI.Product,
+            'id' | 'handle' | 'title'
+          >)
+        | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+              sources: Array<
+                Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+              >;
+              previewImage?: StorefrontAPI.Maybe<
+                Pick<
+                  StorefrontAPI.Image,
+                  'url' | 'altText' | 'width' | 'height'
+                >
+              >;
+            })
+      >;
+      references?: StorefrontAPI.Maybe<{
+        nodes: Array<
+          | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+          | ({__typename: 'Collection'} & Pick<
+              StorefrontAPI.Collection,
+              'id' | 'handle' | 'title'
+            >)
+          | ({__typename: 'GenericFile'} & Pick<
+              StorefrontAPI.GenericFile,
+              'id' | 'url' | 'mimeType'
+            >)
+          | ({__typename: 'MediaImage'} & Pick<
+              StorefrontAPI.MediaImage,
+              'id'
+            > & {
+                image?: StorefrontAPI.Maybe<
+                  Pick<
+                    StorefrontAPI.Image,
+                    'url' | 'altText' | 'width' | 'height'
+                  >
+                >;
+              })
+          | ({__typename: 'Metaobject'} & Pick<
+              StorefrontAPI.Metaobject,
+              'id' | 'handle' | 'type'
+            > & {
+                fields: Array<
+                  Pick<
+                    StorefrontAPI.MetaobjectField,
+                    'key' | 'type' | 'value'
+                  > & {
+                    reference?: StorefrontAPI.Maybe<
+                      | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                          image?: StorefrontAPI.Maybe<
+                            Pick<
+                              StorefrontAPI.Image,
+                              'url' | 'altText' | 'width' | 'height'
+                            >
+                          >;
+                        })
+                      | Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title'>
+                      | (Pick<StorefrontAPI.Video, 'id'> & {
+                          sources: Array<
+                            Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                          >;
+                          previewImage?: StorefrontAPI.Maybe<
+                            Pick<
+                              StorefrontAPI.Image,
+                              'url' | 'altText' | 'width' | 'height'
+                            >
+                          >;
+                        })
+                    >;
+                  }
+                >;
+              })
+          | ({__typename: 'Page'} & Pick<
+              StorefrontAPI.Page,
+              'id' | 'handle' | 'title'
+            >)
+          | ({__typename: 'Product'} & Pick<
+              StorefrontAPI.Product,
+              'id' | 'handle' | 'title'
+            >)
+          | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                sources: Array<
+                  Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                >;
+                previewImage?: StorefrontAPI.Maybe<
+                  Pick<
+                    StorefrontAPI.Image,
+                    'url' | 'altText' | 'width' | 'height'
+                  >
+                >;
+              })
+        >;
+      }>;
+    }
+  >;
+};
+
+export type HomeContentQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type HomeContentQuery = {
+  settings: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id' | 'handle' | 'type'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+              | ({__typename: 'Collection'} & Pick<
+                  StorefrontAPI.Collection,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'GenericFile'} & Pick<
+                  StorefrontAPI.GenericFile,
+                  'id' | 'url' | 'mimeType'
+                >)
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Metaobject'} & Pick<
+                  StorefrontAPI.Metaobject,
+                  'id' | 'handle' | 'type'
+                > & {
+                    fields: Array<
+                      Pick<
+                        StorefrontAPI.MetaobjectField,
+                        'key' | 'type' | 'value'
+                      > & {
+                        reference?: StorefrontAPI.Maybe<
+                          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                              image?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                          | Pick<
+                              StorefrontAPI.Product,
+                              'id' | 'handle' | 'title'
+                            >
+                          | (Pick<StorefrontAPI.Video, 'id'> & {
+                              sources: Array<
+                                Pick<
+                                  StorefrontAPI.VideoSource,
+                                  'url' | 'mimeType'
+                                >
+                              >;
+                              previewImage?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                        >;
+                      }
+                    >;
+                  })
+              | ({__typename: 'Page'} & Pick<
+                  StorefrontAPI.Page,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                    sources: Array<
+                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                    >;
+                    previewImage?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'GenericFile'} & Pick<
+                    StorefrontAPI.GenericFile,
+                    'id' | 'url' | 'mimeType'
+                  >)
+                | ({__typename: 'MediaImage'} & Pick<
+                    StorefrontAPI.MediaImage,
+                    'id'
+                  > & {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+                | ({__typename: 'Metaobject'} & Pick<
+                    StorefrontAPI.Metaobject,
+                    'id' | 'handle' | 'type'
+                  > & {
+                      fields: Array<
+                        Pick<
+                          StorefrontAPI.MetaobjectField,
+                          'key' | 'type' | 'value'
+                        > & {
+                          reference?: StorefrontAPI.Maybe<
+                            | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                                image?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                            | Pick<
+                                StorefrontAPI.Product,
+                                'id' | 'handle' | 'title'
+                              >
+                            | (Pick<StorefrontAPI.Video, 'id'> & {
+                                sources: Array<
+                                  Pick<
+                                    StorefrontAPI.VideoSource,
+                                    'url' | 'mimeType'
+                                  >
+                                >;
+                                previewImage?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                          >;
+                        }
+                      >;
+                    })
+                | ({__typename: 'Page'} & Pick<
+                    StorefrontAPI.Page,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Product'} & Pick<
+                    StorefrontAPI.Product,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                      sources: Array<
+                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                      >;
+                      previewImage?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  };
+  hero: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id' | 'handle' | 'type'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+              | ({__typename: 'Collection'} & Pick<
+                  StorefrontAPI.Collection,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'GenericFile'} & Pick<
+                  StorefrontAPI.GenericFile,
+                  'id' | 'url' | 'mimeType'
+                >)
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Metaobject'} & Pick<
+                  StorefrontAPI.Metaobject,
+                  'id' | 'handle' | 'type'
+                > & {
+                    fields: Array<
+                      Pick<
+                        StorefrontAPI.MetaobjectField,
+                        'key' | 'type' | 'value'
+                      > & {
+                        reference?: StorefrontAPI.Maybe<
+                          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                              image?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                          | Pick<
+                              StorefrontAPI.Product,
+                              'id' | 'handle' | 'title'
+                            >
+                          | (Pick<StorefrontAPI.Video, 'id'> & {
+                              sources: Array<
+                                Pick<
+                                  StorefrontAPI.VideoSource,
+                                  'url' | 'mimeType'
+                                >
+                              >;
+                              previewImage?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                        >;
+                      }
+                    >;
+                  })
+              | ({__typename: 'Page'} & Pick<
+                  StorefrontAPI.Page,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                    sources: Array<
+                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                    >;
+                    previewImage?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'GenericFile'} & Pick<
+                    StorefrontAPI.GenericFile,
+                    'id' | 'url' | 'mimeType'
+                  >)
+                | ({__typename: 'MediaImage'} & Pick<
+                    StorefrontAPI.MediaImage,
+                    'id'
+                  > & {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+                | ({__typename: 'Metaobject'} & Pick<
+                    StorefrontAPI.Metaobject,
+                    'id' | 'handle' | 'type'
+                  > & {
+                      fields: Array<
+                        Pick<
+                          StorefrontAPI.MetaobjectField,
+                          'key' | 'type' | 'value'
+                        > & {
+                          reference?: StorefrontAPI.Maybe<
+                            | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                                image?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                            | Pick<
+                                StorefrontAPI.Product,
+                                'id' | 'handle' | 'title'
+                              >
+                            | (Pick<StorefrontAPI.Video, 'id'> & {
+                                sources: Array<
+                                  Pick<
+                                    StorefrontAPI.VideoSource,
+                                    'url' | 'mimeType'
+                                  >
+                                >;
+                                previewImage?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                          >;
+                        }
+                      >;
+                    })
+                | ({__typename: 'Page'} & Pick<
+                    StorefrontAPI.Page,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Product'} & Pick<
+                    StorefrontAPI.Product,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                      sources: Array<
+                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                      >;
+                      previewImage?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  };
+  pressLogos: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id' | 'handle' | 'type'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+              | ({__typename: 'Collection'} & Pick<
+                  StorefrontAPI.Collection,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'GenericFile'} & Pick<
+                  StorefrontAPI.GenericFile,
+                  'id' | 'url' | 'mimeType'
+                >)
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Metaobject'} & Pick<
+                  StorefrontAPI.Metaobject,
+                  'id' | 'handle' | 'type'
+                > & {
+                    fields: Array<
+                      Pick<
+                        StorefrontAPI.MetaobjectField,
+                        'key' | 'type' | 'value'
+                      > & {
+                        reference?: StorefrontAPI.Maybe<
+                          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                              image?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                          | Pick<
+                              StorefrontAPI.Product,
+                              'id' | 'handle' | 'title'
+                            >
+                          | (Pick<StorefrontAPI.Video, 'id'> & {
+                              sources: Array<
+                                Pick<
+                                  StorefrontAPI.VideoSource,
+                                  'url' | 'mimeType'
+                                >
+                              >;
+                              previewImage?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                        >;
+                      }
+                    >;
+                  })
+              | ({__typename: 'Page'} & Pick<
+                  StorefrontAPI.Page,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                    sources: Array<
+                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                    >;
+                    previewImage?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'GenericFile'} & Pick<
+                    StorefrontAPI.GenericFile,
+                    'id' | 'url' | 'mimeType'
+                  >)
+                | ({__typename: 'MediaImage'} & Pick<
+                    StorefrontAPI.MediaImage,
+                    'id'
+                  > & {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+                | ({__typename: 'Metaobject'} & Pick<
+                    StorefrontAPI.Metaobject,
+                    'id' | 'handle' | 'type'
+                  > & {
+                      fields: Array<
+                        Pick<
+                          StorefrontAPI.MetaobjectField,
+                          'key' | 'type' | 'value'
+                        > & {
+                          reference?: StorefrontAPI.Maybe<
+                            | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                                image?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                            | Pick<
+                                StorefrontAPI.Product,
+                                'id' | 'handle' | 'title'
+                              >
+                            | (Pick<StorefrontAPI.Video, 'id'> & {
+                                sources: Array<
+                                  Pick<
+                                    StorefrontAPI.VideoSource,
+                                    'url' | 'mimeType'
+                                  >
+                                >;
+                                previewImage?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                          >;
+                        }
+                      >;
+                    })
+                | ({__typename: 'Page'} & Pick<
+                    StorefrontAPI.Page,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Product'} & Pick<
+                    StorefrontAPI.Product,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                      sources: Array<
+                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                      >;
+                      previewImage?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  };
+  story: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id' | 'handle' | 'type'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+              | ({__typename: 'Collection'} & Pick<
+                  StorefrontAPI.Collection,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'GenericFile'} & Pick<
+                  StorefrontAPI.GenericFile,
+                  'id' | 'url' | 'mimeType'
+                >)
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Metaobject'} & Pick<
+                  StorefrontAPI.Metaobject,
+                  'id' | 'handle' | 'type'
+                > & {
+                    fields: Array<
+                      Pick<
+                        StorefrontAPI.MetaobjectField,
+                        'key' | 'type' | 'value'
+                      > & {
+                        reference?: StorefrontAPI.Maybe<
+                          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                              image?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                          | Pick<
+                              StorefrontAPI.Product,
+                              'id' | 'handle' | 'title'
+                            >
+                          | (Pick<StorefrontAPI.Video, 'id'> & {
+                              sources: Array<
+                                Pick<
+                                  StorefrontAPI.VideoSource,
+                                  'url' | 'mimeType'
+                                >
+                              >;
+                              previewImage?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                        >;
+                      }
+                    >;
+                  })
+              | ({__typename: 'Page'} & Pick<
+                  StorefrontAPI.Page,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                    sources: Array<
+                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                    >;
+                    previewImage?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'GenericFile'} & Pick<
+                    StorefrontAPI.GenericFile,
+                    'id' | 'url' | 'mimeType'
+                  >)
+                | ({__typename: 'MediaImage'} & Pick<
+                    StorefrontAPI.MediaImage,
+                    'id'
+                  > & {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+                | ({__typename: 'Metaobject'} & Pick<
+                    StorefrontAPI.Metaobject,
+                    'id' | 'handle' | 'type'
+                  > & {
+                      fields: Array<
+                        Pick<
+                          StorefrontAPI.MetaobjectField,
+                          'key' | 'type' | 'value'
+                        > & {
+                          reference?: StorefrontAPI.Maybe<
+                            | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                                image?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                            | Pick<
+                                StorefrontAPI.Product,
+                                'id' | 'handle' | 'title'
+                              >
+                            | (Pick<StorefrontAPI.Video, 'id'> & {
+                                sources: Array<
+                                  Pick<
+                                    StorefrontAPI.VideoSource,
+                                    'url' | 'mimeType'
+                                  >
+                                >;
+                                previewImage?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                          >;
+                        }
+                      >;
+                    })
+                | ({__typename: 'Page'} & Pick<
+                    StorefrontAPI.Page,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Product'} & Pick<
+                    StorefrontAPI.Product,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                      sources: Array<
+                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                      >;
+                      previewImage?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  };
+  ugcVideos: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id' | 'handle' | 'type'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+              | ({__typename: 'Collection'} & Pick<
+                  StorefrontAPI.Collection,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'GenericFile'} & Pick<
+                  StorefrontAPI.GenericFile,
+                  'id' | 'url' | 'mimeType'
+                >)
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Metaobject'} & Pick<
+                  StorefrontAPI.Metaobject,
+                  'id' | 'handle' | 'type'
+                > & {
+                    fields: Array<
+                      Pick<
+                        StorefrontAPI.MetaobjectField,
+                        'key' | 'type' | 'value'
+                      > & {
+                        reference?: StorefrontAPI.Maybe<
+                          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                              image?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                          | Pick<
+                              StorefrontAPI.Product,
+                              'id' | 'handle' | 'title'
+                            >
+                          | (Pick<StorefrontAPI.Video, 'id'> & {
+                              sources: Array<
+                                Pick<
+                                  StorefrontAPI.VideoSource,
+                                  'url' | 'mimeType'
+                                >
+                              >;
+                              previewImage?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                        >;
+                      }
+                    >;
+                  })
+              | ({__typename: 'Page'} & Pick<
+                  StorefrontAPI.Page,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                    sources: Array<
+                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                    >;
+                    previewImage?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'GenericFile'} & Pick<
+                    StorefrontAPI.GenericFile,
+                    'id' | 'url' | 'mimeType'
+                  >)
+                | ({__typename: 'MediaImage'} & Pick<
+                    StorefrontAPI.MediaImage,
+                    'id'
+                  > & {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+                | ({__typename: 'Metaobject'} & Pick<
+                    StorefrontAPI.Metaobject,
+                    'id' | 'handle' | 'type'
+                  > & {
+                      fields: Array<
+                        Pick<
+                          StorefrontAPI.MetaobjectField,
+                          'key' | 'type' | 'value'
+                        > & {
+                          reference?: StorefrontAPI.Maybe<
+                            | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                                image?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                            | Pick<
+                                StorefrontAPI.Product,
+                                'id' | 'handle' | 'title'
+                              >
+                            | (Pick<StorefrontAPI.Video, 'id'> & {
+                                sources: Array<
+                                  Pick<
+                                    StorefrontAPI.VideoSource,
+                                    'url' | 'mimeType'
+                                  >
+                                >;
+                                previewImage?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                          >;
+                        }
+                      >;
+                    })
+                | ({__typename: 'Page'} & Pick<
+                    StorefrontAPI.Page,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Product'} & Pick<
+                    StorefrontAPI.Product,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                      sources: Array<
+                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                      >;
+                      previewImage?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  };
+  lifestyle: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id' | 'handle' | 'type'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+              | ({__typename: 'Collection'} & Pick<
+                  StorefrontAPI.Collection,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'GenericFile'} & Pick<
+                  StorefrontAPI.GenericFile,
+                  'id' | 'url' | 'mimeType'
+                >)
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Metaobject'} & Pick<
+                  StorefrontAPI.Metaobject,
+                  'id' | 'handle' | 'type'
+                > & {
+                    fields: Array<
+                      Pick<
+                        StorefrontAPI.MetaobjectField,
+                        'key' | 'type' | 'value'
+                      > & {
+                        reference?: StorefrontAPI.Maybe<
+                          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                              image?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                          | Pick<
+                              StorefrontAPI.Product,
+                              'id' | 'handle' | 'title'
+                            >
+                          | (Pick<StorefrontAPI.Video, 'id'> & {
+                              sources: Array<
+                                Pick<
+                                  StorefrontAPI.VideoSource,
+                                  'url' | 'mimeType'
+                                >
+                              >;
+                              previewImage?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                        >;
+                      }
+                    >;
+                  })
+              | ({__typename: 'Page'} & Pick<
+                  StorefrontAPI.Page,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                    sources: Array<
+                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                    >;
+                    previewImage?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'GenericFile'} & Pick<
+                    StorefrontAPI.GenericFile,
+                    'id' | 'url' | 'mimeType'
+                  >)
+                | ({__typename: 'MediaImage'} & Pick<
+                    StorefrontAPI.MediaImage,
+                    'id'
+                  > & {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+                | ({__typename: 'Metaobject'} & Pick<
+                    StorefrontAPI.Metaobject,
+                    'id' | 'handle' | 'type'
+                  > & {
+                      fields: Array<
+                        Pick<
+                          StorefrontAPI.MetaobjectField,
+                          'key' | 'type' | 'value'
+                        > & {
+                          reference?: StorefrontAPI.Maybe<
+                            | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                                image?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                            | Pick<
+                                StorefrontAPI.Product,
+                                'id' | 'handle' | 'title'
+                              >
+                            | (Pick<StorefrontAPI.Video, 'id'> & {
+                                sources: Array<
+                                  Pick<
+                                    StorefrontAPI.VideoSource,
+                                    'url' | 'mimeType'
+                                  >
+                                >;
+                                previewImage?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                          >;
+                        }
+                      >;
+                    })
+                | ({__typename: 'Page'} & Pick<
+                    StorefrontAPI.Page,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Product'} & Pick<
+                    StorefrontAPI.Product,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                      sources: Array<
+                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                      >;
+                      previewImage?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  };
+  testimonials: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id' | 'handle' | 'type'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+              | ({__typename: 'Collection'} & Pick<
+                  StorefrontAPI.Collection,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'GenericFile'} & Pick<
+                  StorefrontAPI.GenericFile,
+                  'id' | 'url' | 'mimeType'
+                >)
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Metaobject'} & Pick<
+                  StorefrontAPI.Metaobject,
+                  'id' | 'handle' | 'type'
+                > & {
+                    fields: Array<
+                      Pick<
+                        StorefrontAPI.MetaobjectField,
+                        'key' | 'type' | 'value'
+                      > & {
+                        reference?: StorefrontAPI.Maybe<
+                          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                              image?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                          | Pick<
+                              StorefrontAPI.Product,
+                              'id' | 'handle' | 'title'
+                            >
+                          | (Pick<StorefrontAPI.Video, 'id'> & {
+                              sources: Array<
+                                Pick<
+                                  StorefrontAPI.VideoSource,
+                                  'url' | 'mimeType'
+                                >
+                              >;
+                              previewImage?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                        >;
+                      }
+                    >;
+                  })
+              | ({__typename: 'Page'} & Pick<
+                  StorefrontAPI.Page,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                    sources: Array<
+                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                    >;
+                    previewImage?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'GenericFile'} & Pick<
+                    StorefrontAPI.GenericFile,
+                    'id' | 'url' | 'mimeType'
+                  >)
+                | ({__typename: 'MediaImage'} & Pick<
+                    StorefrontAPI.MediaImage,
+                    'id'
+                  > & {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+                | ({__typename: 'Metaobject'} & Pick<
+                    StorefrontAPI.Metaobject,
+                    'id' | 'handle' | 'type'
+                  > & {
+                      fields: Array<
+                        Pick<
+                          StorefrontAPI.MetaobjectField,
+                          'key' | 'type' | 'value'
+                        > & {
+                          reference?: StorefrontAPI.Maybe<
+                            | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                                image?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                            | Pick<
+                                StorefrontAPI.Product,
+                                'id' | 'handle' | 'title'
+                              >
+                            | (Pick<StorefrontAPI.Video, 'id'> & {
+                                sources: Array<
+                                  Pick<
+                                    StorefrontAPI.VideoSource,
+                                    'url' | 'mimeType'
+                                  >
+                                >;
+                                previewImage?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                          >;
+                        }
+                      >;
+                    })
+                | ({__typename: 'Page'} & Pick<
+                    StorefrontAPI.Page,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Product'} & Pick<
+                    StorefrontAPI.Product,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                      sources: Array<
+                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                      >;
+                      previewImage?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  };
+  faqs: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id' | 'handle' | 'type'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+              | ({__typename: 'Collection'} & Pick<
+                  StorefrontAPI.Collection,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'GenericFile'} & Pick<
+                  StorefrontAPI.GenericFile,
+                  'id' | 'url' | 'mimeType'
+                >)
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Metaobject'} & Pick<
+                  StorefrontAPI.Metaobject,
+                  'id' | 'handle' | 'type'
+                > & {
+                    fields: Array<
+                      Pick<
+                        StorefrontAPI.MetaobjectField,
+                        'key' | 'type' | 'value'
+                      > & {
+                        reference?: StorefrontAPI.Maybe<
+                          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                              image?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                          | Pick<
+                              StorefrontAPI.Product,
+                              'id' | 'handle' | 'title'
+                            >
+                          | (Pick<StorefrontAPI.Video, 'id'> & {
+                              sources: Array<
+                                Pick<
+                                  StorefrontAPI.VideoSource,
+                                  'url' | 'mimeType'
+                                >
+                              >;
+                              previewImage?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                        >;
+                      }
+                    >;
+                  })
+              | ({__typename: 'Page'} & Pick<
+                  StorefrontAPI.Page,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                    sources: Array<
+                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                    >;
+                    previewImage?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'GenericFile'} & Pick<
+                    StorefrontAPI.GenericFile,
+                    'id' | 'url' | 'mimeType'
+                  >)
+                | ({__typename: 'MediaImage'} & Pick<
+                    StorefrontAPI.MediaImage,
+                    'id'
+                  > & {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+                | ({__typename: 'Metaobject'} & Pick<
+                    StorefrontAPI.Metaobject,
+                    'id' | 'handle' | 'type'
+                  > & {
+                      fields: Array<
+                        Pick<
+                          StorefrontAPI.MetaobjectField,
+                          'key' | 'type' | 'value'
+                        > & {
+                          reference?: StorefrontAPI.Maybe<
+                            | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                                image?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                            | Pick<
+                                StorefrontAPI.Product,
+                                'id' | 'handle' | 'title'
+                              >
+                            | (Pick<StorefrontAPI.Video, 'id'> & {
+                                sources: Array<
+                                  Pick<
+                                    StorefrontAPI.VideoSource,
+                                    'url' | 'mimeType'
+                                  >
+                                >;
+                                previewImage?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                          >;
+                        }
+                      >;
+                    })
+                | ({__typename: 'Page'} & Pick<
+                    StorefrontAPI.Page,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Product'} & Pick<
+                    StorefrontAPI.Product,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                      sources: Array<
+                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                      >;
+                      previewImage?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  };
+};
+
+export type SiteSettingsQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type SiteSettingsQuery = {
+  settings: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id' | 'handle' | 'type'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+              | ({__typename: 'Collection'} & Pick<
+                  StorefrontAPI.Collection,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'GenericFile'} & Pick<
+                  StorefrontAPI.GenericFile,
+                  'id' | 'url' | 'mimeType'
+                >)
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Metaobject'} & Pick<
+                  StorefrontAPI.Metaobject,
+                  'id' | 'handle' | 'type'
+                > & {
+                    fields: Array<
+                      Pick<
+                        StorefrontAPI.MetaobjectField,
+                        'key' | 'type' | 'value'
+                      > & {
+                        reference?: StorefrontAPI.Maybe<
+                          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                              image?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                          | Pick<
+                              StorefrontAPI.Product,
+                              'id' | 'handle' | 'title'
+                            >
+                          | (Pick<StorefrontAPI.Video, 'id'> & {
+                              sources: Array<
+                                Pick<
+                                  StorefrontAPI.VideoSource,
+                                  'url' | 'mimeType'
+                                >
+                              >;
+                              previewImage?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                        >;
+                      }
+                    >;
+                  })
+              | ({__typename: 'Page'} & Pick<
+                  StorefrontAPI.Page,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                    sources: Array<
+                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                    >;
+                    previewImage?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'GenericFile'} & Pick<
+                    StorefrontAPI.GenericFile,
+                    'id' | 'url' | 'mimeType'
+                  >)
+                | ({__typename: 'MediaImage'} & Pick<
+                    StorefrontAPI.MediaImage,
+                    'id'
+                  > & {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+                | ({__typename: 'Metaobject'} & Pick<
+                    StorefrontAPI.Metaobject,
+                    'id' | 'handle' | 'type'
+                  > & {
+                      fields: Array<
+                        Pick<
+                          StorefrontAPI.MetaobjectField,
+                          'key' | 'type' | 'value'
+                        > & {
+                          reference?: StorefrontAPI.Maybe<
+                            | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                                image?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                            | Pick<
+                                StorefrontAPI.Product,
+                                'id' | 'handle' | 'title'
+                              >
+                            | (Pick<StorefrontAPI.Video, 'id'> & {
+                                sources: Array<
+                                  Pick<
+                                    StorefrontAPI.VideoSource,
+                                    'url' | 'mimeType'
+                                  >
+                                >;
+                                previewImage?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                          >;
+                        }
+                      >;
+                    })
+                | ({__typename: 'Page'} & Pick<
+                    StorefrontAPI.Page,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Product'} & Pick<
+                    StorefrontAPI.Product,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                      sources: Array<
+                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                      >;
+                      previewImage?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  };
+};
+
+export type AboutContentQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type AboutContentQuery = {
+  about: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id' | 'handle' | 'type'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'type' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+              | ({__typename: 'Collection'} & Pick<
+                  StorefrontAPI.Collection,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'GenericFile'} & Pick<
+                  StorefrontAPI.GenericFile,
+                  'id' | 'url' | 'mimeType'
+                >)
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Metaobject'} & Pick<
+                  StorefrontAPI.Metaobject,
+                  'id' | 'handle' | 'type'
+                > & {
+                    fields: Array<
+                      Pick<
+                        StorefrontAPI.MetaobjectField,
+                        'key' | 'type' | 'value'
+                      > & {
+                        reference?: StorefrontAPI.Maybe<
+                          | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                              image?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                          | Pick<
+                              StorefrontAPI.Product,
+                              'id' | 'handle' | 'title'
+                            >
+                          | (Pick<StorefrontAPI.Video, 'id'> & {
+                              sources: Array<
+                                Pick<
+                                  StorefrontAPI.VideoSource,
+                                  'url' | 'mimeType'
+                                >
+                              >;
+                              previewImage?: StorefrontAPI.Maybe<
+                                Pick<
+                                  StorefrontAPI.Image,
+                                  'url' | 'altText' | 'width' | 'height'
+                                >
+                              >;
+                            })
+                        >;
+                      }
+                    >;
+                  })
+              | ({__typename: 'Page'} & Pick<
+                  StorefrontAPI.Page,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle' | 'title'
+                >)
+              | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                    sources: Array<
+                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                    >;
+                    previewImage?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'url' | 'altText' | 'width' | 'height'
+                      >
+                    >;
+                  })
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | {__typename: 'Article' | 'Model3d' | 'ProductVariant'}
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'GenericFile'} & Pick<
+                    StorefrontAPI.GenericFile,
+                    'id' | 'url' | 'mimeType'
+                  >)
+                | ({__typename: 'MediaImage'} & Pick<
+                    StorefrontAPI.MediaImage,
+                    'id'
+                  > & {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+                | ({__typename: 'Metaobject'} & Pick<
+                    StorefrontAPI.Metaobject,
+                    'id' | 'handle' | 'type'
+                  > & {
+                      fields: Array<
+                        Pick<
+                          StorefrontAPI.MetaobjectField,
+                          'key' | 'type' | 'value'
+                        > & {
+                          reference?: StorefrontAPI.Maybe<
+                            | (Pick<StorefrontAPI.MediaImage, 'id'> & {
+                                image?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                            | Pick<
+                                StorefrontAPI.Product,
+                                'id' | 'handle' | 'title'
+                              >
+                            | (Pick<StorefrontAPI.Video, 'id'> & {
+                                sources: Array<
+                                  Pick<
+                                    StorefrontAPI.VideoSource,
+                                    'url' | 'mimeType'
+                                  >
+                                >;
+                                previewImage?: StorefrontAPI.Maybe<
+                                  Pick<
+                                    StorefrontAPI.Image,
+                                    'url' | 'altText' | 'width' | 'height'
+                                  >
+                                >;
+                              })
+                          >;
+                        }
+                      >;
+                    })
+                | ({__typename: 'Page'} & Pick<
+                    StorefrontAPI.Page,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Product'} & Pick<
+                    StorefrontAPI.Product,
+                    'id' | 'handle' | 'title'
+                  >)
+                | ({__typename: 'Video'} & Pick<StorefrontAPI.Video, 'id'> & {
+                      sources: Array<
+                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
+                      >;
+                      previewImage?: StorefrontAPI.Maybe<
+                        Pick<
+                          StorefrontAPI.Image,
+                          'url' | 'altText' | 'width' | 'height'
+                        >
+                      >;
+                    })
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  };
+};
+
 export type MoneyFragment = Pick<
   StorefrontAPI.MoneyV2,
   'currencyCode' | 'amount'
@@ -267,6 +2275,34 @@ export type CartApiQueryFragment = Pick<
   >;
 };
 
+export type MoneyProductCardFragment = Pick<
+  StorefrontAPI.MoneyV2,
+  'amount' | 'currencyCode'
+>;
+
+export type ProductCardFragment = Pick<
+  StorefrontAPI.Product,
+  'id' | 'handle' | 'title' | 'vendor' | 'availableForSale' | 'description'
+> & {
+  featuredImage?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
+  >;
+  priceRange: {
+    minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+    maxVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+  };
+  compareAtPriceRange: {
+    minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+    maxVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+  };
+  badge?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  shortDescription?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Metafield, 'value'>
+  >;
+  rating?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  ratingCount?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+};
+
 export type MenuItemFragment = Pick<
   StorefrontAPI.MenuItem,
   'id' | 'resourceId' | 'tags' | 'title' | 'type' | 'url'
@@ -377,67 +2413,112 @@ export type FooterQuery = {
   >;
 };
 
-export type FeaturedCollectionFragment = Pick<
-  StorefrontAPI.Collection,
-  'id' | 'title' | 'handle'
-> & {
-  image?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
-  >;
-};
-
-export type FeaturedCollectionQueryVariables = StorefrontAPI.Exact<{
+export type HomepageQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+  featuredHandle: StorefrontAPI.Scalars['String']['input'];
+  first: StorefrontAPI.Scalars['Int']['input'];
 }>;
 
-export type FeaturedCollectionQuery = {
-  collections: {
-    nodes: Array<
-      Pick<StorefrontAPI.Collection, 'id' | 'title' | 'handle'> & {
-        image?: StorefrontAPI.Maybe<
+export type HomepageQuery = {
+  featured?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'id' | 'handle' | 'title'> & {
+      products: {
+        nodes: Array<
           Pick<
-            StorefrontAPI.Image,
-            'id' | 'url' | 'altText' | 'width' | 'height'
-          >
+            StorefrontAPI.Product,
+            | 'id'
+            | 'handle'
+            | 'title'
+            | 'vendor'
+            | 'availableForSale'
+            | 'description'
+          > & {
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'url' | 'altText' | 'width' | 'height'
+              >
+            >;
+            priceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+              maxVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+            compareAtPriceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+              maxVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+            badge?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+            shortDescription?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
+            rating?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
+            ratingCount?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
+          }
         >;
-      }
-    >;
-  };
-};
-
-export type RecommendedProductFragment = Pick<
-  StorefrontAPI.Product,
-  'id' | 'title' | 'handle'
-> & {
-  priceRange: {
-    minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-  };
-  featuredImage?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
+      };
+    }
   >;
-};
-
-export type RecommendedProductsQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-}>;
-
-export type RecommendedProductsQuery = {
-  products: {
+  bestSellers: {
     nodes: Array<
-      Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle'> & {
-        priceRange: {
-          minVariantPrice: Pick<
-            StorefrontAPI.MoneyV2,
-            'amount' | 'currencyCode'
-          >;
-        };
+      Pick<
+        StorefrontAPI.Product,
+        | 'id'
+        | 'handle'
+        | 'title'
+        | 'vendor'
+        | 'availableForSale'
+        | 'description'
+      > & {
         featuredImage?: StorefrontAPI.Maybe<
           Pick<
             StorefrontAPI.Image,
             'id' | 'url' | 'altText' | 'width' | 'height'
           >
+        >;
+        priceRange: {
+          minVariantPrice: Pick<
+            StorefrontAPI.MoneyV2,
+            'amount' | 'currencyCode'
+          >;
+          maxVariantPrice: Pick<
+            StorefrontAPI.MoneyV2,
+            'amount' | 'currencyCode'
+          >;
+        };
+        compareAtPriceRange: {
+          minVariantPrice: Pick<
+            StorefrontAPI.MoneyV2,
+            'amount' | 'currencyCode'
+          >;
+          maxVariantPrice: Pick<
+            StorefrontAPI.MoneyV2,
+            'amount' | 'currencyCode'
+          >;
+        };
+        badge?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+        shortDescription?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Metafield, 'value'>
+        >;
+        rating?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+        ratingCount?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Metafield, 'value'>
         >;
       }
     >;
@@ -741,6 +2822,22 @@ export type PageQueryVariables = StorefrontAPI.Exact<{
 export type PageQuery = {
   page?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Page, 'handle' | 'id' | 'title' | 'body'> & {
+      seo?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Seo, 'description' | 'title'>
+      >;
+    }
+  >;
+};
+
+export type AboutPageQueryVariables = StorefrontAPI.Exact<{
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  handle: StorefrontAPI.Scalars['String']['input'];
+}>;
+
+export type AboutPageQuery = {
+  page?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Page, 'id' | 'handle' | 'title' | 'body'> & {
       seo?: StorefrontAPI.Maybe<
         Pick<StorefrontAPI.Seo, 'description' | 'title'>
       >;
@@ -1268,6 +3365,18 @@ export type PredictiveSearchQuery = {
 };
 
 interface GeneratedQueryTypes {
+  '#graphql\n  query HomeContent($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    settings: metaobjects(type: "mellow_settings", first: 1) {\n      nodes {\n        ...MellowMetaobject\n      }\n    }\n    hero: metaobjects(type: "mellow_hero", first: 1) {\n      nodes {\n        ...MellowMetaobject\n      }\n    }\n    pressLogos: metaobjects(type: "mellow_press_logo", first: 12) {\n      nodes {\n        ...MellowMetaobject\n      }\n    }\n    story: metaobjects(type: "mellow_story", first: 1) {\n      nodes {\n        ...MellowMetaobject\n      }\n    }\n    ugcVideos: metaobjects(type: "mellow_ugc_video", first: 8) {\n      nodes {\n        ...MellowMetaobject\n      }\n    }\n    lifestyle: metaobjects(type: "mellow_lifestyle_image", first: 4) {\n      nodes {\n        ...MellowMetaobject\n      }\n    }\n    testimonials: metaobjects(type: "mellow_testimonial", first: 9) {\n      nodes {\n        ...MellowMetaobject\n      }\n    }\n    faqs: metaobjects(type: "mellow_faq", first: 12) {\n      nodes {\n        ...MellowMetaobject\n      }\n    }\n  }\n  #graphql\n  fragment MellowMetaobject on Metaobject {\n    id\n    handle\n    type\n    fields {\n      key\n      type\n      value\n      reference {\n        ...MellowReference\n      }\n      references(first: 12) {\n        nodes {\n          ...MellowReference\n        }\n      }\n    }\n  }\n  #graphql\n  fragment MellowReference on MetafieldReference {\n    __typename\n    ... on MediaImage {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n    }\n    ... on Video {\n      id\n      sources {\n        url\n        mimeType\n      }\n      previewImage {\n        url\n        altText\n        width\n        height\n      }\n    }\n    ... on GenericFile {\n      id\n      url\n      mimeType\n    }\n    ... on Product {\n      id\n      handle\n      title\n    }\n    ... on Collection {\n      id\n      handle\n      title\n    }\n    ... on Page {\n      id\n      handle\n      title\n    }\n    ... on Metaobject {\n      id\n      handle\n      type\n      fields {\n        key\n        type\n        value\n        reference {\n          ... on MediaImage {\n            id\n            image {\n              url\n              altText\n              width\n              height\n            }\n          }\n          ... on Video {\n            id\n            sources {\n              url\n              mimeType\n            }\n            previewImage {\n              url\n              altText\n              width\n              height\n            }\n          }\n          ... on Product {\n            id\n            handle\n            title\n          }\n        }\n      }\n    }\n  }\n\n\n': {
+    return: HomeContentQuery;
+    variables: HomeContentQueryVariables;
+  };
+  '#graphql\n  query SiteSettings($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    settings: metaobjects(type: "mellow_settings", first: 1) {\n      nodes {\n        ...MellowMetaobject\n      }\n    }\n  }\n  #graphql\n  fragment MellowMetaobject on Metaobject {\n    id\n    handle\n    type\n    fields {\n      key\n      type\n      value\n      reference {\n        ...MellowReference\n      }\n      references(first: 12) {\n        nodes {\n          ...MellowReference\n        }\n      }\n    }\n  }\n  #graphql\n  fragment MellowReference on MetafieldReference {\n    __typename\n    ... on MediaImage {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n    }\n    ... on Video {\n      id\n      sources {\n        url\n        mimeType\n      }\n      previewImage {\n        url\n        altText\n        width\n        height\n      }\n    }\n    ... on GenericFile {\n      id\n      url\n      mimeType\n    }\n    ... on Product {\n      id\n      handle\n      title\n    }\n    ... on Collection {\n      id\n      handle\n      title\n    }\n    ... on Page {\n      id\n      handle\n      title\n    }\n    ... on Metaobject {\n      id\n      handle\n      type\n      fields {\n        key\n        type\n        value\n        reference {\n          ... on MediaImage {\n            id\n            image {\n              url\n              altText\n              width\n              height\n            }\n          }\n          ... on Video {\n            id\n            sources {\n              url\n              mimeType\n            }\n            previewImage {\n              url\n              altText\n              width\n              height\n            }\n          }\n          ... on Product {\n            id\n            handle\n            title\n          }\n        }\n      }\n    }\n  }\n\n\n': {
+    return: SiteSettingsQuery;
+    variables: SiteSettingsQueryVariables;
+  };
+  '#graphql\n  query AboutContent($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    about: metaobjects(type: "mellow_about", first: 1) {\n      nodes {\n        ...MellowMetaobject\n      }\n    }\n  }\n  #graphql\n  fragment MellowMetaobject on Metaobject {\n    id\n    handle\n    type\n    fields {\n      key\n      type\n      value\n      reference {\n        ...MellowReference\n      }\n      references(first: 12) {\n        nodes {\n          ...MellowReference\n        }\n      }\n    }\n  }\n  #graphql\n  fragment MellowReference on MetafieldReference {\n    __typename\n    ... on MediaImage {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n    }\n    ... on Video {\n      id\n      sources {\n        url\n        mimeType\n      }\n      previewImage {\n        url\n        altText\n        width\n        height\n      }\n    }\n    ... on GenericFile {\n      id\n      url\n      mimeType\n    }\n    ... on Product {\n      id\n      handle\n      title\n    }\n    ... on Collection {\n      id\n      handle\n      title\n    }\n    ... on Page {\n      id\n      handle\n      title\n    }\n    ... on Metaobject {\n      id\n      handle\n      type\n      fields {\n        key\n        type\n        value\n        reference {\n          ... on MediaImage {\n            id\n            image {\n              url\n              altText\n              width\n              height\n            }\n          }\n          ... on Video {\n            id\n            sources {\n              url\n              mimeType\n            }\n            previewImage {\n              url\n              altText\n              width\n              height\n            }\n          }\n          ... on Product {\n            id\n            handle\n            title\n          }\n        }\n      }\n    }\n  }\n\n\n': {
+    return: AboutContentQuery;
+    variables: AboutContentQueryVariables;
+  };
   '#graphql\n  fragment Shop on Shop {\n    id\n    name\n    description\n    primaryDomain {\n      url\n    }\n    brand {\n      logo {\n        image {\n          url\n        }\n      }\n    }\n  }\n  query Header(\n    $country: CountryCode\n    $headerMenuHandle: String!\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    shop {\n      ...Shop\n    }\n    menu(handle: $headerMenuHandle) {\n      ...Menu\n    }\n  }\n  #graphql\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment Menu on Menu {\n    id\n    items {\n      ...ParentMenuItem\n    }\n  }\n\n': {
     return: HeaderQuery;
     variables: HeaderQueryVariables;
@@ -1276,13 +3385,9 @@ interface GeneratedQueryTypes {
     return: FooterQuery;
     variables: FooterQueryVariables;
   };
-  '#graphql\n  fragment FeaturedCollection on Collection {\n    id\n    title\n    image {\n      id\n      url\n      altText\n      width\n      height\n    }\n    handle\n  }\n  query FeaturedCollection($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collections(first: 1, sortKey: UPDATED_AT, reverse: true) {\n      nodes {\n        ...FeaturedCollection\n      }\n    }\n  }\n': {
-    return: FeaturedCollectionQuery;
-    variables: FeaturedCollectionQueryVariables;
-  };
-  '#graphql\n  fragment RecommendedProduct on Product {\n    id\n    title\n    handle\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n  }\n  query RecommendedProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    products(first: 4, sortKey: UPDATED_AT, reverse: true) {\n      nodes {\n        ...RecommendedProduct\n      }\n    }\n  }\n': {
-    return: RecommendedProductsQuery;
-    variables: RecommendedProductsQueryVariables;
+  '#graphql\n  query Homepage(\n    $country: CountryCode\n    $language: LanguageCode\n    $featuredHandle: String!\n    $first: Int!\n  ) @inContext(country: $country, language: $language) {\n    featured: collection(handle: $featuredHandle) {\n      id\n      handle\n      title\n      products(first: $first) {\n        nodes {\n          ...ProductCard\n        }\n      }\n    }\n    bestSellers: products(first: $first, sortKey: BEST_SELLING) {\n      nodes {\n        ...ProductCard\n      }\n    }\n  }\n  #graphql\n  fragment MoneyProductCard on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductCard on Product {\n    id\n    handle\n    title\n    vendor\n    availableForSale\n    description\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductCard\n      }\n      maxVariantPrice {\n        ...MoneyProductCard\n      }\n    }\n    compareAtPriceRange {\n      minVariantPrice {\n        ...MoneyProductCard\n      }\n      maxVariantPrice {\n        ...MoneyProductCard\n      }\n    }\n    badge: metafield(namespace: "mellow", key: "badge") {\n      value\n    }\n    shortDescription: metafield(namespace: "mellow", key: "short_description") {\n      value\n    }\n    rating: metafield(namespace: "reviews", key: "rating") {\n      value\n    }\n    ratingCount: metafield(namespace: "reviews", key: "rating_count") {\n      value\n    }\n  }\n\n': {
+    return: HomepageQuery;
+    variables: HomepageQueryVariables;
   };
   '#graphql\n  query Article(\n    $articleHandle: String!\n    $blogHandle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blog(handle: $blogHandle) {\n      handle\n      articleByHandle(handle: $articleHandle) {\n        handle\n        title\n        contentHtml\n        publishedAt\n        author: authorV2 {\n          name\n        }\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        seo {\n          description\n          title\n        }\n      }\n    }\n  }\n': {
     return: ArticleQuery;
@@ -1311,6 +3416,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query Page(\n    $language: LanguageCode,\n    $country: CountryCode,\n    $handle: String!\n  )\n  @inContext(language: $language, country: $country) {\n    page(handle: $handle) {\n      handle\n      id\n      title\n      body\n      seo {\n        description\n        title\n      }\n    }\n  }\n': {
     return: PageQuery;
     variables: PageQueryVariables;
+  };
+  '#graphql\n  query AboutPage(\n    $language: LanguageCode\n    $country: CountryCode\n    $handle: String!\n  ) @inContext(language: $language, country: $country) {\n    page(handle: $handle) {\n      id\n      handle\n      title\n      body\n      seo {\n        description\n        title\n      }\n    }\n  }\n': {
+    return: AboutPageQuery;
+    variables: AboutPageQueryVariables;
   };
   '#graphql\n  fragment Policy on ShopPolicy {\n    body\n    handle\n    id\n    title\n    url\n  }\n  query Policy(\n    $country: CountryCode\n    $language: LanguageCode\n    $privacyPolicy: Boolean!\n    $refundPolicy: Boolean!\n    $shippingPolicy: Boolean!\n    $termsOfService: Boolean!\n  ) @inContext(language: $language, country: $country) {\n    shop {\n      privacyPolicy @include(if: $privacyPolicy) {\n        ...Policy\n      }\n      shippingPolicy @include(if: $shippingPolicy) {\n        ...Policy\n      }\n      termsOfService @include(if: $termsOfService) {\n        ...Policy\n      }\n      refundPolicy @include(if: $refundPolicy) {\n        ...Policy\n      }\n    }\n  }\n': {
     return: PolicyQuery;

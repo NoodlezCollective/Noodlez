@@ -171,6 +171,65 @@ export const CART_QUERY_FRAGMENT = `#graphql
   }
 ` as const;
 
+/**
+ * Shared product card fragment used by the homepage grid, collections,
+ * search results and recommendations.
+ *
+ * Merchandising content comes from metafields (see app/lib/content/metafields.ts):
+ * - reviews.rating / reviews.rating_count (Shopify standard review metafields)
+ * - mellow.badge ("BESTSELLER", "NEW")
+ * - mellow.short_description (card copy)
+ */
+export const PRODUCT_CARD_FRAGMENT = `#graphql
+  fragment MoneyProductCard on MoneyV2 {
+    amount
+    currencyCode
+  }
+  fragment ProductCard on Product {
+    id
+    handle
+    title
+    vendor
+    availableForSale
+    description
+    featuredImage {
+      id
+      url
+      altText
+      width
+      height
+    }
+    priceRange {
+      minVariantPrice {
+        ...MoneyProductCard
+      }
+      maxVariantPrice {
+        ...MoneyProductCard
+      }
+    }
+    compareAtPriceRange {
+      minVariantPrice {
+        ...MoneyProductCard
+      }
+      maxVariantPrice {
+        ...MoneyProductCard
+      }
+    }
+    badge: metafield(namespace: "mellow", key: "badge") {
+      value
+    }
+    shortDescription: metafield(namespace: "mellow", key: "short_description") {
+      value
+    }
+    rating: metafield(namespace: "reviews", key: "rating") {
+      value
+    }
+    ratingCount: metafield(namespace: "reviews", key: "rating_count") {
+      value
+    }
+  }
+` as const;
+
 const MENU_FRAGMENT = `#graphql
   fragment MenuItem on MenuItem {
     id
