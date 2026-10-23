@@ -962,14 +962,14 @@ html:has(.overlay.expanded) {
 /* ---------- Dev notice ---------- */
 .dev-notice {
   position: fixed;
-  left: 1rem;
+  right: 1rem;
   bottom: 1rem;
   z-index: 60;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  max-width: calc(100vw - 2rem);
-  padding: 0.55rem 0.9rem;
+  max-width: min(360px, calc(100vw - 2rem));
+  padding: 0.45rem 0.8rem;
   border-radius: var(--radius-pill);
   background: var(--color-dark);
   color: #fff;
