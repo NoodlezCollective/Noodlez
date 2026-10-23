@@ -18,12 +18,17 @@ export function PressBar({logos}: {logos: PressLogo[]}) {
       <Marquee duration={40} gap={0}>
         {items.map((logo) => (
           <span className="press-bar__item" key={logo.key}>
-            {logo.image ? (
-              <ContentImage image={logo.image} alt={logo.name} sizes="160px" />
+            {logo.url ? (
+              <a
+                href={logo.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${logo.name} (opens in a new tab)`}
+              >
+                <PressLogoMark logo={logo} />
+              </a>
             ) : (
-              <span className={`press-logo ${pressLogoStyle(logo.name)}`}>
-                {logo.name}
-              </span>
+              <PressLogoMark logo={logo} />
             )}
           </span>
         ))}
@@ -32,9 +37,20 @@ export function PressBar({logos}: {logos: PressLogo[]}) {
   );
 }
 
+function PressLogoMark({logo}: {logo: PressLogo}) {
+  return logo.image ? (
+    <ContentImage image={logo.image} alt={logo.name} sizes="160px" />
+  ) : (
+    <span className={`press-logo ${pressLogoStyle(logo.name)}`}>
+      {logo.name}
+    </span>
+  );
+}
+
 function pressLogoStyle(name: string) {
   const key = name.toLowerCase();
-  if (key.includes('forbes') || key.includes('digest')) return 'press-logo--serif';
+  if (key.includes('forbes') || key.includes('digest'))
+    return 'press-logo--serif';
   if (key.includes('usa today')) return 'press-logo--dot press-logo--caps';
   if (key.includes('scary')) return 'press-logo--script';
   if (key.includes('us weekly')) return 'press-logo--caps';

@@ -10,14 +10,18 @@ const TITLE = 'Collections | Mellow';
 const DESCRIPTION =
   'Browse Mellow by category: ergonomic pillows, adaptive comforters, plush bath essentials and money-saving bundles.';
 
-export const meta: Route.MetaFunction = () => {
+export const meta: Route.MetaFunction = ({data}) => {
   return [
     {title: TITLE},
     {name: 'description', content: DESCRIPTION},
     {property: 'og:title', content: TITLE},
     {property: 'og:description', content: DESCRIPTION},
     {property: 'og:type', content: 'website'},
-    {tagName: 'link', rel: 'canonical', href: '/collections'},
+    {
+      tagName: 'link',
+      rel: 'canonical',
+      href: `${data?.origin ?? ''}/collections`,
+    },
   ];
 };
 
@@ -35,7 +39,7 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
     }),
   ]);
 
-  return {collections};
+  return {origin: new URL(request.url).origin, collections};
 }
 
 export default function Collections() {

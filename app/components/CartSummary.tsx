@@ -7,7 +7,7 @@ import {useFetcher} from 'react-router';
 import {useAside} from '~/components/Aside';
 import {Button} from '~/components/ui/Button';
 import {ChevronDownIcon, CloseIcon, FeatureIcon} from '~/components/ui/Icons';
-import {DEFAULT_SITE_SETTINGS} from '~/lib/content/defaults';
+import {useSiteSettings} from '~/lib/content/useSiteSettings';
 
 type CartSummaryProps = {
   cart: OptimisticCart<CartApiQueryFragment | null>;
@@ -40,6 +40,7 @@ const GIFT_CARD_FETCHER_KEY = 'gift-card-add';
  * sticky lavender card beside the line items.
  */
 export function CartSummary({cart, layout}: CartSummaryProps) {
+  const siteSettings = useSiteSettings();
   const summaryId = useId();
   const {close} = useAside();
   const cost = cart?.cost;
@@ -126,7 +127,7 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
       </div>
 
       <ul className="trust-badges cart-summary__trust">
-        {DEFAULT_SITE_SETTINGS.trustBadges.map((badge) => (
+        {siteSettings.trustBadges.map((badge) => (
           <li key={badge.label}>
             <FeatureIcon icon={badge.icon} size={18} />
             {badge.label}
@@ -149,7 +150,8 @@ function getDiscountAmount(
   const currencyCode = cost?.totalAmount?.currencyCode;
   if (!currencyCode) return null;
   const allocated = (cart?.discountAllocations ?? []).reduce(
-    (sum, allocation) => sum + Number(allocation?.discountedAmount?.amount ?? 0),
+    (sum, allocation) =>
+      sum + Number(allocation?.discountedAmount?.amount ?? 0),
     0,
   );
   if (allocated >= 0.005) {

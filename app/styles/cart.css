@@ -345,7 +345,9 @@
 .cart-promo__form input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-lavender);
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--color-primary);
 }
 
 .cart-promo__form .btn {

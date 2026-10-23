@@ -352,7 +352,9 @@ function usePredictiveSearch(): UsePredictiveSearchReturn {
   // capture the search input element as a ref
   useEffect(() => {
     if (!inputRef.current) {
-      inputRef.current = document.querySelector('input[type="search"]');
+      inputRef.current = document.querySelector(
+        '.predictive-search input[type="search"]',
+      );
     }
   }, []);
 

@@ -74,7 +74,10 @@ export type UgcContent = {
   videos: UgcVideo[];
 };
 
-export type LifestyleImage = ImageContent & {id: string; caption?: string | null};
+export type LifestyleImage = ImageContent & {
+  id: string;
+  caption?: string | null;
+};
 
 export type Testimonial = {
   id: string;
@@ -121,7 +124,6 @@ export type SiteSettings = {
   trustBadges: TrustBadge[];
   savingsNote: string;
   savingsExplanation: string;
-  shopAllHandle: string;
 };
 
 export type HomeContent = {

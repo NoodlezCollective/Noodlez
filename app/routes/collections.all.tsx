@@ -10,14 +10,18 @@ const TITLE = 'Shop All | Mellow';
 const DESCRIPTION =
   'Every Mellow pillow, comforter, bath essential and bundle in one place.';
 
-export const meta: Route.MetaFunction = () => {
+export const meta: Route.MetaFunction = ({data}) => {
   return [
     {title: TITLE},
     {name: 'description', content: DESCRIPTION},
     {property: 'og:title', content: TITLE},
     {property: 'og:description', content: DESCRIPTION},
     {property: 'og:type', content: 'website'},
-    {tagName: 'link', rel: 'canonical', href: '/collections/all'},
+    {
+      tagName: 'link',
+      rel: 'canonical',
+      href: `${data?.origin ?? ''}/collections/all`,
+    },
   ];
 };
 
@@ -45,7 +49,7 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
     }),
   ]);
 
-  return {products};
+  return {origin: new URL(request.url).origin, products};
 }
 
 export default function ShopAll() {

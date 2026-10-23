@@ -280,7 +280,9 @@ export function fieldList(record: MetaobjectRecord | null, key: string) {
   return parseStringList({value: fieldText(record, key)});
 }
 
-function referenceToImage(ref: Reference | null | undefined): ImageContent | null {
+function referenceToImage(
+  ref: Reference | null | undefined,
+): ImageContent | null {
   if (!ref) return null;
   if (ref.__typename === 'MediaImage' && ref.image?.url) {
     return {
@@ -298,7 +300,11 @@ function referenceToImage(ref: Reference | null | undefined): ImageContent | nul
       height: ref.previewImage.height,
     };
   }
-  if (ref.__typename === 'GenericFile' && ref.url && ref.mimeType?.startsWith('image/')) {
+  if (
+    ref.__typename === 'GenericFile' &&
+    ref.url &&
+    ref.mimeType?.startsWith('image/')
+  ) {
     return {url: ref.url, altText: null};
   }
   return null;
@@ -366,7 +372,10 @@ export function fieldLink(
   };
 }
 
-function toIconKey(value: string | null | undefined, fallback: FeatureIconKey): FeatureIconKey {
+function toIconKey(
+  value: string | null | undefined,
+  fallback: FeatureIconKey,
+): FeatureIconKey {
   if (value && value in FEATURE_ICONS) return value as FeatureIconKey;
   return fallback;
 }
@@ -388,7 +397,8 @@ export function mapSiteSettings(
       return label
         ? {icon: toIconKey(icon.trim(), 'shield'), label}
         : {
-            icon: defaults.trustBadges[index % defaults.trustBadges.length].icon,
+            icon: defaults.trustBadges[index % defaults.trustBadges.length]
+              .icon,
             label: entry,
           };
     },
@@ -401,9 +411,6 @@ export function mapSiteSettings(
     savingsNote: fieldText(record, 'savings_note') ?? defaults.savingsNote,
     savingsExplanation:
       fieldText(record, 'savings_explanation') ?? defaults.savingsExplanation,
-    shopAllHandle:
-      fieldCollectionHandle(record, 'shop_all_collection') ??
-      defaults.shopAllHandle,
   };
 }
 
@@ -436,7 +443,10 @@ export function mapHomeContent(
     id: record.id,
     title: fieldText(record, 'title') ?? '',
     video: fieldVideo(record, 'video'),
-    poster: fieldImage(record, 'poster') ?? fieldVideo(record, 'video')?.poster ?? null,
+    poster:
+      fieldImage(record, 'poster') ??
+      fieldVideo(record, 'video')?.poster ??
+      null,
     productHandle: fieldProductHandle(record, 'product'),
   }));
 
@@ -459,8 +469,10 @@ export function mapHomeContent(
           quote,
           author: fieldText(record, 'author') ?? 'Verified sleeper',
           rating: parseRating({value: fieldText(record, 'rating')}) ?? 5,
-          productTitle: productRef?.__typename === 'Product' ? productRef.title : null,
-          productHandle: productRef?.__typename === 'Product' ? productRef.handle : null,
+          productTitle:
+            productRef?.__typename === 'Product' ? productRef.title : null,
+          productHandle:
+            productRef?.__typename === 'Product' ? productRef.handle : null,
         },
       ];
     },
@@ -488,28 +500,38 @@ export function mapHomeContent(
       video: fieldVideo(story, 'video') ?? defaults.story.video,
       cta: story
         ? fieldText(story, 'cta_label')
-          ? fieldLink(story, 'cta_label', 'cta_url', defaults.story.cta ?? {label: '', url: '/'})
+          ? fieldLink(
+              story,
+              'cta_label',
+              'cta_url',
+              defaults.story.cta ?? {label: '', url: '/'},
+            )
           : null
         : defaults.story.cta,
     },
     featured: {
-      heading: fieldText(settings, 'featured_heading') ?? defaults.featured.heading,
+      heading:
+        fieldText(settings, 'featured_heading') ?? defaults.featured.heading,
       subheading:
-        fieldText(settings, 'featured_subheading') ?? defaults.featured.subheading,
+        fieldText(settings, 'featured_subheading') ??
+        defaults.featured.subheading,
       collectionHandle:
         fieldCollectionHandle(settings, 'featured_collection') ??
         defaults.featured.collectionHandle,
-      ctaLabel: fieldText(settings, 'featured_cta_label') ?? defaults.featured.ctaLabel,
+      ctaLabel:
+        fieldText(settings, 'featured_cta_label') ?? defaults.featured.ctaLabel,
     },
     ugc: {
       heading: fieldText(settings, 'ugc_heading') ?? defaults.ugc.heading,
-      subheading: fieldText(settings, 'ugc_subheading') ?? defaults.ugc.subheading,
+      subheading:
+        fieldText(settings, 'ugc_subheading') ?? defaults.ugc.subheading,
       videos: ugcVideos.length ? ugcVideos : defaults.ugc.videos,
     },
     lifestyle: lifestyle.length ? lifestyle : defaults.lifestyle,
     testimonials: {
       heading:
-        fieldText(settings, 'testimonials_heading') ?? defaults.testimonials.heading,
+        fieldText(settings, 'testimonials_heading') ??
+        defaults.testimonials.heading,
       subheading:
         fieldText(settings, 'testimonials_subheading') ??
         defaults.testimonials.subheading,
@@ -520,10 +542,14 @@ export function mapHomeContent(
       items: faqs.length ? faqs : defaults.faq.items,
     },
     newsletter: {
-      heading: fieldText(settings, 'newsletter_heading') ?? defaults.newsletter.heading,
+      heading:
+        fieldText(settings, 'newsletter_heading') ??
+        defaults.newsletter.heading,
       body: fieldText(settings, 'newsletter_body') ?? defaults.newsletter.body,
       placeholder: defaults.newsletter.placeholder,
-      ctaLabel: fieldText(settings, 'newsletter_cta_label') ?? defaults.newsletter.ctaLabel,
+      ctaLabel:
+        fieldText(settings, 'newsletter_cta_label') ??
+        defaults.newsletter.ctaLabel,
     },
   };
 }
@@ -553,14 +579,21 @@ export function mapAboutContent(
   return {
     hero: {
       heading: fieldText(about, 'hero_heading') ?? defaults.hero.heading,
-      subheading: fieldText(about, 'hero_subheading') ?? defaults.hero.subheading,
-      cta: fieldLink(about, 'hero_cta_label', 'hero_cta_url', defaults.hero.cta),
+      subheading:
+        fieldText(about, 'hero_subheading') ?? defaults.hero.subheading,
+      cta: fieldLink(
+        about,
+        'hero_cta_label',
+        'hero_cta_url',
+        defaults.hero.cta,
+      ),
       image: fieldImage(about, 'hero_image') ?? defaults.hero.image,
     },
     story: {
       heading: fieldText(about, 'story_heading') ?? defaults.story.heading,
       body: fieldText(about, 'story_body') ?? defaults.story.body,
-      highlight: fieldText(about, 'story_highlight') ?? defaults.story.highlight,
+      highlight:
+        fieldText(about, 'story_highlight') ?? defaults.story.highlight,
     },
     imageLeft: fieldImage(about, 'image_left') ?? defaults.imageLeft,
     imageBottom: fieldImage(about, 'image_bottom') ?? defaults.imageBottom,
@@ -568,7 +601,12 @@ export function mapAboutContent(
     closing: {
       heading: fieldText(about, 'closing_heading') ?? defaults.closing.heading,
       body: fieldText(about, 'closing_body') ?? defaults.closing.body,
-      cta: fieldLink(about, 'closing_cta_label', 'closing_cta_url', defaults.closing.cta),
+      cta: fieldLink(
+        about,
+        'closing_cta_label',
+        'closing_cta_url',
+        defaults.closing.cta,
+      ),
     },
   };
 }

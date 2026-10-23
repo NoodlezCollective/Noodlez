@@ -13,7 +13,7 @@ import {
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
-import {SITE_SETTINGS_QUERY} from '~/lib/content/metaobjects';
+import {SITE_SETTINGS_QUERY, mapSiteSettings} from '~/lib/content/metaobjects';
 import {SHOPIFY_RESOURCES} from '~/lib/content/config';
 import tokenStyles from '~/styles/tokens.css?url';
 import resetStyles from '~/styles/reset.css?url';
@@ -81,7 +81,6 @@ export function links() {
 export const meta: Route.MetaFunction = () => [
   {title: DEFAULT_TITLE},
   {name: 'description', content: DEFAULT_DESCRIPTION},
-  {property: 'og:site_name', content: 'Mellow'},
   {property: 'og:type', content: 'website'},
 ];
 
@@ -121,17 +120,27 @@ export async function loader(args: Route.LoaderArgs) {
 async function loadCriticalData({context}: Route.LoaderArgs) {
   const {storefront} = context;
 
-  const [header] = await Promise.all([
+  const [header, settingsData] = await Promise.all([
     storefront.query(HEADER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
         headerMenuHandle: SHOPIFY_RESOURCES.headerMenuHandle,
       },
     }),
-    // Add other queries here, so that they are loaded in parallel
+    // Global storefront settings (announcement bar, trust badges, savings
+    // copy). Optional: defaults apply when the metaobject does not exist yet.
+    storefront
+      .query(SITE_SETTINGS_QUERY, {cache: storefront.CacheLong()})
+      .catch((error: Error) => {
+        console.error(error);
+        return null;
+      }),
   ]);
 
-  return {header};
+  return {
+    header,
+    siteSettings: mapSiteSettings(settingsData?.settings?.nodes?.[0]),
+  };
 }
 
 /**
@@ -156,20 +165,10 @@ function loadDeferredData({context}: Route.LoaderArgs) {
       return null;
     });
 
-  // Global storefront settings (announcement bar, trust badges). Optional:
-  // the UI falls back to defaults when the metaobject does not exist yet.
-  const settings = storefront
-    .query(SITE_SETTINGS_QUERY, {cache: storefront.CacheLong()})
-    .catch((error: Error) => {
-      console.error(error);
-      return null;
-    });
-
   return {
     cart: cart.get(),
     isLoggedIn: customerAccount.isLoggedIn(),
     footer,
-    settings,
   };
 }
 
@@ -182,6 +181,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="theme-color" content="#4c4184" />
+        <meta property="og:site_name" content="Mellow" />
         <link rel="stylesheet" href={tokenStyles}></link>
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>

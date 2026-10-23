@@ -1,15 +1,9 @@
 import {Suspense} from 'react';
 import {Await, Link, NavLink} from 'react-router';
-import type {
-  FooterQuery,
-  HeaderQuery,
-  SiteSettingsQuery,
-} from 'storefrontapi.generated';
+import type {FooterQuery, HeaderQuery} from 'storefrontapi.generated';
 import {Logo} from '~/components/ui/Logo';
 import {FeatureIcon} from '~/components/ui/Icons';
 import {NewsletterForm} from '~/components/NewsletterForm';
-import {DEFAULT_SITE_SETTINGS} from '~/lib/content/defaults';
-import {mapSiteSettings} from '~/lib/content/metaobjects';
 import type {SiteSettings} from '~/lib/content/types';
 import {
   FALLBACK_FOOTER_MENU,
@@ -22,14 +16,14 @@ interface FooterProps {
   footer: Promise<FooterQuery | null>;
   header: HeaderQuery;
   publicStoreDomain: string;
-  settings: Promise<SiteSettingsQuery | null>;
+  siteSettings: SiteSettings;
 }
 
 export function Footer({
   footer: footerPromise,
   header,
   publicStoreDomain,
-  settings,
+  siteSettings,
 }: FooterProps) {
   return (
     <footer className="site-footer">
@@ -40,22 +34,18 @@ export function Footer({
               menu={FALLBACK_FOOTER_MENU}
               header={header}
               publicStoreDomain={publicStoreDomain}
-              siteSettings={DEFAULT_SITE_SETTINGS}
+              siteSettings={siteSettings}
             />
           }
         >
           <Await resolve={footerPromise}>
             {(footer) => (
-              <Await resolve={settings} errorElement={null}>
-                {(settingsData) => (
-                  <FooterContent
-                    menu={footer?.menu ?? FALLBACK_FOOTER_MENU}
-                    header={header}
-                    publicStoreDomain={publicStoreDomain}
-                    siteSettings={mapSiteSettings(settingsData?.settings?.nodes?.[0])}
-                  />
-                )}
-              </Await>
+              <FooterContent
+                menu={footer?.menu ?? FALLBACK_FOOTER_MENU}
+                header={header}
+                publicStoreDomain={publicStoreDomain}
+                siteSettings={siteSettings}
+              />
             )}
           </Await>
         </Suspense>
@@ -80,11 +70,16 @@ function FooterContent({
     normalizeMenuUrl(url, publicStoreDomain, primaryDomainUrl);
 
   const hasGroups = menu.items.some((item) => item.items?.length);
-  const groups: Array<{id: string; title: string; items: MenuItemLike[]}> = hasGroups
-    ? menu.items
-        .filter((item) => item.items?.length)
-        .map((item) => ({id: item.id, title: item.title, items: item.items ?? []}))
-    : [{id: 'links', title: 'Explore', items: menu.items}];
+  const groups: Array<{id: string; title: string; items: MenuItemLike[]}> =
+    hasGroups
+      ? menu.items
+          .filter((item) => item.items?.length)
+          .map((item) => ({
+            id: item.id,
+            title: item.title,
+            items: item.items ?? [],
+          }))
+      : [{id: 'links', title: 'Explore', items: menu.items}];
 
   const policyLinks = menu.items
     .flatMap((item) => [item, ...(item.items ?? [])])

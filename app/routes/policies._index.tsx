@@ -15,6 +15,8 @@ const POLICY_DESCRIPTIONS: Record<string, string> = {
 
 export const meta: Route.MetaFunction = () => {
   return [
+    {property: 'og:type', content: 'website'},
+    {tagName: 'link', rel: 'canonical', href: '/policies'},
     {title: 'Policies | Mellow'},
     {
       name: 'description',

@@ -9,6 +9,8 @@ type BlogNode = BlogsQuery['blogs']['nodes'][0];
 
 export const meta: Route.MetaFunction = () => {
   return [
+    {property: 'og:type', content: 'website'},
+    {tagName: 'link', rel: 'canonical', href: '/blogs'},
     {title: 'Journal | Mellow'},
     {
       name: 'description',

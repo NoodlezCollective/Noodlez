@@ -27,7 +27,6 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   savingsNote: 'Savings based on comparable value.',
   savingsExplanation:
     'Compare-at prices reflect the comparable retail value of similar bedding sold at full price. Your savings are the difference between that value and the Mellow price.',
-  shopAllHandle: SHOPIFY_RESOURCES.shopAllHandle,
 };
 
 export const DEFAULT_HOME_CONTENT: HomeContent = {
@@ -220,7 +219,8 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
 export const DEFAULT_ABOUT_CONTENT: AboutContent = {
   hero: {
     heading: 'Sleep Was Broken.\nWe Fixed It.',
-    subheading: 'Bedding and sleepwear, done right. Engineered for better sleep.',
+    subheading:
+      'Bedding and sleepwear, done right. Engineered for better sleep.',
     cta: {label: 'Shop Now', url: '/collections/all'},
     image: {
       url: `${PLACEHOLDER}/about-hero.svg`,

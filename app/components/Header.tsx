@@ -8,12 +8,7 @@ import {
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {Logo} from '~/components/ui/Logo';
-import {
-  CartIcon,
-  MenuIcon,
-  SearchIcon,
-  UserIcon,
-} from '~/components/ui/Icons';
+import {CartIcon, MenuIcon, SearchIcon, UserIcon} from '~/components/ui/Icons';
 import {
   FALLBACK_HEADER_MENU,
   isExternalUrl,
@@ -41,7 +36,7 @@ export function Header({
   publicStoreDomain,
 }: HeaderProps) {
   const {shop, menu} = header;
-  const {open} = useAside();
+  const {open, type: asideType} = useAside();
   return (
     <header className="site-header">
       <div className="container site-header__inner">
@@ -50,6 +45,7 @@ export function Header({
           onClick={() => open('mobile')}
           aria-label="Open menu"
           aria-haspopup="dialog"
+          aria-expanded={asideType === 'mobile'}
         >
           <MenuIcon />
         </button>
@@ -99,9 +95,18 @@ export function HeaderMenu({
           Home
         </NavLink>
         {items.map((item) => {
-          const url = normalizeMenuUrl(item.url!, publicStoreDomain, primaryDomainUrl);
+          const url = normalizeMenuUrl(
+            item.url!,
+            publicStoreDomain,
+            primaryDomainUrl,
+          );
           return isExternalUrl(url) ? (
-            <a className="mobile-nav__link" href={url} key={item.id} onClick={close}>
+            <a
+              className="mobile-nav__link"
+              href={url}
+              key={item.id}
+              onClick={close}
+            >
               {item.title}
             </a>
           ) : (
@@ -127,7 +132,11 @@ export function HeaderMenu({
           >
             <SearchIcon size={20} /> Search
           </button>
-          <NavLink className="mobile-nav__secondary" to="/account" onClick={close}>
+          <NavLink
+            className="mobile-nav__secondary"
+            to="/account"
+            onClick={close}
+          >
             <UserIcon size={20} />
             {isLoggedIn ? (
               <Suspense fallback="Sign in">
@@ -147,7 +156,11 @@ export function HeaderMenu({
   return (
     <nav className="site-header__nav" aria-label="Primary">
       {items.map((item) => {
-        const url = normalizeMenuUrl(item.url!, publicStoreDomain, primaryDomainUrl);
+        const url = normalizeMenuUrl(
+          item.url!,
+          publicStoreDomain,
+          primaryDomainUrl,
+        );
         return isExternalUrl(url) ? (
           <a className="nav-link" href={url} key={item.id}>
             {item.title}
@@ -177,8 +190,13 @@ function HeaderCtas({
   return (
     <nav className="site-header__actions" aria-label="Account and cart">
       <Suspense fallback={<AccountLink label="Sign in" />}>
-        <Await resolve={isLoggedIn} errorElement={<AccountLink label="Sign in" />}>
-          {(loggedIn) => <AccountLink label={loggedIn ? 'My account' : 'Sign in'} />}
+        <Await
+          resolve={isLoggedIn}
+          errorElement={<AccountLink label="Sign in" />}
+        >
+          {(loggedIn) => (
+            <AccountLink label={loggedIn ? 'My account' : 'Sign in'} />
+          )}
         </Await>
       </Suspense>
       <SearchToggle />

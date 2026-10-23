@@ -9,12 +9,31 @@ type SelectedPolicies = keyof Pick<
 >;
 
 export const meta: Route.MetaFunction = ({data}) => {
+  const title = data?.policy?.title
+    ? `${data.policy.title} | Mellow`
+    : 'Mellow';
+  const description = data?.policy?.title
+    ? `${data.policy.title} for the Mellow store.`
+    : 'Mellow store policies.';
   return [
-    {title: data?.policy?.title ? `${data.policy.title} | Mellow` : 'Mellow'},
+    {title},
+    {name: 'description', content: description},
+    {property: 'og:title', content: title},
+    {property: 'og:description', content: description},
+    {property: 'og:type', content: 'website'},
+    ...(data?.policy?.handle
+      ? [
+          {
+            tagName: 'link',
+            rel: 'canonical',
+            href: `${data.origin ?? ''}/policies/${data.policy.handle}`,
+          },
+        ]
+      : []),
   ];
 };
 
-export async function loader({params, context}: Route.LoaderArgs) {
+export async function loader({params, context, request}: Route.LoaderArgs) {
   if (!params.handle) {
     throw new Response('No handle was passed in', {status: 404});
   }
@@ -41,7 +60,7 @@ export async function loader({params, context}: Route.LoaderArgs) {
     throw new Response('Could not find the policy', {status: 404});
   }
 
-  return {policy};
+  return {policy, origin: new URL(request.url).origin};
 }
 
 export default function Policy() {

@@ -25,7 +25,7 @@ export const meta: Route.MetaFunction = ({data}) => {
     ...(data?.content.hero.image?.url.startsWith('https://')
       ? [{property: 'og:image', content: data.content.hero.image.url}]
       : []),
-    {tagName: 'link', rel: 'canonical', href: '/'},
+    {tagName: 'link', rel: 'canonical', href: `${data?.origin ?? ''}/`},
   ];
 };
 
@@ -41,7 +41,7 @@ export async function loader(args: Route.LoaderArgs) {
  * exist yet; the product grid falls back to best sellers when the configured
  * collection is empty or missing.
  */
-async function loadCriticalData({context}: Route.LoaderArgs) {
+async function loadCriticalData({context, request}: Route.LoaderArgs) {
   const {storefront} = context;
 
   const contentData = await storefront
@@ -64,7 +64,11 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     ? featured.products.nodes
     : bestSellers.nodes;
 
-  return {content, products};
+  return {
+    origin: new URL(request.url).origin,
+    content,
+    products,
+  };
 }
 
 export default function Homepage() {

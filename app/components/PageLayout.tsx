@@ -4,8 +4,8 @@ import type {
   CartApiQueryFragment,
   FooterQuery,
   HeaderQuery,
-  SiteSettingsQuery,
 } from 'storefrontapi.generated';
+import type {SiteSettings} from '~/lib/content/types';
 import {Aside} from '~/components/Aside';
 import {AnnouncementBar} from '~/components/AnnouncementBar';
 import {DevNotice} from '~/components/DevNotice';
@@ -26,7 +26,7 @@ export interface PageLayoutProps {
   header: HeaderQuery;
   isLoggedIn: Promise<boolean>;
   publicStoreDomain: string;
-  settings: Promise<SiteSettingsQuery | null>;
+  siteSettings: SiteSettings;
   isMockStorefront?: boolean;
   children?: React.ReactNode;
 }
@@ -38,7 +38,7 @@ export function PageLayout({
   header,
   isLoggedIn,
   publicStoreDomain,
-  settings,
+  siteSettings,
   isMockStorefront = false,
 }: PageLayoutProps) {
   return (
@@ -46,7 +46,7 @@ export function PageLayout({
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <AnnouncementBar settings={settings} />
+      <AnnouncementBar messages={siteSettings.announcements} />
       {header && (
         <Header
           header={header}
@@ -62,7 +62,7 @@ export function PageLayout({
         footer={footer}
         header={header}
         publicStoreDomain={publicStoreDomain}
-        settings={settings}
+        siteSettings={siteSettings}
       />
       <CartAside cart={cart} />
       <SearchAside />

@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {useLoaderData} from 'react-router';
+import {isRouteErrorResponse, useLoaderData, useRouteError} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
   getSelectedProductOptions,
@@ -26,7 +26,8 @@ import {SavingsNote} from '~/components/product/SavingsNote';
 import {TrustBadges} from '~/components/product/TrustBadges';
 import {isDiscounted} from '~/components/ui/Price';
 import {Stars} from '~/components/ui/Stars';
-import {DEFAULT_SITE_SETTINGS} from '~/lib/content/defaults';
+import {useSiteSettings} from '~/lib/content/useSiteSettings';
+import {ErrorView} from '~/components/ErrorView';
 import {
   mapReviewMetaobjects,
   parseFeatures,
@@ -42,7 +43,12 @@ const SITE_NAME = 'Mellow';
 
 export const meta: Route.MetaFunction = ({data}) => {
   const product = data?.product;
-  if (!product) return [{title: `Product | ${SITE_NAME}`}];
+  if (!product) {
+    return [
+      {title: `Product not found | ${SITE_NAME}`},
+      {name: 'robots', content: 'noindex'},
+    ];
+  }
 
   const title = product.seo?.title?.trim() || `${product.title} | ${SITE_NAME}`;
   const description =
@@ -56,7 +62,11 @@ export const meta: Route.MetaFunction = ({data}) => {
     {property: 'og:description', content: description},
     {property: 'og:type', content: 'product'},
     ...(image ? [{property: 'og:image', content: image}] : []),
-    {tagName: 'link', rel: 'canonical', href: `/products/${product.handle}`},
+    {
+      tagName: 'link',
+      rel: 'canonical',
+      href: `${data?.origin ?? ''}/products/${product.handle}`,
+    },
   ];
 };
 
@@ -168,8 +178,9 @@ export default function Product() {
     selectedVariant?.price,
     selectedVariant?.compareAtPrice,
   );
+  const siteSettings = useSiteSettings();
   const savingsNote =
-    product.savingsNote?.value?.trim() || DEFAULT_SITE_SETTINGS.savingsNote;
+    product.savingsNote?.value?.trim() || siteSettings.savingsNote;
 
   const jsonLd = buildProductJsonLd({
     product,
@@ -211,7 +222,7 @@ export default function Product() {
             {onSale ? (
               <SavingsNote
                 note={savingsNote}
-                explanation={DEFAULT_SITE_SETTINGS.savingsExplanation}
+                explanation={siteSettings.savingsExplanation}
               />
             ) : null}
             <ProductForm
@@ -221,7 +232,7 @@ export default function Product() {
             >
               <ProductFeatures features={features} />
             </ProductForm>
-            <TrustBadges />
+            <TrustBadges badges={siteSettings.trustBadges} />
             <ProductAccordions
               descriptionHtml={descriptionHtml}
               materials={materials}
@@ -580,3 +591,18 @@ const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
   }
   ${PRODUCT_CARD_FRAGMENT}
 ` as const;
+
+/**
+ * Renders missing products (404) with the designed error view while keeping
+ * this route's "Product not found" meta.
+ */
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  const message = isRouteErrorResponse(error)
+    ? String(error.data ?? '')
+    : error instanceof Error
+      ? error.message
+      : undefined;
+  return <ErrorView status={status} message={message} />;
+}

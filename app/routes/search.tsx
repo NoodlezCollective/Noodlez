@@ -41,12 +41,15 @@ export async function loader({request, context}: Route.LoaderArgs) {
       ? predictiveSearch({request, context})
       : regularSearch({request, context});
 
-  searchPromise.catch((error: Error) => {
+  return searchPromise.catch((error: Error) => {
     console.error(error);
-    return {term: '', result: null, error: error.message};
+    return {
+      type: 'regular',
+      term: '',
+      result: null,
+      error: error.message,
+    } as unknown as RegularSearchReturn;
   });
-
-  return await searchPromise;
 }
 
 /**

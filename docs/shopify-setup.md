@@ -71,7 +71,7 @@ back to the copy in `app/lib/content/defaults.ts`.
 
 | Type | Fields | Used by |
 | --- | --- | --- |
-| `mellow_settings` (one entry) | `announcements` (list text), `trust_badges` (list text `icon|Label`), `savings_note`, `savings_explanation`, `featured_heading`, `featured_subheading`, `featured_collection` (collection ref), `featured_cta_label`, `ugc_heading`, `ugc_subheading`, `testimonials_heading`, `testimonials_subheading`, `faq_heading`, `newsletter_heading`, `newsletter_body`, `newsletter_cta_label`, `shop_all_collection` (collection ref) | Announcement bar, section headings, trust badges |
+| `mellow_settings` (one entry) | `announcements` (list text), `trust_badges` (list text `icon|Label`), `savings_note`, `savings_explanation`, `featured_heading`, `featured_subheading`, `featured_collection` (collection ref), `featured_cta_label`, `ugc_heading`, `ugc_subheading`, `testimonials_heading`, `testimonials_subheading`, `faq_heading`, `newsletter_heading`, `newsletter_body`, `newsletter_cta_label` | Announcement bar, section headings, trust badges |
 | `mellow_hero` (one) | `rating_label`, `rating` (decimal), `headline` (multi-line; line breaks kept), `subheadline`, `cta_label`, `cta_url`, `image` (file) | Homepage hero |
 | `mellow_press_logo` | `name`, `image` (file), `url` | "As seen in" marquee (text fallback when no image) |
 | `mellow_story` (one) | `heading`, `body`, `video` (file, Shopify-hosted video), `video_url` (YouTube/Vimeo URL), `poster` (file), `cta_label`, `cta_url` | "Redefining Sleep" section |

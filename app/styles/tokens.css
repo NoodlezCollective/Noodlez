@@ -21,7 +21,7 @@
   --color-ink: #1e2021; /* body / product titles */
   --color-heading: #4a4070; /* display headings */
   --color-muted: #5b6562;
-  --color-subtle: #807b9a; /* compare-at price */
+  --color-subtle: #66627f; /* compare-at price, counts (≥4.5:1 on white) */
   --color-border: #bbbbc7;
   --color-border-light: #e3e2ef;
   --color-surface: #ffffff;
@@ -34,8 +34,7 @@
   --font-display:
     'Outfit', 'Avenir Next', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-body:
-    'Inter', 'Helvetica Neue', 'Segoe UI', system-ui, -apple-system,
-    sans-serif;
+    'Inter', 'Helvetica Neue', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --text-xs: 0.75rem; /* 12 */
   --text-sm: 0.875rem; /* 14 */
   --text-base: 1rem; /* 16 */

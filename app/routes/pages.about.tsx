@@ -18,7 +18,12 @@ export const meta: Route.MetaFunction = ({data}) => {
     {name: 'description', content: description},
     {property: 'og:title', content: title},
     {property: 'og:description', content: description},
-    {tagName: 'link', rel: 'canonical', href: '/pages/about'},
+    {
+      tagName: 'link',
+      rel: 'canonical',
+      href: `${data?.origin ?? ''}/pages/about`,
+    },
+    {property: 'og:type', content: 'website'},
   ];
 };
 
@@ -27,7 +32,7 @@ export const meta: Route.MetaFunction = ({data}) => {
  * `mellow_about` metaobject (falling back to defaults) and, when a Shopify
  * page with the `about` handle exists, its body is rendered as well.
  */
-export async function loader({context}: Route.LoaderArgs) {
+export async function loader({context, request}: Route.LoaderArgs) {
   const {storefront} = context;
   const [aboutData, pageData] = await Promise.all([
     storefront
@@ -48,6 +53,7 @@ export async function loader({context}: Route.LoaderArgs) {
   ]);
 
   return {
+    origin: new URL(request.url).origin,
     content: mapAboutContent(aboutData),
     page: pageData?.page ?? null,
   };
@@ -59,7 +65,11 @@ export default function AboutPage() {
 
   return (
     <div className="about">
-      <section className="container" style={{paddingTop: '1.5rem'}} aria-labelledby="about-hero-heading">
+      <section
+        className="container"
+        style={{paddingTop: '1.5rem'}}
+        aria-labelledby="about-hero-heading"
+      >
         <div className="about-hero">
           <div className="about-hero__content">
             <h1 id="about-hero-heading" className="about-hero__heading">
@@ -86,11 +96,17 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="section section--tight" aria-labelledby="about-story-heading">
+      <section
+        className="section section--tight"
+        aria-labelledby="about-story-heading"
+      >
         <div className="container about-story">
           {content.imageLeft ? (
             <div className="about-story__image-left">
-              <ContentImage image={content.imageLeft} sizes="(min-width: 64em) 50vw, 100vw" />
+              <ContentImage
+                image={content.imageLeft}
+                sizes="(min-width: 64em) 50vw, 100vw"
+              />
             </div>
           ) : null}
           <div className="about-story__card">
@@ -98,22 +114,33 @@ export default function AboutPage() {
             <p>
               {content.story.body}{' '}
               {content.story.highlight ? (
-                <span className="about-story__highlight">{content.story.highlight}</span>
+                <span className="about-story__highlight">
+                  {content.story.highlight}
+                </span>
               ) : null}
             </p>
           </div>
           {content.imageBottom ? (
             <div className="about-story__image-bottom">
-              <ContentImage image={content.imageBottom} sizes="(min-width: 64em) 50vw, 100vw" />
+              <ContentImage
+                image={content.imageBottom}
+                sizes="(min-width: 64em) 50vw, 100vw"
+              />
             </div>
           ) : null}
         </div>
       </section>
 
       {content.values.length ? (
-        <section className="section section--tight" aria-labelledby="about-values-heading">
+        <section
+          className="section section--tight"
+          aria-labelledby="about-values-heading"
+        >
           <div className="container">
-            <SectionHeading id="about-values-heading" title="What we stand for" />
+            <SectionHeading
+              id="about-values-heading"
+              title="What we stand for"
+            />
             <ul className="values-grid">
               {content.values.map((value) => (
                 <li className="value-card" key={value.id}>
@@ -141,7 +168,10 @@ export default function AboutPage() {
         </section>
       ) : null}
 
-      <section className="section section--tight" aria-labelledby="about-cta-heading">
+      <section
+        className="section section--tight"
+        aria-labelledby="about-cta-heading"
+      >
         <div className="container">
           <div className="cta-band">
             <h2 id="about-cta-heading">{content.closing.heading}</h2>

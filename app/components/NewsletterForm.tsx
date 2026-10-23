@@ -22,7 +22,7 @@ export function NewsletterForm({
   const busy = fetcher.state !== 'idle';
 
   useEffect(() => {
-    if (data?.ok) formRef.current?.reset();
+    if (data?.status === 'subscribed') formRef.current?.reset();
   }, [data]);
 
   return (
@@ -63,7 +63,13 @@ export function NewsletterForm({
       {data ? (
         <p
           id={messageId}
-          className={`form-message ${data.ok ? 'form-message--success' : 'form-message--error'}`}
+          className={`form-message ${
+            data.status === 'subscribed'
+              ? 'form-message--success'
+              : data.ok
+                ? ''
+                : 'form-message--error'
+          }`}
           role="status"
         >
           {data.message}

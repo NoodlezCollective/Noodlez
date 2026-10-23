@@ -20,4 +20,4 @@ be developed and reviewed before a Shopify store is linked.
 
 The mock is only loaded when `import.meta.env.DEV` is true (see
 `app/lib/context.ts`), so production bundles never include it. A badge in the
-bottom-left corner of every page indicates when mock data is being served.
+bottom-right corner of every page indicates when mock data is being served.

@@ -1,11 +1,7 @@
 import {isMockStorefrontEnabled} from '~/lib/mock/flag';
 
 export type NewsletterStatus =
-  | 'subscribed'
-  | 'invalid'
-  | 'not_configured'
-  | 'error'
-  | 'mock';
+  'subscribed' | 'invalid' | 'not_configured' | 'error' | 'mock';
 
 export type NewsletterResult = {
   ok: boolean;
@@ -33,7 +29,11 @@ export async function subscribeToNewsletter({
   env: Env;
 }): Promise<NewsletterResult> {
   if (!isValidEmail(email)) {
-    return {ok: false, status: 'invalid', message: 'Enter a valid email address.'};
+    return {
+      ok: false,
+      status: 'invalid',
+      message: 'Enter a valid email address.',
+    };
   }
 
   if (env.NEWSLETTER_WEBHOOK_URL) {
@@ -70,7 +70,8 @@ export async function subscribeToNewsletter({
     return {
       ok: true,
       status: 'mock',
-      message: 'Development mock: signup accepted locally. No email service is connected.',
+      message:
+        'Development mock: no email service is connected, so this signup was not recorded.',
     };
   }
 

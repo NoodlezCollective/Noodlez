@@ -1,7 +1,13 @@
-import {redirect, useLoaderData} from 'react-router';
+import {
+  isRouteErrorResponse,
+  redirect,
+  useLoaderData,
+  useRouteError,
+} from 'react-router';
 import type {Route} from './+types/collections.$handle';
 import {Analytics, getPaginationVariables} from '@shopify/hydrogen';
 import {CollectionHeader} from '~/components/collection/CollectionHeader';
+import {ErrorView} from '~/components/ErrorView';
 import {ProductListing} from '~/components/collection/ProductListing';
 import {
   COLLECTION_FILTER_FRAGMENT,
@@ -14,6 +20,12 @@ import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {DEFAULT_DESCRIPTION} from '~/root';
 
 export const meta: Route.MetaFunction = ({data}) => {
+  if (!data?.collection) {
+    return [
+      {title: 'Collection not found | Mellow'},
+      {name: 'robots', content: 'noindex'},
+    ];
+  }
   const collection = data?.collection;
   const title = `${collection?.seo?.title || collection?.title || 'Collection'} | Mellow`;
   const description =
@@ -33,7 +45,7 @@ export const meta: Route.MetaFunction = ({data}) => {
     {
       tagName: 'link',
       rel: 'canonical',
-      href: `/collections/${collection?.handle ?? ''}`,
+      href: `${data?.origin ?? ''}/collections/${collection?.handle ?? ''}`,
     },
   ];
 };
@@ -77,7 +89,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
 
-  return {collection};
+  return {collection, origin: new URL(request.url).origin};
 }
 
 export default function Collection() {
@@ -168,3 +180,15 @@ const COLLECTION_QUERY = `#graphql
   ${PRODUCT_CARD_FRAGMENT}
   ${COLLECTION_FILTER_FRAGMENT}
 ` as const;
+
+/** Missing collections render the designed 404 view with this route's meta. */
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  const message = isRouteErrorResponse(error)
+    ? String(error.data ?? '')
+    : error instanceof Error
+      ? error.message
+      : undefined;
+  return <ErrorView status={status} message={message} />;
+}

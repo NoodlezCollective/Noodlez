@@ -59,7 +59,7 @@ export function ProductCard({
         className="product-card__media"
         to={url}
         prefetch="intent"
-        aria-label={product.title}
+        aria-hidden="true"
         tabIndex={-1}
       >
         {image ? (

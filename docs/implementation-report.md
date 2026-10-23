@@ -132,9 +132,41 @@ verification, and reviewed every agent's output before committing.
   for the unconfigured account page; 404 for unknown URLs), one `h1` per page,
   no horizontal overflow, no unexpected console or page errors. Interaction
   scripts for the product page (48 + 7 checks), collections (26 checks), cart
-  (9 checks), drawers, newsletter and FAQ all pass.
+  (9 checks), drawers/focus management (22 checks), newsletter and FAQ all
+  pass.
 * The only console messages are expected in this sandbox: Hydrogen's "mock
   shop" analytics warning and blocked requests to `cdn.shopify.com`.
+
+## 8a. QA review outcome
+
+An independent QA pass (routes × 3 viewports, 128 scripted interaction
+checks, axe-core on 8 page states, keyboard/focus/contrast probes and a code
+read) found no blockers. Confirmed findings were fixed before the final
+commit:
+
+* Drawers now follow the modal dialog pattern: focus moves into the drawer,
+  Tab is trapped, the page behind is `inert`, Escape/overlay click close and
+  focus returns to the opener (an unstable context callback was re-running
+  the focus effect on every re-render; fixed with memoised context values).
+* Colour contrast: badge and cart-count text use the ink colour on coral;
+  compare-at prices and filter counts use a darker muted purple; the
+  focus ring is primary purple with an offset; inputs show a two-tone ring.
+* Settings metaobject fields (savings note/explanation, trust badges) are
+  now resolved once in the root loader and consumed by the product page,
+  cart and footer; the unused `shop_all_collection` field was removed from
+  the docs; press logos link to their URL; review dates render.
+* Sitemap no longer advertises unserved locales; absolute canonical URLs;
+  `og:site_name` on every page; policy/blog meta completed; product and
+  collection 404s carry "not found" titles and `noindex`.
+* Development-only issues: mock checkout hydration error, newsletter mock
+  message no longer reads as a success, predictive search input reset on
+  `/search`, search loader error handling.
+* Product cards align price and button across a grid row.
+
+Accepted deviations (documented, not changed): coral star fill contrast
+(brand design; numeric rating is exposed to assistive tech), the header
+account icon (sign-in entry point required by the brief; the reference shows
+only search and cart) and the product-page quantity stepper.
 
 ## 9. Shopify configuration still required
 

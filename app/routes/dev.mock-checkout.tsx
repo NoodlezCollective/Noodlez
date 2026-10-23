@@ -52,7 +52,7 @@ export default function MockCheckout() {
                     : ''}{' '}
                   × {line.quantity}
                 </span>
-                <Money data={line.cost.totalAmount} />
+                <Money as="span" data={line.cost.totalAmount} />
               </li>
             ))}
           </ul>
@@ -60,7 +60,7 @@ export default function MockCheckout() {
             <strong>Total</strong>
             {cart?.cost?.totalAmount ? (
               <strong>
-                <Money data={cart.cost.totalAmount} />
+                <Money as="span" data={cart.cost.totalAmount} />
               </strong>
             ) : null}
           </p>
@@ -82,7 +82,11 @@ export default function MockCheckout() {
         </div>
       ) : (
         <p style={{marginTop: '2rem'}}>
-          Your cart is empty. <Link className="link" to="/collections/all">Continue shopping</Link>.
+          Your cart is empty.{' '}
+          <Link className="link" to="/collections/all">
+            Continue shopping
+          </Link>
+          .
         </p>
       )}
     </div>
