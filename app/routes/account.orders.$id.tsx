@@ -21,13 +21,35 @@ export const meta: Route.MetaFunction = ({data}) => {
   ];
 };
 
+const ORDER_GID_PREFIX = 'gid://shopify/Order/';
+
+/**
+ * Order links carry the order GID as base64 (see account.orders._index.tsx).
+ * Anything that is not base64 of an order GID is not a link we issued.
+ */
+function decodeOrderId(token: string): string | null {
+  try {
+    const orderId = atob(token);
+    return orderId.startsWith(ORDER_GID_PREFIX) &&
+      orderId.length > ORDER_GID_PREFIX.length
+      ? orderId
+      : null;
+  } catch {
+    // `atob` throws a DOMException for characters outside the base64 alphabet.
+    return null;
+  }
+}
+
 export async function loader({params, context}: Route.LoaderArgs) {
   const {customerAccount} = context;
   if (!params.id) {
     return redirect('/account/orders');
   }
 
-  const orderId = atob(params.id);
+  const orderId = decodeOrderId(params.id);
+  if (!orderId) {
+    throw new Response('Order not found', {status: 404});
+  }
   const {data, errors}: {data: OrderQuery; errors?: Array<{message: string}>} =
     await customerAccount.query(CUSTOMER_ORDER_QUERY, {
       variables: {

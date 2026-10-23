@@ -1,60 +1,70 @@
-import {Link, useLoaderData} from 'react-router';
+import {
+  isRouteErrorResponse,
+  Link,
+  useLoaderData,
+  useRouteError,
+} from 'react-router';
 import type {Route} from './+types/policies.$handle';
-import {type Shop} from '@shopify/hydrogen/storefront-api-types';
 import {Button} from '~/components/ui/Button';
+import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
+import {ErrorView} from '~/components/ErrorView';
 
-type SelectedPolicies = keyof Pick<
-  Shop,
-  'privacyPolicy' | 'shippingPolicy' | 'termsOfService' | 'refundPolicy'
->;
+type PolicyField =
+  | 'privacyPolicy'
+  | 'shippingPolicy'
+  | 'termsOfService'
+  | 'refundPolicy'
+  | 'subscriptionPolicy';
+
+/**
+ * The policy URLs this route serves and the `Shop` field behind each one.
+ * `params.handle` comes from the URL, so it is only ever used as a key into
+ * this map; indexing the API response with it would let `/policies/constructor`
+ * or `/policies/__proto__` reach `Object` members.
+ */
+const POLICY_FIELDS: ReadonlyMap<string, PolicyField> = new Map([
+  ['privacy-policy', 'privacyPolicy'],
+  ['shipping-policy', 'shippingPolicy'],
+  ['terms-of-service', 'termsOfService'],
+  ['refund-policy', 'refundPolicy'],
+  ['subscription-policy', 'subscriptionPolicy'],
+]);
 
 export const meta: Route.MetaFunction = ({data}) => {
-  const title = data?.policy?.title
-    ? `${data.policy.title} | Mellow`
-    : 'Mellow';
-  const description = data?.policy?.title
-    ? `${data.policy.title} for the Mellow store.`
-    : 'Mellow store policies.';
+  if (!data?.policy) return notFoundMeta('Policy');
+
+  const {policy, origin} = data;
+  const title = `${policy.title} | ${SITE_NAME}`;
+  const description = `${policy.title} for the ${SITE_NAME} store.`;
   return [
     {title},
     {name: 'description', content: description},
     {property: 'og:title', content: title},
     {property: 'og:description', content: description},
     {property: 'og:type', content: 'website'},
-    ...(data?.policy?.handle
-      ? [
-          {
-            tagName: 'link',
-            rel: 'canonical',
-            href: `${data.origin ?? ''}/policies/${data.policy.handle}`,
-          },
-        ]
-      : []),
+    canonicalLink(origin, `/policies/${policy.handle}`),
   ];
 };
 
 export async function loader({params, context, request}: Route.LoaderArgs) {
-  if (!params.handle) {
-    throw new Response('No handle was passed in', {status: 404});
-  }
+  const field = params.handle ? POLICY_FIELDS.get(params.handle) : undefined;
 
-  const policyName = params.handle.replace(
-    /-([a-z])/g,
-    (_: unknown, m1: string) => m1.toUpperCase(),
-  ) as SelectedPolicies;
+  if (!field) {
+    throw new Response('Could not find the policy', {status: 404});
+  }
 
   const data = await context.storefront.query(POLICY_CONTENT_QUERY, {
     variables: {
-      privacyPolicy: false,
-      shippingPolicy: false,
-      termsOfService: false,
-      refundPolicy: false,
-      [policyName]: true,
+      privacyPolicy: field === 'privacyPolicy',
+      shippingPolicy: field === 'shippingPolicy',
+      termsOfService: field === 'termsOfService',
+      refundPolicy: field === 'refundPolicy',
+      subscriptionPolicy: field === 'subscriptionPolicy',
       language: context.storefront.i18n?.language,
     },
   });
 
-  const policy = data.shop?.[policyName];
+  const policy = data.shop?.[field];
 
   if (!policy) {
     throw new Response('Could not find the policy', {status: 404});
@@ -101,12 +111,20 @@ const POLICY_CONTENT_QUERY = `#graphql
     title
     url
   }
+  fragment SubscriptionPolicy on ShopPolicyWithDefault {
+    body
+    handle
+    id
+    title
+    url
+  }
   query Policy(
     $country: CountryCode
     $language: LanguageCode
     $privacyPolicy: Boolean!
     $refundPolicy: Boolean!
     $shippingPolicy: Boolean!
+    $subscriptionPolicy: Boolean!
     $termsOfService: Boolean!
   ) @inContext(language: $language, country: $country) {
     shop {
@@ -122,6 +140,24 @@ const POLICY_CONTENT_QUERY = `#graphql
       refundPolicy @include(if: $refundPolicy) {
         ...Policy
       }
+      subscriptionPolicy @include(if: $subscriptionPolicy) {
+        ...SubscriptionPolicy
+      }
     }
   }
 ` as const;
+
+/**
+ * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
+ * while the route stays in the rendered tree (not-found title, `noindex`).
+ */
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  const message = isRouteErrorResponse(error)
+    ? String(error.data ?? '')
+    : error instanceof Error
+      ? error.message
+      : undefined;
+  return <ErrorView status={status} message={message} />;
+}

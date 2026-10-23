@@ -3,12 +3,17 @@ import type {Route} from './+types/cart';
 import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm, useOptimisticCart} from '@shopify/hydrogen';
 import {CartMain, formatItemCount} from '~/components/CartMain';
+import {STOREFRONT_API_ERROR_STATUS} from '~/lib/storefront-errors';
+import {safeRedirectPath} from '~/lib/urls';
 
 export const meta: Route.MetaFunction = () => {
   return [{title: 'Cart | Mellow'}, {name: 'robots', content: 'noindex'}];
 };
 
 export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
+
+const CART_UNAVAILABLE_MESSAGE =
+  'We couldn’t update your cart right now. Please try again.';
 
 export async function action({request, context}: Route.ActionArgs) {
   const {cart} = context;
@@ -24,63 +29,92 @@ export async function action({request, context}: Route.ActionArgs) {
   let status = 200;
   let result: CartQueryDataReturn;
 
-  switch (action) {
-    case CartForm.ACTIONS.LinesAdd:
-      result = await cart.addLines(inputs.lines);
-      break;
-    case CartForm.ACTIONS.LinesUpdate:
-      result = await cart.updateLines(inputs.lines);
-      break;
-    case CartForm.ACTIONS.LinesRemove:
-      result = await cart.removeLines(inputs.lineIds);
-      break;
-    case CartForm.ACTIONS.DiscountCodesUpdate: {
-      const formDiscountCode = inputs.discountCode;
+  try {
+    switch (action) {
+      case CartForm.ACTIONS.LinesAdd:
+        result = await cart.addLines(inputs.lines);
+        break;
+      case CartForm.ACTIONS.LinesUpdate:
+        result = await cart.updateLines(inputs.lines);
+        break;
+      case CartForm.ACTIONS.LinesRemove:
+        result = await cart.removeLines(inputs.lineIds);
+        break;
+      case CartForm.ACTIONS.DiscountCodesUpdate: {
+        const formDiscountCode = inputs.discountCode;
 
-      // User inputted discount code
-      const discountCodes = (
-        formDiscountCode ? [formDiscountCode] : []
-      ) as string[];
+        // User inputted discount code
+        const discountCodes = (
+          formDiscountCode ? [formDiscountCode] : []
+        ) as string[];
 
-      // Combine discount codes already applied on cart
-      discountCodes.push(...inputs.discountCodes);
+        // Combine discount codes already applied on cart
+        discountCodes.push(...inputs.discountCodes);
 
-      result = await cart.updateDiscountCodes(discountCodes);
-      break;
+        result = await cart.updateDiscountCodes(discountCodes);
+        break;
+      }
+      case CartForm.ACTIONS.GiftCardCodesAdd: {
+        const formGiftCardCode = inputs.giftCardCode;
+
+        const giftCardCodes = (
+          formGiftCardCode ? [formGiftCardCode] : []
+        ) as string[];
+
+        result = await cart.addGiftCardCodes(giftCardCodes);
+        break;
+      }
+      case CartForm.ACTIONS.GiftCardCodesRemove: {
+        const appliedGiftCardIds = inputs.giftCardCodes as string[];
+        result = await cart.removeGiftCardCodes(appliedGiftCardIds);
+        break;
+      }
+      case CartForm.ACTIONS.BuyerIdentityUpdate: {
+        result = await cart.updateBuyerIdentity({
+          ...inputs.buyerIdentity,
+        });
+        break;
+      }
+      default:
+        throw new Error(`${action} cart action is not defined`);
     }
-    case CartForm.ACTIONS.GiftCardCodesAdd: {
-      const formGiftCardCode = inputs.giftCardCode;
-
-      const giftCardCodes = (
-        formGiftCardCode ? [formGiftCardCode] : []
-      ) as string[];
-
-      result = await cart.addGiftCardCodes(giftCardCodes);
-      break;
+  } catch (error) {
+    // The storefront client rejects with a 502 when the API answers with GraphQL
+    // errors and no data (app/lib/storefront-errors.ts). The cart UI shows
+    // `errors` inline (AddToCartButton, CartSummary), so report the failure as
+    // data instead of replacing the page with an error view. The API's own
+    // messages were logged by the guard and are not sent to the browser.
+    if (
+      error instanceof Response &&
+      error.status === STOREFRONT_API_ERROR_STATUS
+    ) {
+      return data(
+        {
+          cart: null,
+          errors: [{message: CART_UNAVAILABLE_MESSAGE}],
+          userErrors: [],
+          warnings: [],
+          analytics: {cartId: undefined},
+        },
+        {status: error.status},
+      );
     }
-    case CartForm.ACTIONS.GiftCardCodesRemove: {
-      const appliedGiftCardIds = inputs.giftCardCodes as string[];
-      result = await cart.removeGiftCardCodes(appliedGiftCardIds);
-      break;
-    }
-    case CartForm.ACTIONS.BuyerIdentityUpdate: {
-      result = await cart.updateBuyerIdentity({
-        ...inputs.buyerIdentity,
-      });
-      break;
-    }
-    default:
-      throw new Error(`${action} cart action is not defined`);
+    throw error;
   }
 
   const cartId = result?.cart?.id;
   const headers = cartId ? cart.setCartId(result.cart.id) : new Headers();
   const {cart: cartResult, errors, userErrors, warnings} = result;
 
-  const redirectTo = formData.get('redirectTo') ?? null;
-  if (typeof redirectTo === 'string') {
+  // `redirectTo` is a form field, so it is attacker-controlled: only a
+  // same-origin path is followed, anything else lands on `/`. `/.//host`
+  // parses to the same-origin pathname `//host`, which a browser would read as
+  // a protocol-relative URL, so that shape is rejected as well.
+  const redirectTo = formData.get('redirectTo');
+  if (typeof redirectTo === 'string' && redirectTo) {
+    const requested = safeRedirectPath(redirectTo, new URL(request.url).origin);
     status = 303;
-    headers.set('Location', redirectTo);
+    headers.set('Location', requested.startsWith('//') ? '/' : requested);
   }
 
   return data(

@@ -1,5 +1,6 @@
 import type {Route} from './+types/[sitemap.xml]';
 import {getSitemapIndex} from '@shopify/hydrogen';
+import {SITEMAP_TYPES} from '~/lib/seo';
 
 export async function loader({
   request,
@@ -8,6 +9,9 @@ export async function loader({
   const response = await getSitemapIndex({
     storefront,
     request,
+    // Hydrogen's default also lists metaobject sitemaps. The storefront has no
+    // metaobject pages, so advertising them would list URLs that 404.
+    types: [...SITEMAP_TYPES],
   });
 
   response.headers.set('Cache-Control', `max-age=${60 * 60 * 24}`);

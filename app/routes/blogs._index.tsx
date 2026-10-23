@@ -1,21 +1,34 @@
-import {Link, useLoaderData} from 'react-router';
+import {
+  isRouteErrorResponse,
+  Link,
+  useLoaderData,
+  useRouteError,
+} from 'react-router';
 import type {Route} from './+types/blogs._index';
 import {Pagination, getPaginationVariables} from '@shopify/hydrogen';
 import type {BlogsQuery} from 'storefrontapi.generated';
 import {Button} from '~/components/ui/Button';
 import {ArrowRightIcon} from '~/components/ui/Icons';
+import {canonicalLink} from '~/lib/seo';
+import {ErrorView} from '~/components/ErrorView';
 
 type BlogNode = BlogsQuery['blogs']['nodes'][0];
 
-export const meta: Route.MetaFunction = () => {
+const TITLE = 'Journal | Mellow';
+const DESCRIPTION =
+  'Sleep science, product care and stories from the Mellow team.';
+
+export const meta: Route.MetaFunction = ({data}) => {
+  // No data means the loader failed: keep the error page out of the index.
+  if (!data) return [{title: TITLE}, {name: 'robots', content: 'noindex'}];
+
   return [
+    {title: TITLE},
+    {name: 'description', content: DESCRIPTION},
+    {property: 'og:title', content: TITLE},
+    {property: 'og:description', content: DESCRIPTION},
     {property: 'og:type', content: 'website'},
-    {tagName: 'link', rel: 'canonical', href: '/blogs'},
-    {title: 'Journal | Mellow'},
-    {
-      name: 'description',
-      content: 'Sleep science, product care and stories from the Mellow team.',
-    },
+    canonicalLink(data.origin, '/blogs'),
   ];
 };
 
@@ -47,7 +60,7 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
     // Add other queries here, so that they are loaded in parallel
   ]);
 
-  return {blogs};
+  return {blogs, origin: new URL(request.url).origin};
 }
 
 /**
@@ -174,3 +187,18 @@ const BLOGS_QUERY = `#graphql
     }
   }
 ` as const;
+
+/**
+ * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
+ * while the route stays in the rendered tree (not-found title, `noindex`).
+ */
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  const message = isRouteErrorResponse(error)
+    ? String(error.data ?? '')
+    : error instanceof Error
+      ? error.message
+      : undefined;
+  return <ErrorView status={status} message={message} />;
+}

@@ -1,17 +1,34 @@
-import {Link, useLoaderData} from 'react-router';
+import {
+  isRouteErrorResponse,
+  Link,
+  useLoaderData,
+  useRouteError,
+} from 'react-router';
 import type {Route} from './+types/blogs.$blogHandle._index';
 import {Image, Pagination, getPaginationVariables} from '@shopify/hydrogen';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {formatDate} from '~/lib/dates';
+import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
+import {ErrorView} from '~/components/ErrorView';
 import {Button} from '~/components/ui/Button';
 import {ArrowRightIcon} from '~/components/ui/Icons';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  const title = data?.blog?.seo?.title || data?.blog?.title;
-  const description = data?.blog?.seo?.description;
+  if (!data?.blog) return notFoundMeta('Blog');
+
+  const {blog, origin} = data;
+  const title = `${blog.seo?.title || blog.title} | ${SITE_NAME}`;
+  const description = blog.seo?.description;
   return [
-    {title: title ? `${title} | Mellow` : 'Journal | Mellow'},
+    {title},
     ...(description ? [{name: 'description', content: description}] : []),
+    {property: 'og:title', content: title},
+    ...(description
+      ? [{property: 'og:description', content: description}]
+      : []),
+    {property: 'og:type', content: 'website'},
+    canonicalLink(origin, `/blogs/${blog.handle}`),
   ];
 };
 
@@ -54,7 +71,7 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
 
   redirectIfHandleIsLocalized(request, {handle: params.blogHandle, data: blog});
 
-  return {blog};
+  return {blog, origin: new URL(request.url).origin};
 }
 
 /**
@@ -145,26 +162,12 @@ export default function Blog() {
   );
 }
 
-const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
+/** "September 12, 2026", always in UTC so server and browser agree. */
+const PUBLISHED_FORMAT: Intl.DateTimeFormatOptions = {
   year: 'numeric',
   month: 'long',
   day: 'numeric',
-});
-
-/** Plain-text excerpt derived from the article HTML. */
-function excerptFromHtml(html: string, maxLength = 160): string {
-  const text = html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&rsquo;/g, '’')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (text.length <= maxLength) return text;
-  const cut = text.slice(0, maxLength);
-  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 80)).trim()}…`;
-}
+};
 
 function ArticleItem({
   article,
@@ -173,8 +176,10 @@ function ArticleItem({
   article: ArticleItemFragment;
   loading?: HTMLImageElement['loading'];
 }) {
-  const publishedAt = DATE_FORMAT.format(new Date(article.publishedAt!));
-  const excerpt = excerptFromHtml(article.contentHtml ?? '');
+  const publishedAt = formatDate(article.publishedAt, PUBLISHED_FORMAT);
+  // The merchant's excerpt when there is one, else the start of the article.
+  // Both come from the API as single-line plain text, already truncated.
+  const excerpt = article.excerpt || article.content;
 
   return (
     <li className="article-card">
@@ -196,8 +201,11 @@ function ArticleItem({
         </div>
         <div className="article-card__body">
           <p className="article-card__meta">
-            <time dateTime={article.publishedAt}>{publishedAt}</time>
-            {article.author?.name ? <> &middot; {article.author.name}</> : null}
+            {publishedAt ? (
+              <time dateTime={article.publishedAt}>{publishedAt}</time>
+            ) : null}
+            {publishedAt && article.author?.name ? <> &middot; </> : null}
+            {article.author?.name}
           </p>
           <h2 className="article-card__title">{article.title}</h2>
           {excerpt ? <p className="article-card__excerpt">{excerpt}</p> : null}
@@ -239,11 +247,9 @@ const BLOGS_QUERY = `#graphql
         pageInfo {
           hasPreviousPage
           hasNextPage
-          hasNextPage
           endCursor
           startCursor
         }
-
       }
     }
   }
@@ -251,7 +257,8 @@ const BLOGS_QUERY = `#graphql
     author: authorV2 {
       name
     }
-    contentHtml
+    content(truncateAt: 160)
+    excerpt(truncateAt: 160)
     handle
     id
     image {
@@ -268,3 +275,18 @@ const BLOGS_QUERY = `#graphql
     }
   }
 ` as const;
+
+/**
+ * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
+ * while the route stays in the rendered tree (not-found title, `noindex`).
+ */
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  const message = isRouteErrorResponse(error)
+    ? String(error.data ?? '')
+    : error instanceof Error
+      ? error.message
+      : undefined;
+  return <ErrorView status={status} message={message} />;
+}

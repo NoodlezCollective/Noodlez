@@ -6,6 +6,14 @@ import {
 } from 'react-router';
 
 /**
+ * True when the request reached the worker over https. Cookies get the
+ * `Secure` attribute only then, so local http development keeps working.
+ */
+export function isSecureRequest(request: Request): boolean {
+  return new URL(request.url).protocol === 'https:';
+}
+
+/**
  * This is a custom session implementation for your Hydrogen shop.
  * Feel free to customize it to your needs, add helper methods, or
  * swap out the cookie-based implementation with something else!
@@ -28,6 +36,7 @@ export class AppSession implements HydrogenSession {
         httpOnly: true,
         path: '/',
         sameSite: 'lax',
+        secure: isSecureRequest(request),
         secrets,
       },
     });

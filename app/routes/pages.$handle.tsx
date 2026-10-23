@@ -1,13 +1,24 @@
-import {useLoaderData} from 'react-router';
+import {isRouteErrorResponse, useLoaderData, useRouteError} from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
+import {ErrorView} from '~/components/ErrorView';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  const title = data?.page?.seo?.title || data?.page?.title;
-  const description = data?.page?.seo?.description;
+  if (!data?.page) return notFoundMeta('Page');
+
+  const {page, origin} = data;
+  const title = `${page.seo?.title || page.title} | ${SITE_NAME}`;
+  const description = page.seo?.description || page.bodySummary;
   return [
-    {title: title ? `${title} | Mellow` : 'Mellow'},
+    {title},
     ...(description ? [{name: 'description', content: description}] : []),
+    {property: 'og:title', content: title},
+    ...(description
+      ? [{property: 'og:description', content: description}]
+      : []),
+    {property: 'og:type', content: 'website'},
+    canonicalLink(origin, `/pages/${page.handle}`),
   ];
 };
 
@@ -47,6 +58,7 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
 
   return {
     page,
+    origin: new URL(request.url).origin,
   };
 }
 
@@ -85,6 +97,7 @@ const PAGE_QUERY = `#graphql
       id
       title
       body
+      bodySummary
       seo {
         description
         title
@@ -92,3 +105,18 @@ const PAGE_QUERY = `#graphql
     }
   }
 ` as const;
+
+/**
+ * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
+ * while the route stays in the rendered tree (not-found title, `noindex`).
+ */
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  const message = isRouteErrorResponse(error)
+    ? String(error.data ?? '')
+    : error instanceof Error
+      ? error.message
+      : undefined;
+  return <ErrorView status={status} message={message} />;
+}

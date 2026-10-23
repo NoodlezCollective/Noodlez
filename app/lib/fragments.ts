@@ -196,7 +196,7 @@ export const PRODUCT_CARD_FRAGMENT = `#graphql
     title
     vendor
     availableForSale
-    description
+    description(truncateAt: 200)
     featuredImage {
       id
       url

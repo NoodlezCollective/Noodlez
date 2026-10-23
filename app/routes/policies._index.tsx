@@ -1,7 +1,14 @@
-import {useLoaderData, Link} from 'react-router';
+import {
+  isRouteErrorResponse,
+  Link,
+  useLoaderData,
+  useRouteError,
+} from 'react-router';
 import type {Route} from './+types/policies._index';
 import type {PoliciesQuery, PolicyItemFragment} from 'storefrontapi.generated';
 import {ArrowRightIcon} from '~/components/ui/Icons';
+import {canonicalLink, notFoundMeta} from '~/lib/seo';
+import {ErrorView} from '~/components/ErrorView';
 
 /** Short blurbs for the standard Shopify policies, keyed by handle. */
 const POLICY_DESCRIPTIONS: Record<string, string> = {
@@ -13,20 +20,23 @@ const POLICY_DESCRIPTIONS: Record<string, string> = {
   'subscription-policy': 'How subscriptions renew, pause and cancel.',
 };
 
-export const meta: Route.MetaFunction = () => {
+export const meta: Route.MetaFunction = ({data}) => {
+  if (!data) return notFoundMeta('Policies');
+
+  const title = 'Policies | Mellow';
+  const description =
+    'Shipping, returns, privacy and terms of service for the Mellow store.';
   return [
+    {title},
+    {name: 'description', content: description},
+    {property: 'og:title', content: title},
+    {property: 'og:description', content: description},
     {property: 'og:type', content: 'website'},
-    {tagName: 'link', rel: 'canonical', href: '/policies'},
-    {title: 'Policies | Mellow'},
-    {
-      name: 'description',
-      content:
-        'Shipping, returns, privacy and terms of service for the Mellow store.',
-    },
+    canonicalLink(data.origin, '/policies'),
   ];
 };
 
-export async function loader({context}: Route.LoaderArgs) {
+export async function loader({context, request}: Route.LoaderArgs) {
   const data: PoliciesQuery = await context.storefront.query(POLICIES_QUERY);
 
   const shopPolicies = data.shop;
@@ -42,7 +52,7 @@ export async function loader({context}: Route.LoaderArgs) {
     throw new Response('No policies found', {status: 404});
   }
 
-  return {policies};
+  return {policies, origin: new URL(request.url).origin};
 }
 
 export default function Policies() {
@@ -60,7 +70,7 @@ export default function Policies() {
       </header>
       <ul className="policy-list">
         {policies.map((policy) => (
-          <li key={policy.id}>
+          <li key={policy.handle}>
             <Link
               className="policy-card"
               prefetch="intent"
@@ -111,3 +121,18 @@ const POLICIES_QUERY = `#graphql
     }
   }
 ` as const;
+
+/**
+ * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
+ * while the route stays in the rendered tree (not-found title, `noindex`).
+ */
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  const message = isRouteErrorResponse(error)
+    ? String(error.data ?? '')
+    : error instanceof Error
+      ? error.message
+      : undefined;
+  return <ErrorView status={status} message={message} />;
+}

@@ -40,7 +40,7 @@ export async function action({request, context}: Route.ActionArgs) {
     const customer: CustomerUpdateInput = {};
     const validInputKeys = ['firstName', 'lastName'] as const;
     for (const [key, value] of form.entries()) {
-      if (!validInputKeys.includes(key as any)) {
+      if (!(validInputKeys as readonly string[]).includes(key)) {
         continue;
       }
       if (typeof value === 'string' && value.length) {
@@ -71,9 +71,19 @@ export async function action({request, context}: Route.ActionArgs) {
       error: null,
       customer: data?.customerUpdate?.customer,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    // `customerAccount.mutate` throws a redirect `Response` when the session
+    // has expired; it must reach React Router instead of becoming a 400.
+    if (error instanceof Response) throw error;
+
     return data(
-      {error: error.message, customer: null},
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Customer profile update failed.',
+        customer: null,
+      },
       {
         status: 400,
       },

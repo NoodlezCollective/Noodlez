@@ -4,12 +4,14 @@ import {UserIcon} from '~/components/ui/Icons';
 /**
  * True when the Customer Account API has been configured for this storefront.
  * Both variables are provided by `npx shopify hydrogen env pull` once the
- * storefront is linked to a Shopify store.
+ * storefront is linked to a Shopify store, and Hydrogen's customer account
+ * client needs both: with only one of them a sign-in attempt would fail with a
+ * raw 500, so a partial configuration counts as not configured.
  */
 export function isCustomerAccountConfigured(
   env: Pick<Env, 'SHOP_ID' | 'PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID'>,
 ): boolean {
-  return Boolean(env.SHOP_ID || env.PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID);
+  return Boolean(env.SHOP_ID && env.PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID);
 }
 
 /**

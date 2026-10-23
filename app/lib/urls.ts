@@ -19,7 +19,10 @@ export function safeRedirectPath(
   try {
     const parsed = new URL(value, origin);
     if (parsed.origin !== origin) return fallback;
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    const path = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    // Dot segments can leave a same-origin pathname that starts with `//`
+    // (`/.//host` → `//host`), which a browser reads as protocol-relative.
+    return path.startsWith('//') ? fallback : path;
   } catch {
     return fallback;
   }

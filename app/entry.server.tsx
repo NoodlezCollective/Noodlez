@@ -38,6 +38,13 @@ export default async function handleRequest(
       'https://www.youtube-nocookie.com',
       'https://player.vimeo.com',
     ],
+    // No plugins (Flash, PDF embeds, <object>): nothing here needs them.
+    objectSrc: ["'none'"],
+    // Every form posts to this origin (cart, newsletter, account). The sign-in
+    // flow is a redirect, not a form. Sign-out is a same-origin POST that
+    // redirects to Shopify's customer account domain, which Chromium also
+    // checks against form-action when the form is submitted without JavaScript.
+    formAction: ["'self'", 'https://shopify.com'],
   });
 
   const body = await renderToReadableStream(
@@ -64,6 +71,8 @@ export default async function handleRequest(
 
   responseHeaders.set('Content-Type', 'text/html');
   responseHeaders.set('Content-Security-Policy', header);
+  responseHeaders.set('X-Content-Type-Options', 'nosniff');
+  responseHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
   return new Response(body, {
     headers: responseHeaders,

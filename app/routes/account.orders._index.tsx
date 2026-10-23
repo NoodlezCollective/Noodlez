@@ -247,7 +247,9 @@ function OrderSearchForm({
 function OrderItem({order}: {order: OrderItemFragment}) {
   const fulfillmentStatus =
     order.fulfillmentStatus ?? flattenConnection(order.fulfillments)[0]?.status;
-  const href = `/account/orders/${btoa(order.id)}`;
+  // Base64 can contain `/` and `+` (and `=`), none of which survive in a path
+  // segment unescaped: a `/` would split the `:id` param.
+  const href = `/account/orders/${encodeURIComponent(btoa(order.id))}`;
 
   return (
     <li className="order-card">

@@ -1,6 +1,7 @@
-import {createHydrogenContext} from '@shopify/hydrogen';
-import {AppSession} from '~/lib/session';
+import {cartSetIdDefault, createHydrogenContext} from '@shopify/hydrogen';
+import {AppSession, isSecureRequest} from '~/lib/session';
 import {CART_QUERY_FRAGMENT} from '~/lib/fragments';
+import {guardStorefrontErrors} from '~/lib/storefront-errors';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 
 // Define the additional context object
@@ -56,6 +57,14 @@ export async function createHydrogenRouterContext(
       i18n: {language: 'EN', country: 'US'},
       cart: {
         queryFragment: CART_QUERY_FRAGMENT,
+        // The cart id cookie is only ever read on the server (`cartGetIdDefault`
+        // parses the request header); no client code touches it. `Secure` is
+        // added over https so local http development keeps working.
+        setId: cartSetIdDefault({
+          httponly: true,
+          samesite: 'Lax',
+          secure: isSecureRequest(request),
+        }),
       },
     },
     additionalContext,
@@ -70,6 +79,14 @@ export async function createHydrogenRouterContext(
     const {installMockStorefront} = await import('~/lib/mock/install.server');
     installMockStorefront(hydrogenContext.storefront, request);
   }
+
+  /**
+   * Reject (502) when the Storefront API answers with GraphQL errors and no
+   * data, instead of handing loaders an object full of `undefined`s. Applied
+   * after the mock so development behaves like production. The cart handler
+   * shares this storefront object, so cart queries and mutations are covered.
+   */
+  guardStorefrontErrors(hydrogenContext.storefront);
 
   return hydrogenContext;
 }

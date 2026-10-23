@@ -50,13 +50,24 @@ Crawl-delay: 1
 
 /**
  * This function generates disallow rules that generally follow what Shopify's
- * Online Store has as defaults for their robots.txt
+ * Online Store has as defaults for their robots.txt.
+ *
+ * The listing parameters are the ones this app uses (see
+ * app/lib/collectionFilters.ts): `sort_key` and `reverse` for sorting,
+ * `filter.<key>` for facets and `cursor` for "Load more" pagination. Every
+ * such URL canonicalises to the plain listing, so crawlers skip them.
  */
 function generalDisallowRules({sitemapUrl}: {sitemapUrl?: string}) {
   return `Disallow: /cart
 Disallow: /account
-Disallow: /collections/*sort_by*
-Disallow: /*/collections/*sort_by*
+Disallow: /collections/*sort_key*
+Disallow: /*/collections/*sort_key*
+Disallow: /collections/*reverse=*
+Disallow: /*/collections/*reverse=*
+Disallow: /collections/*filter.*
+Disallow: /*/collections/*filter.*
+Disallow: /collections/*cursor=*
+Disallow: /*/collections/*cursor=*
 Disallow: /collections/*+*
 Disallow: /collections/*%2B*
 Disallow: /collections/*%2b*
@@ -70,6 +81,8 @@ Disallow: /blogs/*%2b*
 Disallow: /*/blogs/*+*
 Disallow: /*/blogs/*%2B*
 Disallow: /*/blogs/*%2b*
+Disallow: /blogs?*cursor=*
+Disallow: /blogs/*cursor=*
 Disallow: /policies/
 Disallow: /search
 Allow: /search/

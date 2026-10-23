@@ -1,0 +1,148 @@
+import {describe, expect, it} from 'vitest';
+import {loader, meta} from '../../routes/policies.$handle';
+import {
+  ORIGIN,
+  callRoute,
+  createFakeStorefront,
+  expectValidStorefrontDocument,
+  thrownResponse,
+} from './route-test-utils';
+
+const POLICIES = [
+  ['privacy-policy', 'privacyPolicy'],
+  ['shipping-policy', 'shippingPolicy'],
+  ['terms-of-service', 'termsOfService'],
+  ['refund-policy', 'refundPolicy'],
+  ['subscription-policy', 'subscriptionPolicy'],
+] as const;
+
+const FLAGS = POLICIES.map(([, field]) => field);
+
+function policyLoader(handle: string | undefined, data: unknown) {
+  const storefront = createFakeStorefront(data);
+  const promise = callRoute(loader, {
+    request: new Request(`${ORIGIN}/policies/${handle}`),
+    context: {storefront},
+    params: {handle},
+  });
+  return {promise, storefront};
+}
+
+describe('policies/:handle loader', () => {
+  it.each(POLICIES)('serves %s from shop.%s', async (handle, field) => {
+    // Arrange
+    const policy = {
+      id: 'gid://shopify/ShopPolicy/1',
+      handle,
+      title: 'A policy',
+      body: '<p>Text</p>',
+      url: ORIGIN,
+    };
+    const {promise, storefront} = policyLoader(handle, {
+      shop: {[field]: policy},
+    });
+
+    // Act
+    const result = await promise;
+
+    // Assert
+    expect(result).toEqual({policy, origin: ORIGIN});
+    expect(storefront.query).toHaveBeenCalledTimes(1);
+    const [document, options] = storefront.query.mock.calls[0] as [
+      string,
+      {variables: Record<string, unknown>},
+    ];
+    expect(options.variables).toEqual({
+      ...Object.fromEntries(FLAGS.map((flag) => [flag, flag === field])),
+      language: 'EN',
+    });
+    expectValidStorefrontDocument(document);
+  });
+
+  it('serves the subscription policy, whose id may be null for a default policy', async () => {
+    const policy = {
+      id: null,
+      handle: 'subscription-policy',
+      title: 'Subscription policy',
+      body: '<p>Default</p>',
+      url: ORIGIN,
+    };
+    const {promise} = policyLoader('subscription-policy', {
+      shop: {subscriptionPolicy: policy},
+    });
+    expect(await promise).toEqual({policy, origin: ORIGIN});
+  });
+
+  it.each([
+    'constructor',
+    '__proto__',
+    'prototype',
+    'toString',
+    'valueOf',
+    'hasOwnProperty',
+    'privacyPolicy',
+    'PRIVACY-POLICY',
+    'privacy-policy/',
+    ' privacy-policy',
+    'nope',
+    '',
+  ])('answers 404 for %j without calling the API', async (handle) => {
+    const {promise, storefront} = policyLoader(handle, {shop: {}});
+
+    const response = await thrownResponse(promise);
+
+    expect(response.status).toBe(404);
+    expect(storefront.query).not.toHaveBeenCalled();
+  });
+
+  it('answers 404 when the param is missing', async () => {
+    const {promise, storefront} = policyLoader(undefined, {shop: {}});
+    expect((await thrownResponse(promise)).status).toBe(404);
+    expect(storefront.query).not.toHaveBeenCalled();
+  });
+
+  it('answers 404 when the store has no such policy', async () => {
+    const {promise} = policyLoader('privacy-policy', {
+      shop: {privacyPolicy: null},
+    });
+    expect((await thrownResponse(promise)).status).toBe(404);
+  });
+
+  it('never returns Object members, even if the API response had them', async () => {
+    // A live Storefront response is a plain object: `data.shop['constructor']`
+    // is `Object`. The allowlist keeps the handle from ever being used as a key.
+    const {promise} = policyLoader('constructor', {shop: {}});
+    expect((await thrownResponse(promise)).status).toBe(404);
+  });
+});
+
+describe('policies/:handle meta', () => {
+  const policy = {handle: 'refund-policy', title: 'Refund policy'};
+
+  it('has a title, description, Open Graph tags and an absolute canonical', () => {
+    const tags = callRoute(meta, {data: {policy, origin: ORIGIN}}) as unknown[];
+
+    expect(tags).toEqual([
+      {title: 'Refund policy | Mellow'},
+      {name: 'description', content: 'Refund policy for the Mellow store.'},
+      {property: 'og:title', content: 'Refund policy | Mellow'},
+      {
+        property: 'og:description',
+        content: 'Refund policy for the Mellow store.',
+      },
+      {property: 'og:type', content: 'website'},
+      {
+        tagName: 'link',
+        rel: 'canonical',
+        href: `${ORIGIN}/policies/refund-policy`,
+      },
+    ]);
+  });
+
+  it('is a noindex "not found" page when the loader threw', () => {
+    expect(callRoute(meta, {data: undefined})).toEqual([
+      {title: 'Policy not found | Mellow'},
+      {name: 'robots', content: 'noindex'},
+    ]);
+  });
+});
