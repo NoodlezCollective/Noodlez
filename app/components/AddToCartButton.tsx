@@ -2,15 +2,7 @@ import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {type FetcherWithComponents} from 'react-router';
 import {CartForm, type OptimisticCartLineInput} from '@shopify/hydrogen';
 import {Button} from '~/components/ui/Button';
-
-type CartActionError = {message?: string | null} | null | undefined;
-/** The parts of the /cart action result this button cares about. */
-type CartActionData =
-  | {
-      errors?: CartActionError[] | null;
-      userErrors?: CartActionError[] | null;
-    }
-  | undefined;
+import type {CartActionData} from '~/routes/cart';
 
 const FALLBACK_ERROR =
   'We couldn’t add this item to your cart. Please try again.';

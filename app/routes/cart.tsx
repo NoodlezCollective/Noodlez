@@ -173,6 +173,13 @@ export async function action({request, context}: Route.ActionArgs) {
   );
 }
 
+/**
+ * What the cart UI receives from the action through a fetcher (CartSummary,
+ * AddToCartButton). Derived from the action itself, so a change to its result
+ * is a type error in the components that read it.
+ */
+export type CartActionData = Route.ComponentProps['actionData'];
+
 export async function loader({context}: Route.LoaderArgs) {
   const {cart} = context;
   return await cart.get();

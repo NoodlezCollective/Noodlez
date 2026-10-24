@@ -8,17 +8,11 @@ import {useAside} from '~/components/Aside';
 import {Button} from '~/components/ui/Button';
 import {ChevronDownIcon, CloseIcon, FeatureIcon} from '~/components/ui/Icons';
 import {useSiteSettings} from '~/lib/content/useSiteSettings';
+import type {CartActionData} from '~/routes/cart';
 
 type CartSummaryProps = {
   cart: OptimisticCart<CartApiQueryFragment | null>;
   layout: CartLayout;
-};
-
-/** Shape of the data returned by the /cart action (see app/routes/cart.tsx). */
-type CartActionData = {
-  errors?: Array<{message: string}> | null;
-  userErrors?: Array<{message: string}> | null;
-  warnings?: Array<{message: string}> | null;
 };
 
 /** User-facing messages (userErrors + GraphQL errors) from a cart action. */
