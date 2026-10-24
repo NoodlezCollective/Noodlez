@@ -1,16 +1,10 @@
-import {
-  isRouteErrorResponse,
-  Link,
-  useLoaderData,
-  useRouteError,
-} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs.$blogHandle._index';
 import {Image, Pagination, getPaginationVariables} from '@shopify/hydrogen';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {formatDate} from '~/lib/dates';
 import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
-import {ErrorView} from '~/components/ErrorView';
 import {Button} from '~/components/ui/Button';
 import {ArrowRightIcon} from '~/components/ui/Icons';
 
@@ -263,13 +257,4 @@ const BLOGS_QUERY = `#graphql
  * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
  * while the route stays in the rendered tree (not-found title, `noindex`).
  */
-export function ErrorBoundary() {
-  const error = useRouteError();
-  const status = isRouteErrorResponse(error) ? error.status : 500;
-  const message = isRouteErrorResponse(error)
-    ? String(error.data ?? '')
-    : error instanceof Error
-      ? error.message
-      : undefined;
-  return <ErrorView status={status} message={message} />;
-}
+export {RouteErrorBoundary as ErrorBoundary} from '~/components/ErrorView';

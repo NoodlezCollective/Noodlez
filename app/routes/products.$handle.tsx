@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {isRouteErrorResponse, useLoaderData, useRouteError} from 'react-router';
+import {useLoaderData} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
   getSelectedProductOptions,
@@ -27,7 +27,6 @@ import {TrustBadges} from '~/components/product/TrustBadges';
 import {isDiscounted} from '~/components/ui/Price';
 import {Stars} from '~/components/ui/Stars';
 import {useSiteSettings} from '~/lib/content/useSiteSettings';
-import {ErrorView} from '~/components/ErrorView';
 import {
   mapReviewMetaobjects,
   parseFeatures,
@@ -597,13 +596,4 @@ const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
  * Renders missing products (404) with the designed error view while keeping
  * this route's "Product not found" meta.
  */
-export function ErrorBoundary() {
-  const error = useRouteError();
-  const status = isRouteErrorResponse(error) ? error.status : 500;
-  const message = isRouteErrorResponse(error)
-    ? String(error.data ?? '')
-    : error instanceof Error
-      ? error.message
-      : undefined;
-  return <ErrorView status={status} message={message} />;
-}
+export {RouteErrorBoundary as ErrorBoundary} from '~/components/ErrorView';

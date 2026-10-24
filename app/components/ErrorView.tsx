@@ -1,7 +1,9 @@
+import {isRouteErrorResponse, useRouteError} from 'react-router';
 import {Button} from '~/components/ui/Button';
 
 /**
- * Designed error page used by the root ErrorBoundary and the catch-all route.
+ * Designed error page used by the root ErrorBoundary and the route-level
+ * boundaries (see RouteErrorBoundary).
  */
 export function ErrorView({
   status,
@@ -31,4 +33,22 @@ export function ErrorView({
       {!notFound && message && import.meta.env.DEV ? <pre>{message}</pre> : null}
     </section>
   );
+}
+
+/**
+ * ErrorBoundary shared by the routes that keep thrown responses (404, 502)
+ * inside the route, so that the route's own `meta` (not-found title,
+ * `noindex`) still applies. A route module opts in with:
+ *
+ *   export {RouteErrorBoundary as ErrorBoundary} from '~/components/ErrorView';
+ */
+export function RouteErrorBoundary() {
+  const error = useRouteError();
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  const message = isRouteErrorResponse(error)
+    ? String(error.data ?? '')
+    : error instanceof Error
+      ? error.message
+      : undefined;
+  return <ErrorView status={status} message={message} />;
 }

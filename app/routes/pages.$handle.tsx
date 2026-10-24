@@ -1,8 +1,7 @@
-import {isRouteErrorResponse, useLoaderData, useRouteError} from 'react-router';
+import {useLoaderData} from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
-import {ErrorView} from '~/components/ErrorView';
 
 export const meta: Route.MetaFunction = ({data}) => {
   if (!data?.page) return notFoundMeta('Page');
@@ -93,13 +92,4 @@ const PAGE_QUERY = `#graphql
  * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
  * while the route stays in the rendered tree (not-found title, `noindex`).
  */
-export function ErrorBoundary() {
-  const error = useRouteError();
-  const status = isRouteErrorResponse(error) ? error.status : 500;
-  const message = isRouteErrorResponse(error)
-    ? String(error.data ?? '')
-    : error instanceof Error
-      ? error.message
-      : undefined;
-  return <ErrorView status={status} message={message} />;
-}
+export {RouteErrorBoundary as ErrorBoundary} from '~/components/ErrorView';

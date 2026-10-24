@@ -1,14 +1,8 @@
-import {
-  isRouteErrorResponse,
-  Link,
-  useLoaderData,
-  useRouteError,
-} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/policies._index';
 import type {PoliciesQuery, PolicyItemFragment} from 'storefrontapi.generated';
 import {ArrowRightIcon} from '~/components/ui/Icons';
 import {canonicalLink, notFoundMeta} from '~/lib/seo';
-import {ErrorView} from '~/components/ErrorView';
 
 /** Short blurbs for the standard Shopify policies, keyed by handle. */
 const POLICY_DESCRIPTIONS: Record<string, string> = {
@@ -126,13 +120,4 @@ const POLICIES_QUERY = `#graphql
  * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
  * while the route stays in the rendered tree (not-found title, `noindex`).
  */
-export function ErrorBoundary() {
-  const error = useRouteError();
-  const status = isRouteErrorResponse(error) ? error.status : 500;
-  const message = isRouteErrorResponse(error)
-    ? String(error.data ?? '')
-    : error instanceof Error
-      ? error.message
-      : undefined;
-  return <ErrorView status={status} message={message} />;
-}
+export {RouteErrorBoundary as ErrorBoundary} from '~/components/ErrorView';

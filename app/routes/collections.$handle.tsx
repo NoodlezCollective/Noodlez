@@ -1,8 +1,7 @@
-import {isRouteErrorResponse, useLoaderData, useRouteError} from 'react-router';
+import {useLoaderData} from 'react-router';
 import type {Route} from './+types/collections.$handle';
 import {Analytics, getPaginationVariables} from '@shopify/hydrogen';
 import {CollectionHeader} from '~/components/collection/CollectionHeader';
-import {ErrorView} from '~/components/ErrorView';
 import {ProductListing} from '~/components/collection/ProductListing';
 import {
   COLLECTION_FILTER_FRAGMENT,
@@ -171,13 +170,4 @@ const COLLECTION_QUERY = `#graphql
 ` as const;
 
 /** Missing collections render the designed 404 view with this route's meta. */
-export function ErrorBoundary() {
-  const error = useRouteError();
-  const status = isRouteErrorResponse(error) ? error.status : 500;
-  const message = isRouteErrorResponse(error)
-    ? String(error.data ?? '')
-    : error instanceof Error
-      ? error.message
-      : undefined;
-  return <ErrorView status={status} message={message} />;
-}
+export {RouteErrorBoundary as ErrorBoundary} from '~/components/ErrorView';

@@ -1,13 +1,7 @@
-import {
-  isRouteErrorResponse,
-  Link,
-  useLoaderData,
-  useRouteError,
-} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/policies.$handle';
 import {Button} from '~/components/ui/Button';
 import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
-import {ErrorView} from '~/components/ErrorView';
 
 type PolicyField =
   | 'privacyPolicy'
@@ -151,13 +145,4 @@ const POLICY_CONTENT_QUERY = `#graphql
  * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
  * while the route stays in the rendered tree (not-found title, `noindex`).
  */
-export function ErrorBoundary() {
-  const error = useRouteError();
-  const status = isRouteErrorResponse(error) ? error.status : 500;
-  const message = isRouteErrorResponse(error)
-    ? String(error.data ?? '')
-    : error instanceof Error
-      ? error.message
-      : undefined;
-  return <ErrorView status={status} message={message} />;
-}
+export {RouteErrorBoundary as ErrorBoundary} from '~/components/ErrorView';

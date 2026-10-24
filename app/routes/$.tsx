@@ -1,6 +1,4 @@
-import {isRouteErrorResponse, useRouteError} from 'react-router';
 import type {Route} from './+types/$';
-import {ErrorView} from '~/components/ErrorView';
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -24,14 +22,4 @@ export default function CatchAllPage() {
  * root ErrorBoundary uses. Catching it here (instead of letting it bubble to
  * the root) lets this route's `meta` set the "Page not found" title.
  */
-export function ErrorBoundary() {
-  const error = useRouteError();
-  const status = isRouteErrorResponse(error) ? error.status : 500;
-  const message = isRouteErrorResponse(error)
-    ? String(error.data ?? '')
-    : error instanceof Error
-      ? error.message
-      : undefined;
-
-  return <ErrorView status={status} message={message} />;
-}
+export {RouteErrorBoundary as ErrorBoundary} from '~/components/ErrorView';
