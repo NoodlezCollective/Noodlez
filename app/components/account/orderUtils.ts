@@ -1,4 +1,5 @@
 import type {BadgeTone} from '~/components/ui/Badge';
+import {formatDate} from '~/lib/dates';
 
 const SUCCESS_STATUSES = new Set([
   'PAID',
@@ -39,15 +40,16 @@ export function isPendingStatus(status?: string | null): boolean {
   return statusTone(status) === 'primary';
 }
 
-const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
+const ORDER_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
   year: 'numeric',
   month: 'short',
   day: 'numeric',
-});
+};
 
-/** "Oct 12, 2026" */
+/**
+ * "Oct 12, 2026". Formatted in UTC so the server render and the browser
+ * agree (no hydration mismatch) and date-only values never show a day early.
+ */
 export function formatOrderDate(value?: string | null): string {
-  if (!value) return '';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '' : DATE_FORMAT.format(date);
+  return formatDate(value, ORDER_DATE_OPTIONS) ?? '';
 }

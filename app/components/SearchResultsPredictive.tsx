@@ -3,7 +3,9 @@ import {Image} from '@shopify/hydrogen';
 import React, {useRef, useEffect, useId} from 'react';
 import {
   getEmptyPredictiveSearchResult,
+  getPredictiveStatusMessage,
   urlWithTrackingParams,
+  type PredictiveSearchResponse,
   type PredictiveSearchReturn,
 } from '~/lib/search';
 import {Price} from '~/components/ui/Price';
@@ -16,7 +18,7 @@ type UsePredictiveSearchReturn = {
   total: number;
   inputRef: React.MutableRefObject<HTMLInputElement | null>;
   items: PredictiveSearchItems;
-  fetcher: Fetcher<PredictiveSearchReturn>;
+  fetcher: ReturnType<typeof useFetcher<PredictiveSearchResponse>>;
 };
 
 type SearchResultsPredictiveArgs = Pick<
@@ -64,21 +66,38 @@ export function SearchResultsPredictive({
   }
 
   /**
-   * Utility that resets the search input and closes the search aside
+   * Utility that resets the search input and closes the search aside. The
+   * fetcher is reset as well: otherwise the cleared input would show the
+   * previous search's results again the next time the drawer opens.
    */
   function closeSearch() {
     resetInput();
+    term.current = '';
+    fetcher.reset();
     aside.close();
   }
 
-  return children({
-    items,
-    closeSearch,
-    inputRef,
-    state: fetcher.state,
-    term,
-    total,
-  });
+  return (
+    <>
+      {/* Screen readers: "Searching…", then the count (or the failure). */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {getPredictiveStatusMessage({
+          state: fetcher.state,
+          term: term.current,
+          total,
+          error: fetcher.data?.error,
+        })}
+      </div>
+      {children({
+        items,
+        closeSearch,
+        inputRef,
+        state: fetcher.state,
+        term,
+        total,
+      })}
+    </>
+  );
 }
 
 SearchResultsPredictive.Articles = SearchResultsPredictiveArticles;
@@ -123,9 +142,9 @@ function ResultGroup({
   const id = useId();
   return (
     <section className="predictive-search-result" aria-labelledby={id}>
-      <h5 id={id} className="eyebrow predictive-search-result__heading">
+      <h4 id={id} className="eyebrow predictive-search-result__heading">
         {title}
-      </h5>
+      </h4>
       <ul className="predictive-search-result__list">{children}</ul>
     </section>
   );
@@ -316,8 +335,20 @@ function SearchResultsPredictiveEmpty({
 }: {
   term: React.MutableRefObject<string>;
 }) {
+  // Same fetcher as the form and the results (shared by key).
+  const fetcher = useFetcher<PredictiveSearchResponse>({key: 'search'});
+
   if (!term.current) {
     return null;
+  }
+
+  // A failed search is not "no results".
+  if (fetcher.data?.error) {
+    return (
+      <div className="predictive-search__empty">
+        <p className="predictive-search__status">{fetcher.data.error}</p>
+      </div>
+    );
   }
 
   return (
@@ -341,7 +372,7 @@ function SearchResultsPredictiveEmpty({
  * '''
  **/
 function usePredictiveSearch(): UsePredictiveSearchReturn {
-  const fetcher = useFetcher<PredictiveSearchReturn>({key: 'search'});
+  const fetcher = useFetcher<PredictiveSearchResponse>({key: 'search'});
   const term = useRef<string>('');
   const inputRef = useRef<HTMLInputElement | null>(null);
 

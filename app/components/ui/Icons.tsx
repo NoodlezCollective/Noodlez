@@ -298,11 +298,19 @@ export const FEATURE_ICONS = {
 
 export type FeatureIconKey = keyof typeof FEATURE_ICONS;
 
+/**
+ * Whether `value` is one of the keys of FEATURE_ICONS. Own keys only: names
+ * inherited from Object.prototype ("constructor", "toString", …) are not
+ * icons, however a merchant's content spells them.
+ */
+export function isFeatureIconKey(value: unknown): value is FeatureIconKey {
+  return typeof value === 'string' && Object.hasOwn(FEATURE_ICONS, value);
+}
+
 export function FeatureIcon({
   icon,
   ...props
 }: IconProps & {icon?: string | null}) {
-  const Component =
-    (icon && FEATURE_ICONS[icon as FeatureIconKey]) || SparkleIcon;
+  const Component = isFeatureIconKey(icon) ? FEATURE_ICONS[icon] : SparkleIcon;
   return <Component {...props} />;
 }

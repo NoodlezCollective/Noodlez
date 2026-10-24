@@ -11,6 +11,9 @@
     "lint": "eslint --no-error-on-unmatched-pattern .",
     "format": "prettier --write .",
     "typecheck": "react-router typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
     "codegen": "shopify hydrogen codegen && react-router typegen"
   },
   "prettier": "@shopify/prettier-config",

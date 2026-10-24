@@ -1,5 +1,6 @@
 import {useId, useState} from 'react';
 import type {ProductReview} from '~/lib/content/types';
+import {formatDate} from '~/lib/dates';
 import {Stars} from '~/components/ui/Stars';
 import {
   CheckIcon,
@@ -26,6 +27,9 @@ export function ReviewsCarousel({
 
   const current = Math.min(index, count - 1);
   const review = reviews[current];
+  // UTC on server and client alike, so hydration matches and a date-only
+  // value such as 2026-09-12 never shows as the 11th in the Americas.
+  const reviewDate = review.date ? formatDate(review.date) : null;
   const go = (delta: number) =>
     setIndex((value) => (value + delta + count) % count);
 
@@ -45,7 +49,9 @@ export function ReviewsCarousel({
           aria-roledescription="slide"
           aria-label={`Review ${current + 1} of ${count}`}
         >
-          <Stars rating={review.rating} size="md" />
+          {typeof review.rating === 'number' ? (
+            <Stars rating={review.rating} size="md" />
+          ) : null}
           {review.title ? (
             <h3 className="reviews__title">{review.title}</h3>
           ) : null}
@@ -60,9 +66,9 @@ export function ReviewsCarousel({
                 Verified buyer
               </span>
             ) : null}
-            {review.date ? (
+            {review.date && reviewDate ? (
               <time className="reviews__date" dateTime={review.date}>
-                {formatReviewDate(review.date)}
+                {reviewDate}
               </time>
             ) : null}
           </p>
@@ -104,14 +110,4 @@ export function ReviewsCarousel({
       ) : null}
     </section>
   );
-}
-
-function formatReviewDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(date);
 }

@@ -16,17 +16,26 @@ export function Testimonials({content}: {content: TestimonialsContent}) {
         <ul className="testimonials">
           {content.items.map((item) => (
             <li className="testimonial" key={item.id}>
-              <Stars rating={item.rating} size="sm" />
-              <blockquote className="testimonial__quote">“{item.quote}”</blockquote>
+              {typeof item.rating === 'number' ? (
+                <Stars rating={item.rating} size="sm" />
+              ) : null}
+              <blockquote className="testimonial__quote">
+                “{item.quote}”
+              </blockquote>
               <div className="testimonial__meta">
                 <span className="testimonial__author">{item.author}</span>
                 {item.productTitle ? (
                   item.productHandle ? (
-                    <Link className="testimonial__product" to={`/products/${item.productHandle}`}>
+                    <Link
+                      className="testimonial__product"
+                      to={`/products/${item.productHandle}`}
+                    >
                       {item.productTitle}
                     </Link>
                   ) : (
-                    <span className="testimonial__product">{item.productTitle}</span>
+                    <span className="testimonial__product">
+                      {item.productTitle}
+                    </span>
                   )
                 ) : null}
               </div>

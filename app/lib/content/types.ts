@@ -83,7 +83,8 @@ export type Testimonial = {
   id: string;
   quote: string;
   author: string;
-  rating: number;
+  /** Stars on a 0 to 5 scale; `null` when the merchant did not set one. */
+  rating: number | null;
   productTitle?: string | null;
   productHandle?: string | null;
 };
@@ -107,14 +108,16 @@ export type NewsletterContent = {
 
 export type TrustBadge = {icon: FeatureIconKey; label: string};
 
-export type ProductFeature = {icon: FeatureIconKey | string; text: string};
+export type ProductFeature = {icon: FeatureIconKey; text: string};
 
 export type ProductReview = {
   id: string;
-  rating: number;
+  /** Stars on a 0 to 5 scale; `null` when the review carries no valid rating. */
+  rating: number | null;
   title: string | null;
   body: string;
   author: string;
+  /** True only when the merchant explicitly marked the review as verified. */
   verified: boolean;
   date?: string | null;
 };

@@ -12,14 +12,13 @@ import type {
   MellowMetaobjectFragment,
   MellowReferenceFragment,
 } from 'storefrontapi.generated';
-import type {FeatureIconKey} from '~/components/ui/Icons';
-import {FEATURE_ICONS} from '~/components/ui/Icons';
+import {safeHref} from '~/lib/urls';
 import {
   DEFAULT_ABOUT_CONTENT,
   DEFAULT_HOME_CONTENT,
   DEFAULT_SITE_SETTINGS,
 } from './defaults';
-import {parseRating, parseStringList} from './metafields';
+import {parseRating, parseStringList, splitIconPrefix} from './metafields';
 import type {
   AboutContent,
   AboutValue,
@@ -360,6 +359,22 @@ export function fieldCollectionHandle(
   return ref?.__typename === 'Collection' ? ref.handle : null;
 }
 
+/**
+ * An optional link field: the merchant's URL when it is safe to put in an
+ * `href` (relative, http(s), mailto, tel), otherwise `null`. `javascript:` and
+ * `data:` values entered in the Shopify admin can never become links.
+ */
+export function fieldUrl(
+  record: MetaobjectRecord | null,
+  key: string,
+): string | null {
+  return safeHref(fieldText(record, key), '') || null;
+}
+
+/**
+ * A label + URL pair. A missing or unsafe URL falls back to `fallback.url`,
+ * which is trusted code, so the result is always safe to render as a link.
+ */
 export function fieldLink(
   record: MetaobjectRecord | null,
   labelKey: string,
@@ -368,16 +383,8 @@ export function fieldLink(
 ): LinkContent {
   return {
     label: fieldText(record, labelKey) ?? fallback.label,
-    url: fieldText(record, urlKey) ?? fallback.url,
+    url: safeHref(fieldText(record, urlKey), fallback.url),
   };
-}
-
-function toIconKey(
-  value: string | null | undefined,
-  fallback: FeatureIconKey,
-): FeatureIconKey {
-  if (value && value in FEATURE_ICONS) return value as FeatureIconKey;
-  return fallback;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -390,17 +397,12 @@ export function mapSiteSettings(
 ): SiteSettings {
   const record = settingsNode ? toRecord(settingsNode) : null;
   const announcements = fieldList(record, 'announcements');
-  const trustBadges: TrustBadge[] = fieldList(record, 'trust_badges').map(
+  const trustBadges: TrustBadge[] = fieldList(record, 'trust_badges').flatMap(
     (entry, index) => {
-      const [icon, ...rest] = entry.split('|');
-      const label = rest.join('|').trim();
-      return label
-        ? {icon: toIconKey(icon.trim(), 'shield'), label}
-        : {
-            icon: defaults.trustBadges[index % defaults.trustBadges.length]
-              .icon,
-            label: entry,
-          };
+      const {icon, text} = splitIconPrefix(entry);
+      if (!text) return [];
+      const rotated = defaults.trustBadges[index % defaults.trustBadges.length];
+      return [{icon: icon ?? rotated?.icon ?? 'shield', label: text}];
     },
   );
   return {
@@ -433,7 +435,7 @@ export function mapHomeContent(
           id: record.id,
           name,
           image: fieldImage(record, 'image'),
-          url: fieldText(record, 'url'),
+          url: fieldUrl(record, 'url'),
         },
       ];
     },
@@ -467,8 +469,9 @@ export function mapHomeContent(
         {
           id: record.id,
           quote,
-          author: fieldText(record, 'author') ?? 'Verified sleeper',
-          rating: parseRating({value: fieldText(record, 'rating')}) ?? 5,
+          author: fieldText(record, 'author') ?? 'Customer',
+          // No rating means no stars: never an invented 5.
+          rating: parseRating({value: fieldText(record, 'rating')}),
           productTitle:
             productRef?.__typename === 'Product' ? productRef.title : null,
           productHandle:
@@ -563,14 +566,17 @@ export function mapAboutContent(
 
   const values: AboutValue[] = fieldList(about, 'values').flatMap(
     (entry, index) => {
-      const [icon, title, ...body] = entry.split('|');
+      // "icon|title|body", where the icon is optional ("title|body").
+      const {icon, text} = splitIconPrefix(entry);
+      const separator = text.indexOf('|');
+      const title = (separator === -1 ? text : text.slice(0, separator)).trim();
       if (!title) return [];
       return [
         {
           id: `${about.id}-value-${index}`,
-          icon: toIconKey(icon?.trim(), 'sparkle'),
-          title: title.trim(),
-          body: body.join('|').trim(),
+          icon: icon ?? 'sparkle',
+          title,
+          body: separator === -1 ? '' : text.slice(separator + 1).trim(),
         },
       ];
     },

@@ -146,6 +146,8 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
       caption: null,
     },
   ],
+  // Ratings are explicit on purpose: a testimonial without one renders no
+  // stars, so these placeholders must carry the stars they should show.
   testimonials: {
     heading: 'Loved By 124,952+ Sleepers',
     subheading: 'Real reviews from people who stopped fighting their bedding.',

@@ -59,8 +59,24 @@ function isFilterKey(key: string): key is FilterKey {
   return (FILTER_KEYS as readonly string[]).includes(key);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0;
+}
+
+/**
+ * Only numbers and non-blank numeric strings are prices. `Number()` alone
+ * would also turn `true`, `[5]` or `"  "` into 1, 5 and 0.
+ */
 function toNumber(value: unknown): number | undefined {
-  if (value === null || value === undefined || value === '') return undefined;
+  if (typeof value === 'string') {
+    if (!value.trim()) return undefined;
+  } else if (typeof value !== 'number') {
+    return undefined;
+  }
   const num = Number(value);
   return Number.isFinite(num) && num >= 0 ? num : undefined;
 }
@@ -86,6 +102,8 @@ export function toPriceFilter(min: unknown, max: unknown): PriceFilter | null {
 /**
  * Validates a parsed URL value for a given filter key so that malformed URLs
  * never turn into invalid GraphQL variables (which would fail the whole page).
+ * Object filters are rebuilt from their known fields, so nothing else the URL
+ * carries is forwarded to the Storefront API.
  */
 function normalizeFilterValue(key: FilterKey, value: unknown): unknown {
   switch (key) {
@@ -94,21 +112,37 @@ function normalizeFilterValue(key: FilterKey, value: unknown): unknown {
     case 'productType':
     case 'productVendor':
     case 'tag':
-      return typeof value === 'string' && value.length ? value : undefined;
+      return isNonEmptyString(value) ? value : undefined;
     case 'price': {
-      if (!value || typeof value !== 'object') return undefined;
-      const {min, max} = value as Record<string, unknown>;
-      return toPriceFilter(min, max) ?? undefined;
+      if (!isRecord(value)) return undefined;
+      return toPriceFilter(value.min, value.max) ?? undefined;
     }
     case 'variantOption': {
-      if (!value || typeof value !== 'object') return undefined;
-      const {name, value: optionValue} = value as Record<string, unknown>;
+      if (!isRecord(value)) return undefined;
+      const {name, value: optionValue} = value;
       return typeof name === 'string' && typeof optionValue === 'string'
         ? {name, value: optionValue}
         : undefined;
     }
+    case 'category': {
+      // CategoryFilter { id: String! }
+      if (!isRecord(value)) return undefined;
+      return isNonEmptyString(value.id) ? {id: value.id} : undefined;
+    }
+    case 'productMetafield':
+    case 'taxonomyMetafield':
+    case 'variantMetafield': {
+      // MetafieldFilter / TaxonomyMetafieldFilter { namespace, key, value }
+      if (!isRecord(value)) return undefined;
+      const {namespace, key: metafieldKey, value: metafieldValue} = value;
+      return isNonEmptyString(namespace) &&
+        isNonEmptyString(metafieldKey) &&
+        isNonEmptyString(metafieldValue)
+        ? {namespace, key: metafieldKey, value: metafieldValue}
+        : undefined;
+    }
     default:
-      return value && typeof value === 'object' ? value : undefined;
+      return undefined;
   }
 }
 
@@ -352,12 +386,14 @@ export function applySortParams(
 /* Formatting                                                                  */
 /* -------------------------------------------------------------------------- */
 
+/** "$20" for whole amounts, "$19.50" otherwise (never "$19.5"). */
 export function formatPrice(amount: number, currencyCode = 'USD') {
+  const fractionDigits = Number.isInteger(amount) ? 0 : 2;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currencyCode,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   }).format(amount);
 }
 

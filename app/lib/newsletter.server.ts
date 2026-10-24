@@ -9,8 +9,65 @@ export type NewsletterResult = {
   message: string;
 };
 
-export function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+/** Longest address RFC 5321 allows. Anything longer is rejected unread. */
+const MAX_EMAIL_LENGTH = 254;
+/** Label recorded when the form did not send a usable `source`. */
+const DEFAULT_SOURCE = 'storefront';
+const MAX_SOURCE_LENGTH = 32;
+const SOURCE_PATTERN = /^[a-z0-9_-]+$/;
+/** The signup request must not hold a worker open for a slow webhook. */
+const WEBHOOK_TIMEOUT_MS = 5000;
+
+/**
+ * Sanity check for a signup address (the browser's `type="email"` input and
+ * the mail provider do the strict validation). Every step is a bounded string
+ * operation: no regular expression is ever run against unbounded user input,
+ * so hostile payloads cannot burn CPU through backtracking.
+ */
+export function isValidEmail(email: string): boolean {
+  if (typeof email !== 'string' || email.length > MAX_EMAIL_LENGTH) {
+    return false;
+  }
+  const value = email.trim();
+  const at = value.indexOf('@');
+  // Exactly one "@" with something in front of it.
+  if (at < 1 || at !== value.lastIndexOf('@')) return false;
+  if (/\s/.test(value)) return false;
+
+  const domain = value.slice(at + 1);
+  const lastDot = domain.lastIndexOf('.');
+  if (domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) {
+    return false;
+  }
+  // A dot with a label before it and a top-level domain of 2+ characters.
+  return lastDot > 0 && domain.length - lastDot - 1 >= 2;
+}
+
+/**
+ * The signup `source` ("footer", "homepage", …) is attacker-controlled form
+ * data that ends up in the webhook payload: only short lower-case slugs pass.
+ */
+export function normalizeNewsletterSource(source: string): string {
+  return typeof source === 'string' &&
+    source.length <= MAX_SOURCE_LENGTH &&
+    SOURCE_PATTERN.test(source)
+    ? source
+    : DEFAULT_SOURCE;
+}
+
+const HTTP_STATUS_BY_RESULT: Record<NewsletterStatus, number> = {
+  subscribed: 200,
+  mock: 200,
+  invalid: 400,
+  error: 502,
+  not_configured: 503,
+};
+
+/** HTTP status the `/newsletter` action answers with for a result. */
+export function getNewsletterHttpStatus({
+  status,
+}: Pick<NewsletterResult, 'status'>): number {
+  return HTTP_STATUS_BY_RESULT[status];
 }
 
 /**
@@ -43,10 +100,11 @@ export async function subscribeToNewsletter({
         headers: {'content-type': 'application/json'},
         body: JSON.stringify({
           email: email.trim(),
-          source,
+          source: normalizeNewsletterSource(source),
           storefront: env.PUBLIC_STORE_DOMAIN,
           timestamp: new Date().toISOString(),
         }),
+        signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
       });
       if (!response.ok) {
         throw new Error(`Newsletter webhook responded with ${response.status}`);

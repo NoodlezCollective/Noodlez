@@ -1,16 +1,21 @@
-import {useLoaderData} from 'react-router';
+import {useEffect, useRef} from 'react';
+import {data, useLoaderData, useNavigation} from 'react-router';
 import type {Route} from './+types/search';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
 import {Button} from '~/components/ui/Button';
 import {SearchIcon} from '~/components/ui/Icons';
-import {pluralize} from '~/lib/collectionFilters';
 import {PRODUCT_CARD_FRAGMENT} from '~/lib/fragments';
 import {
   type RegularSearchReturn,
   type PredictiveSearchReturn,
+  formatSearchTotal,
   getEmptyPredictiveSearchResult,
+  getEmptyRegularSearchResult,
+  hasMoreSearchResults,
+  parseSearchLimit,
+  searchUnavailable,
 } from '~/lib/search';
 import type {
   RegularSearchQuery,
@@ -33,48 +38,72 @@ export const meta: Route.MetaFunction = ({data}) => {
   ];
 };
 
+/** The trimmed `q` search parameter. */
+function readTerm(url: URL) {
+  return String(url.searchParams.get('q') || '').trim();
+}
+
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
-  const isPredictive = url.searchParams.has('predictive');
-  const searchPromise: Promise<PredictiveSearchReturn | RegularSearchReturn> =
-    isPredictive
-      ? predictiveSearch({request, context})
-      : regularSearch({request, context});
+  const type = url.searchParams.has('predictive') ? 'predictive' : 'regular';
 
-  return searchPromise.catch((error: Error) => {
-    console.error(error);
-    return {
-      type: 'regular',
-      term: '',
-      result: null,
-      error: error.message,
-    } as unknown as RegularSearchReturn;
-  });
+  try {
+    return type === 'predictive'
+      ? await predictiveSearch({request, context})
+      : await regularSearch({request, context});
+  } catch (error) {
+    // The real cause (often a raw GraphQL message) stays in the server log;
+    // the shopper gets a generic message and a 503.
+    console.error(`[search] ${type} search failed`, error);
+    return data(searchUnavailable(type, readTerm(url)), {status: 503});
+  }
 }
+
+const SEARCH_INPUT_ID = 'search-page-input';
 
 /**
  * Renders the /search route
  */
 export default function SearchPage() {
-  const {type, term, result, error} = useLoaderData<typeof loader>();
-  if (type === 'predictive') return null;
+  const response = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+  const refocusInput = useRef(false);
 
+  // The form is keyed by the term, so a new search replaces its input; hand
+  // keyboard focus back to the field once the results have loaded.
+  useEffect(() => {
+    if (navigation.state !== 'idle' || !refocusInput.current) return;
+    refocusInput.current = false;
+    document.getElementById(SEARCH_INPUT_ID)?.focus();
+  }, [navigation.state]);
+
+  if (response.type === 'predictive') return null;
+
+  const {term, result, error} = response;
   const total = result?.total ?? 0;
+  const hasResults = Boolean(term) && total > 0;
 
   return (
     <div className="search-page container">
       <header className="page-header page-header--center search-header">
         <p className="eyebrow page-header__eyebrow">Search</p>
         <h1>Search</h1>
-        <SearchForm className="search-form">
+        {/* Keyed by the term so the input follows the URL (chips, Back). */}
+        <SearchForm
+          key={term}
+          className="search-form"
+          onSubmit={() => {
+            refocusInput.current = true;
+          }}
+        >
           {({inputRef}) => (
             <div className="search-form__field">
-              <label className="sr-only" htmlFor="search-page-input">
+              <label className="sr-only" htmlFor={SEARCH_INPUT_ID}>
                 Search products, pages and articles
               </label>
               <SearchIcon className="search-form__icon" size={22} />
               <input
-                id="search-page-input"
+                id={SEARCH_INPUT_ID}
                 defaultValue={term}
                 name="q"
                 placeholder="Search pillows, comforters, bundles…"
@@ -94,13 +123,14 @@ export default function SearchPage() {
         </p>
       ) : null}
 
-      {term && total ? (
+      {hasResults ? (
         <p className="search-summary" aria-live="polite">
-          {pluralize(total, 'result')} for <q>{term}</q>
+          {formatSearchTotal(total, hasMoreSearchResults(result?.items))} for{' '}
+          <q>{term}</q>
         </p>
       ) : null}
 
-      {!term || !total ? (
+      {error ? null : !hasResults ? (
         <SearchResults.Empty term={term} />
       ) : (
         <SearchResults result={result} term={term}>
@@ -117,7 +147,11 @@ export default function SearchPage() {
           )}
         </SearchResults>
       )}
-      <Analytics.SearchView data={{searchTerm: term, searchResults: result}} />
+      {term && result ? (
+        <Analytics.SearchView
+          data={{searchTerm: term, searchResults: result}}
+        />
+      ) : null}
     </div>
   );
 }
@@ -240,7 +274,12 @@ async function regularSearch({
   const {storefront} = context;
   const url = new URL(request.url);
   const variables = getPaginationVariables(request, {pageBy: 12});
-  const term = String(url.searchParams.get('q') || '').trim();
+  const term = readTerm(url);
+
+  // Nothing to look for: no API call, and no empty search sent to analytics.
+  if (!term) {
+    return {type: 'regular', term, result: getEmptyRegularSearchResult()};
+  }
 
   // Search articles, pages, and products for the `q` term
   const {
@@ -251,8 +290,10 @@ async function regularSearch({
       variables: {...variables, term},
     });
 
-  if (!items) {
-    throw new Error('No search data returned from Shopify API');
+  if (errors?.length) {
+    throw new Error(
+      `Shopify API errors: ${errors.map(({message}: {message: string}) => message).join(', ')}`,
+    );
   }
 
   const total = Object.values(items).reduce(
@@ -260,11 +301,7 @@ async function regularSearch({
     0,
   );
 
-  const error = errors
-    ? errors.map(({message}: {message: string}) => message).join(', ')
-    : undefined;
-
-  return {type: 'regular', term, error, result: {total, items}};
+  return {type: 'regular', term, result: {total, items}};
 }
 
 /**
@@ -408,8 +445,8 @@ async function predictiveSearch({
 >): Promise<PredictiveSearchReturn> {
   const {storefront} = context;
   const url = new URL(request.url);
-  const term = String(url.searchParams.get('q') || '').trim();
-  const limit = Number(url.searchParams.get('limit') || 10);
+  const term = readTerm(url);
+  const limit = parseSearchLimit(url.searchParams.get('limit'));
   const type = 'predictive';
 
   if (!term) return {type, term, result: getEmptyPredictiveSearchResult()};

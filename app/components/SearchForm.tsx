@@ -9,6 +9,9 @@ type SearchFormProps = Omit<FormProps, 'children'> & {
 
 /**
  * Search form component that sends search requests to the `/search` route.
+ * The input is uncontrolled (`defaultValue`), so key the form by the term it
+ * shows (`<SearchForm key={term}>`) to make it follow the URL on Back and chip
+ * clicks.
  * @example
  * ```tsx
  * <SearchForm>

@@ -15,7 +15,9 @@ type PartialSearchResult<ItemType extends keyof SearchItems> = Pick<
 
 type SearchProductNode = SearchItems['products']['nodes'][number];
 
-type SearchResultsProps = RegularSearchReturn & {
+type SearchResultsProps = Pick<RegularSearchReturn, 'term'> & {
+  /** `null` when the search failed: there is nothing to render. */
+  result: RegularSearchReturn['result'] | null;
   children: (args: SearchItems & {term: string}) => React.ReactNode;
 };
 
@@ -29,11 +31,7 @@ const SUGGESTED_TERMS = [
   'bundle',
 ];
 
-export function SearchResults({
-  term,
-  result,
-  children,
-}: Omit<SearchResultsProps, 'error' | 'type'>) {
+export function SearchResults({term, result, children}: SearchResultsProps) {
   if (!result?.total) {
     return null;
   }
