@@ -459,14 +459,16 @@ test.describe('search page', {tag: '@mobile'}, () => {
     await expect(pageSummary(page)).toHaveCount(0);
   });
 
-  test('shows "N+" for a broad term and loads the rest on request', async ({
+  test('shows the full count for a broad term and loads the rest on request', async ({
     page,
   }) => {
-    // Every product matches "a": 12 on the first page, plus the About page.
+    // Every product matches "a" (13, one more than a page) plus the About page;
+    // the summary counts them all from the connection's totalCount even though
+    // only the first page is listed.
     await gotoHydrated(page, '/search?q=a');
 
     await expect(pageSummary(page)).toHaveText(
-      `${PAGE_SIZE + 1}+ results for a`,
+      `${PAGE_SIZE + 2} results for a`,
     );
     await expect(pageCards(page)).toHaveCount(PAGE_SIZE);
     const loadMore = page.getByRole('link', {name: 'Load more'});

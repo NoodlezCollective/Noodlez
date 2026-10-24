@@ -139,6 +139,7 @@ describe('getEmptyRegularSearchResult', () => {
         articles: {nodes: []},
         pages: {nodes: []},
         products: {
+          totalCount: 0,
           nodes: [],
           pageInfo: {
             hasNextPage: false,

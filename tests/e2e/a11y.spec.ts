@@ -22,8 +22,8 @@
  *   tags do not cover.
  *
  * Page-level states are tagged `@mobile` and also run at 390px. The product
- * page is the exception: at that width it has a documented defect (see the
- * `test.fixme` below), so its desktop and phone scans are separate tests.
+ * page keeps a separate phone scan: at that width the gallery becomes a
+ * sideways-scrolling strip, which axe requires to be keyboard reachable.
  */
 import {AxeBuilder} from '@axe-core/playwright';
 import type {Page} from '@playwright/test';
