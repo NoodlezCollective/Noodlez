@@ -1,6 +1,6 @@
 # Removing Hydrogen from the Mellow storefront: architecture
 
-Status: **proposed** (2026-10-24). Produced by the ECC `architect` agent from a
+Status: **accepted** (2026-10-24; decisions recorded in section 5). Produced by the ECC `architect` agent from a
 read-only analysis of the codebase; nothing described here is implemented yet.
 Owner decision taken: Shopify Hydrogen (`@shopify/hydrogen`, the Hydrogen CLI
 and Vite plugin, MiniOxygen, Oxygen hosting) is removed; the storefront stays
@@ -309,3 +309,21 @@ dev-only.
    the known 7.16 advisories.
 
 Sizes per phase: S, M, M, M, M/L, S or L, S.
+
+## 5. Decisions taken by the owner (2026-10-24)
+
+1. **Deployment target:** Cloudflare Workers (ADR-A, option A1).
+2. **Customer accounts:** deferred behind the existing "not configured" page
+   (ADR-D, option D2); the OAuth client may be ported later.
+3. **Analytics and consent:** rebuilt now with hydrogen-react's helpers,
+   enabled once `PUBLIC_CHECKOUT_DOMAIN` and `PUBLIC_STOREFRONT_ID` are set
+   (ADR-E, option E1).
+4. **Channel and tokens:** keep the Hydrogen sales channel and its public
+   Storefront API token; a `PRIVATE_STOREFRONT_API_TOKEN` can be added later
+   for server-side calls (ADR-B).
+5. **React Router:** upgrade to 7.18+ as part of the final phase, once
+   Hydrogen's peer range no longer applies, and remove the path-segment guard.
+
+Sequencing: the current increment (committed test suites, review fixes,
+documentation) lands first; the ECC planner then turns this document into the
+implementation plan.
