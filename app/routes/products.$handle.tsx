@@ -442,7 +442,8 @@ const PRODUCT_VARIANT_FRAGMENT = `#graphql
 ` as const;
 
 /**
- * Metafield aliases follow PRODUCT_METAFIELDS in app/lib/content/metafields.ts.
+ * The metafield namespaces and keys read here are documented in
+ * docs/shopify-setup.md (section 4).
  */
 const PRODUCT_FRAGMENT = `#graphql
   fragment Product on Product {

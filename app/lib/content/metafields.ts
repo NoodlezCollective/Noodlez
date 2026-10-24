@@ -1,50 +1,6 @@
 import {isFeatureIconKey, type FeatureIconKey} from '~/components/ui/Icons';
 import type {ProductFeature, ProductReview} from './types';
 
-/**
- * Metafield identifiers the storefront reads from Shopify.
- *
- * The GraphQL fragments hard-code the same namespace/key pairs and alias names
- * (GraphQL documents must be static for codegen); this table is the single
- * documented source of truth and is reused by the development mock.
- */
-export const PRODUCT_METAFIELDS = {
-  /** Shopify standard product review metafields. */
-  rating: {namespace: 'reviews', key: 'rating', alias: 'rating'},
-  ratingCount: {
-    namespace: 'reviews',
-    key: 'rating_count',
-    alias: 'ratingCount',
-  },
-  /** "BESTSELLER", "NEW" … shown as a pill on product cards. */
-  badge: {namespace: 'mellow', key: 'badge', alias: 'badge'},
-  /** Short card copy. Falls back to the product description. */
-  shortDescription: {
-    namespace: 'mellow',
-    key: 'short_description',
-    alias: 'shortDescription',
-  },
-  /** list.single_line_text_field – "icon|Feature text" or plain text. */
-  features: {namespace: 'mellow', key: 'features', alias: 'features'},
-  /** multi_line_text_field or rich_text_field. */
-  materials: {namespace: 'mellow', key: 'materials', alias: 'materials'},
-  care: {namespace: 'mellow', key: 'care', alias: 'care'},
-  /** json – {"Group label": ["Option value", ...]} groups colour swatches. */
-  swatchGroups: {
-    namespace: 'mellow',
-    key: 'swatch_groups',
-    alias: 'swatchGroups',
-  },
-  /** Overrides the "Savings based on comparable value." note. */
-  savingsNote: {namespace: 'mellow', key: 'savings_note', alias: 'savingsNote'},
-  /** list.metaobject_reference → mellow_review metaobjects. */
-  featuredReviews: {
-    namespace: 'mellow',
-    key: 'featured_reviews',
-    alias: 'featuredReviews',
-  },
-} as const;
-
 export type MetafieldValue =
   {value?: string | null; type?: string | null} | null | undefined;
 
