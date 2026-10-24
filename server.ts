@@ -1,6 +1,7 @@
 import * as serverBuild from 'virtual:react-router/server-build';
 import {createRequestHandler, storefrontRedirect} from '@shopify/hydrogen';
 import {createHydrogenRouterContext} from '~/lib/context';
+import {safeRedirectPath} from '~/lib/urls';
 
 /**
  * Real routes have at most four path segments (`/blogs/:blog/:article` splits
@@ -38,6 +39,29 @@ function ensureSecurityHeaders(response: Response) {
     apply(copy.headers);
     return copy;
   }
+}
+
+/**
+ * Hydrogen's `storefrontRedirect` follows `?redirect=` / `?return_to=` on a 404
+ * when the value looks like a local path, but its check accepts dot-segment
+ * forms such as `/.//evil.example`, which it then re-serialises as
+ * `//evil.example`: an open redirect. Resolve both parameters to a same-origin
+ * path first and drop them when they are not one.
+ */
+export function withSafeRedirectParams(request: Request): Request {
+  const url = new URL(request.url);
+  let changed = false;
+  for (const key of ['redirect', 'return_to']) {
+    const value = url.searchParams.get(key);
+    if (value === null) continue;
+    const safe = safeRedirectPath(value, url.origin, '');
+    if (safe) url.searchParams.set(key, safe);
+    else url.searchParams.delete(key);
+    changed = true;
+  }
+  return changed
+    ? new Request(url, {method: request.method, headers: request.headers})
+    : request;
 }
 
 /**
@@ -87,7 +111,7 @@ export default {
          */
         return ensureSecurityHeaders(
           await storefrontRedirect({
-            request,
+            request: withSafeRedirectParams(request),
             response,
             storefront: hydrogenContext.storefront,
           }),
@@ -97,7 +121,9 @@ export default {
       return ensureSecurityHeaders(response);
     } catch (error) {
       console.error(error);
-      return new Response('An unexpected error occurred', {status: 500});
+      return ensureSecurityHeaders(
+        new Response('An unexpected error occurred', {status: 500}),
+      );
     }
   },
 };

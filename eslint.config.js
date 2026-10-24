@@ -36,6 +36,7 @@ export default [
       '**/playwright-report/',
       '**/blob-report/',
       '**/coverage/',
+      '**/.claude/',
     ],
   },
   ...fixupConfigRules(

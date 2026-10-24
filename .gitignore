@@ -22,3 +22,5 @@ node_modules
 # TypeScript incremental build info
 tsconfig.tsbuildinfo
 /coverage
+# Claude Code agent worktrees
+.claude/worktrees/

@@ -3,7 +3,7 @@ import type {Storefront} from '@shopify/hydrogen';
 /** Status returned when the Storefront API answers with errors and no data. */
 export const STOREFRONT_API_ERROR_STATUS = 502;
 
-type GraphQLErrorLike = {message?: unknown};
+type GraphQLErrorLike = {message?: unknown; extensions?: {code?: unknown}};
 
 /**
  * True when a Storefront API result has GraphQL `errors` and nothing usable
@@ -27,10 +27,21 @@ function describeOperation(document: unknown): string {
   );
 }
 
+/**
+ * Error messages echo variable values (`Variable "$handle" got invalid value
+ * …`), which can include buyer identity, so outside development only the
+ * count and the error codes are logged.
+ */
 function describeErrors(errors: GraphQLErrorLike[]): string {
-  return errors
-    .map((error) => String(error?.message ?? 'unknown error'))
-    .join('; ');
+  if (import.meta.env.DEV) {
+    return errors
+      .map((error) => String(error?.message ?? 'unknown error'))
+      .join('; ');
+  }
+  const codes = errors
+    .map((error) => error?.extensions?.code)
+    .filter((code): code is string => typeof code === 'string');
+  return `${errors.length} error(s)${codes.length ? ` [${codes.join(', ')}]` : ''}`;
 }
 
 type Operation = (document: string, options?: unknown) => Promise<unknown>;
@@ -44,8 +55,8 @@ type Operation = (document: string, options?: unknown) => Promise<unknown>;
  * resolves to an object whose data fields are all `undefined`. Loaders read
  * that as "not found" (a bogus 404 for collections and products) or crash on it
  * (`header.shop` in the layout). Rejecting once, here, gives every caller the
- * same honest failure. Only the operation name and the messages are logged;
- * variables can hold personal data (buyer identity) and are never printed.
+ * same honest failure. Only the operation name and (outside development) the
+ * error codes are logged; variables and messages can hold personal data.
  */
 export function guardStorefrontErrors(storefront: Storefront): void {
   const target = storefront as unknown as {query: Operation; mutate: Operation};

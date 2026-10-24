@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {ContentImage} from '~/components/ContentImage';
 import {PlayIcon} from '~/components/ui/Icons';
-import type {VideoContent} from '~/lib/content/types';
+import type {VideoContent, VideoCaptions} from '~/lib/content/types';
 
 export function toEmbedUrl(url: string): string | null {
   try {
@@ -27,14 +27,7 @@ export function toEmbedUrl(url: string): string | null {
   return null;
 }
 
-/** A WebVTT captions file for a native <video>. */
-export type VideoCaptions = {
-  url: string;
-  /** BCP 47 language of the captions. Defaults to "en" (the storefront language). */
-  language?: string;
-  /** Name shown in the player's captions menu. Defaults to "English". */
-  label?: string;
-};
+export type {VideoCaptions};
 
 /** The `<track>` for a captions file; rendered only when one is provided. */
 export function CaptionsTrack({captions}: {captions?: VideoCaptions | null}) {

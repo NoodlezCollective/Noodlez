@@ -18,11 +18,22 @@ export type ImageContent = {
 
 export type VideoSource = {url: string; mimeType: string};
 
+/** A WebVTT captions file for a self-hosted video. */
+export type VideoCaptions = {
+  url: string;
+  /** BCP 47 language of the captions. Defaults to "en" (the storefront language). */
+  language?: string;
+  /** Name shown in the player's captions menu. Defaults to "English". */
+  label?: string;
+};
+
 export type VideoContent = {
   sources: VideoSource[];
   poster: ImageContent | null;
   /** YouTube/Vimeo URL when the video is hosted externally. */
   externalUrl?: string | null;
+  /** Captions for the self-hosted sources (metaobject `captions` file). */
+  captions?: VideoCaptions | null;
 };
 
 export type LinkContent = {label: string; url: string};

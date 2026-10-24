@@ -1,6 +1,6 @@
 import {useState} from 'react';
-import {PlayIcon} from '~/components/ui/Icons';
 import {Marquee} from '~/components/ui/Marquee';
+import {PauseToggle} from '~/components/ui/PauseToggle';
 
 /**
  * Scrolling announcement strip. The messages are read once (the Marquee hides
@@ -27,32 +27,12 @@ export function AnnouncementBar({messages}: {messages: string[]}) {
           </span>
         ))}
       </Marquee>
-      <button
-        type="button"
+      <PauseToggle
         className="announcement-bar__toggle"
-        aria-label="Pause announcements"
-        aria-pressed={paused}
-        onClick={() => setPaused((value) => !value)}
-      >
-        {paused ? <PlayIcon size={12} /> : <PauseGlyph />}
-      </button>
+        label="Pause announcements"
+        paused={paused}
+        onToggle={() => setPaused((value) => !value)}
+      />
     </div>
-  );
-}
-
-/** Two bars; the shared icon set has no pause glyph. */
-function PauseGlyph() {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <rect x="5" y="4" width="5" height="16" rx="1.5" />
-      <rect x="14" y="4" width="5" height="16" rx="1.5" />
-    </svg>
   );
 }

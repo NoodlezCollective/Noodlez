@@ -1487,11 +1487,46 @@ html:has(.overlay.expanded) .dev-notice {
 
 /* Press bar */
 .press-bar {
+  position: relative;
   background: var(--color-primary);
   color: #fff;
   height: 52px;
   display: flex;
   align-items: center;
+}
+
+.press-bar__toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  translate: 0 -50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.92);
+  opacity: 0.85;
+  transition: opacity var(--duration-fast) ease;
+}
+
+.press-bar__toggle:hover,
+.press-bar__toggle:focus-visible {
+  opacity: 1;
+}
+
+.press-bar__toggle:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Nothing moves with reduced motion, so there is nothing to pause. */
+@media (prefers-reduced-motion: reduce) {
+  .press-bar__toggle {
+    display: none;
+  }
 }
 
 .press-bar__item {

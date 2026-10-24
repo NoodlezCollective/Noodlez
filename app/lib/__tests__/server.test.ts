@@ -16,7 +16,7 @@ vi.mock('@shopify/hydrogen', () => ({
   storefrontRedirect: mocks.storefrontRedirect,
 }));
 
-import server from '../../../server';
+import server, {withSafeRedirectParams} from '../../../server';
 
 const ENV = {} as Env;
 const EXECUTION_CONTEXT = {} as ExecutionContext;
@@ -151,5 +151,43 @@ describe('server fetch handler: failures', () => {
 
     expect(response.status).toBe(500);
     expect(await response.text()).toBe('An unexpected error occurred');
+  });
+});
+
+describe('withSafeRedirectParams (404 redirect parameters handed to storefrontRedirect)', () => {
+  const origin = 'https://shop.example';
+
+  it('leaves requests without redirect parameters untouched', () => {
+    const request = new Request(`${origin}/nope?utm_source=x`);
+    expect(withSafeRedirectParams(request)).toBe(request);
+  });
+
+  it('keeps same-origin paths (normalised) in both parameters', () => {
+    const request = new Request(
+      `${origin}/nope?redirect=/collections/all&return_to=${encodeURIComponent(
+        `${origin}/products?x=1`,
+      )}`,
+    );
+    const url = new URL(withSafeRedirectParams(request).url);
+    expect(url.searchParams.get('redirect')).toBe('/collections/all');
+    expect(url.searchParams.get('return_to')).toBe('/products?x=1');
+  });
+
+  it.each([
+    '/.//evil.example',
+    '/..//evil.example',
+    '/%2e//evil.example',
+    '//evil.example',
+    '/\\evil.example',
+    'https://evil.example/',
+    'javascript:alert(1)',
+  ])('drops the hostile value %s', (value) => {
+    const request = new Request(
+      `${origin}/nope?redirect=${encodeURIComponent(value)}&return_to=${encodeURIComponent(value)}&keep=1`,
+    );
+    const url = new URL(withSafeRedirectParams(request).url);
+    expect(url.searchParams.has('redirect')).toBe(false);
+    expect(url.searchParams.has('return_to')).toBe(false);
+    expect(url.searchParams.get('keep')).toBe('1');
   });
 });

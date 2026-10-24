@@ -55,12 +55,7 @@ function buildRedirectUrl(url: URL): string {
     searchParams.get('redirect') || searchParams.get('return_to'),
     url.origin,
   );
-  // `/.//host` parses to the same-origin pathname `//host`, which a browser
-  // would read as a protocol-relative URL (and `new URL` below as another
-  // origin). No legitimate link looks like that.
-  const safePath = requested.startsWith('//') ? '/' : requested;
-
-  const target = new URL(safePath, url.origin);
+  const target = new URL(requested, url.origin);
   for (const [key, value] of searchParams) {
     if (key !== 'redirect' && key !== 'return_to') {
       target.searchParams.append(key, value);

@@ -18,7 +18,11 @@ export function UgcGrid({content}: {content: UgcContent}) {
         />
         <div className="ugc-grid">
           {content.videos.map((video) => (
-            <UgcCard key={video.id} video={video} />
+            <UgcCard
+              key={video.id}
+              video={video}
+              captions={video.video?.captions}
+            />
           ))}
         </div>
       </div>

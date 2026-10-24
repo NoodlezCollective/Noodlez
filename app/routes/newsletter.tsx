@@ -1,6 +1,7 @@
 import {data, redirect} from 'react-router';
 import type {Route} from './+types/newsletter';
 import {
+  MAX_NEWSLETTER_BODY_BYTES,
   getNewsletterHttpStatus,
   subscribeToNewsletter,
   type NewsletterResult,
@@ -20,6 +21,17 @@ export async function loader() {
 }
 
 export async function action({request, context}: Route.ActionArgs) {
+  // Cheap rejection before the body is read at all.
+  if (
+    Number(request.headers.get('content-length') ?? 0) >
+    MAX_NEWSLETTER_BODY_BYTES
+  ) {
+    return data<NewsletterActionData>(
+      {ok: false, status: 'invalid', message: 'That request was too large.'},
+      {status: 413},
+    );
+  }
+
   let formData: FormData;
   try {
     formData = await request.formData();

@@ -1,12 +1,16 @@
+import {useState} from 'react';
 import {ContentImage} from '~/components/ContentImage';
 import {Marquee} from '~/components/ui/Marquee';
+import {PauseToggle} from '~/components/ui/PauseToggle';
 import type {PressLogo} from '~/lib/content/types';
 
 /**
  * "As seen in" strip. Logos uploaded to Shopify render as images; otherwise a
- * typographic treatment of the publication name is used.
+ * typographic treatment of the publication name is used. The strip scrolls on
+ * its own, so it pauses on hover/focus and has a pause button (WCAG 2.2.2).
  */
 export function PressBar({logos}: {logos: PressLogo[]}) {
+  const [paused, setPaused] = useState(false);
   if (!logos.length) return null;
   // Repeat the logos so each half of the loop is wider than the viewport. Only
   // the first copy is exposed (the Marquee hides and disables the repeats), so
@@ -14,7 +18,7 @@ export function PressBar({logos}: {logos: PressLogo[]}) {
   const copies = Math.max(1, Math.ceil(12 / logos.length));
   return (
     <section className="press-bar" aria-label="As seen in">
-      <Marquee duration={40} gap={0} copies={copies}>
+      <Marquee duration={40} gap={0} copies={copies} paused={paused}>
         {logos.map((logo) => (
           <span className="press-bar__item" key={logo.id}>
             {logo.url ? (
@@ -32,6 +36,12 @@ export function PressBar({logos}: {logos: PressLogo[]}) {
           </span>
         ))}
       </Marquee>
+      <PauseToggle
+        className="press-bar__toggle"
+        label="Pause press logos"
+        paused={paused}
+        onToggle={() => setPaused((value) => !value)}
+      />
     </section>
   );
 }

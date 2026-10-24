@@ -321,12 +321,19 @@ export function fieldVideo(
   videoKey: string,
   posterKey = 'poster',
   externalUrlKey = 'video_url',
+  captionsKey = 'captions',
 ): VideoContent | null {
   const ref = record?.fields.get(videoKey)?.reference;
   const externalUrl = fieldText(record, externalUrlKey);
   const poster =
     fieldImage(record, posterKey) ??
     (ref?.__typename === 'Video' ? referenceToImage(ref) : null);
+  // An optional WebVTT file (generic file reference) for self-hosted sources.
+  const captionsRef = record?.fields.get(captionsKey)?.reference;
+  const captions =
+    captionsRef?.__typename === 'GenericFile' && captionsRef.url
+      ? {captions: {url: captionsRef.url}}
+      : {};
   if (ref?.__typename === 'Video' && ref.sources?.length) {
     return {
       sources: ref.sources.map((source) => ({
@@ -335,10 +342,11 @@ export function fieldVideo(
       })),
       poster,
       externalUrl,
+      ...captions,
     };
   }
   if (externalUrl) {
-    return {sources: [], poster, externalUrl};
+    return {sources: [], poster, externalUrl, ...captions};
   }
   return null;
 }

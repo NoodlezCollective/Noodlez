@@ -15,7 +15,11 @@ export function Story({content}: {content: StoryContent}) {
             </Button>
           ) : null}
         </div>
-        <VideoCard video={content.video} title={content.heading} />
+        <VideoCard
+          video={content.video}
+          title={content.heading}
+          captions={content.video?.captions}
+        />
       </div>
     </section>
   );

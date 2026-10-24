@@ -421,3 +421,22 @@ describe('subscribeToNewsletter', () => {
     });
   });
 });
+
+describe('isValidEmail rejects local parts that are payloads for downstream tools', () => {
+  it.each([
+    ['spreadsheet formula', '=cmd|calc!A1@example.com'],
+    ['leading plus formula', '+SUM(1)@example.com'],
+    ['leading minus formula', '-1+1@example.com'],
+    ['markup', '<script>alert(1)</script>@example.com'],
+    ['NUL byte', 'a\u0000b@example.com'],
+    ['quotes and semicolons', '"a";b@example.com'],
+  ])('%s', (_label, value) => {
+    expect(isValidEmail(value)).toBe(false);
+  });
+
+  it('still accepts ordinary addresses', () => {
+    expect(isValidEmail('first.last+news@example.co.uk')).toBe(true);
+    expect(isValidEmail("o'brien@example.com")).toBe(true);
+    expect(isValidEmail('josé@ejemplo.es')).toBe(true);
+  });
+});

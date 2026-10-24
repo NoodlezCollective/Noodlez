@@ -166,7 +166,14 @@ function loadDeferredData({context}: Route.LoaderArgs) {
     });
 
   return {
-    cart: cart.get(),
+    // Hydrogen's CartAnalytics awaits this promise without a catch, so a
+    // rejected cart query (502 from the Storefront API guard) would surface as
+    // an unhandled rejection in the browser; the header and drawer already
+    // render their own fallbacks for a null cart.
+    cart: cart.get().catch((error: Error) => {
+      console.error(error);
+      return null;
+    }),
     isLoggedIn: customerAccount.isLoggedIn(),
     footer,
   };

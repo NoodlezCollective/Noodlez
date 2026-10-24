@@ -99,3 +99,55 @@ describe('POST /cart when the Storefront API fails', () => {
     });
   });
 });
+
+describe('POST /cart with malformed input', () => {
+  it('answers 400 (not 500) when the body is not a form', async () => {
+    const cart = cartWith(async () => {
+      throw new Error('must not be called');
+    });
+    const result = await (callRoute(cartAction, {
+      request: new Request(`${ORIGIN}/cart`, {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: '{"action":',
+      }),
+      context: {cart},
+    }) as Promise<{data: Record<string, unknown>; init: {status: number}}>);
+
+    expect(result.init.status).toBe(400);
+    expect(result.data).toMatchObject({cart: null, userErrors: []});
+    expect(cart.addLines).not.toHaveBeenCalled();
+  });
+
+  it('answers 400 when lines is not an array', async () => {
+    const cart = cartWith(async () => {
+      throw new Error('must not be called');
+    });
+    const formData = new FormData();
+    formData.set(
+      'cartFormInput',
+      JSON.stringify({action: 'LinesAdd', inputs: {lines: 'nope'}}),
+    );
+    const result = await (callRoute(cartAction, {
+      request: new Request(`${ORIGIN}/cart`, {method: 'POST', body: formData}),
+      context: {cart},
+    }) as Promise<{data: Record<string, unknown>; init: {status: number}}>);
+
+    expect(result.init.status).toBe(400);
+    expect(cart.addLines).not.toHaveBeenCalled();
+  });
+
+  it('answers 400 for an unknown action', async () => {
+    const cart = cartWith(async () => {
+      throw new Error('must not be called');
+    });
+    const formData = new FormData();
+    formData.set('cartFormInput', JSON.stringify({action: 'Nope', inputs: {}}));
+    const result = await (callRoute(cartAction, {
+      request: new Request(`${ORIGIN}/cart`, {method: 'POST', body: formData}),
+      context: {cart},
+    }) as Promise<{data: Record<string, unknown>; init: {status: number}}>);
+
+    expect(result.init.status).toBe(400);
+  });
+});

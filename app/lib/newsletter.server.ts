@@ -17,6 +17,8 @@ const MAX_SOURCE_LENGTH = 32;
 const SOURCE_PATTERN = /^[a-z0-9_-]+$/;
 /** The signup request must not hold a worker open for a slow webhook. */
 const WEBHOOK_TIMEOUT_MS = 5000;
+/** A signup form posts a few hundred bytes; anything bigger is not a signup. */
+export const MAX_NEWSLETTER_BODY_BYTES = 8 * 1024;
 
 /**
  * Sanity check for a signup address (the browser's `type="email"` input and
@@ -33,6 +35,18 @@ export function isValidEmail(email: string): boolean {
   // Exactly one "@" with something in front of it.
   if (at < 1 || at !== value.lastIndexOf('@')) return false;
   if (/\s/.test(value)) return false;
+
+  // Control characters are never valid. The other characters are legal in
+  // theory but only ever turn up in payloads aimed at whoever opens the
+  // subscriber list downstream (spreadsheet formulas such as `=cmd|…`, markup).
+  const local = value.slice(0, at);
+  for (const char of local) {
+    const code = char.charCodeAt(0);
+    if (code < 0x20 || code === 0x7f) return false;
+  }
+  if (/[<>"\\,;:()[\]|]/.test(local) || /^[=+\-@]/.test(local)) {
+    return false;
+  }
 
   const domain = value.slice(at + 1);
   const lastDot = domain.lastIndexOf('.');
