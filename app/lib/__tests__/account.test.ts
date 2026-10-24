@@ -2,12 +2,7 @@ import {describe, expect, it, vi} from 'vitest';
 import {isCustomerAccountConfigured} from '~/components/account/AccountUnavailable';
 import {loader as orderLoader} from '../../routes/account.orders.$id';
 import {action as profileAction} from '../../routes/account.profile';
-import {
-  ORIGIN,
-  callRoute,
-  renderRoute,
-  thrownResponse,
-} from './route-test-utils';
+import {ORIGIN, callRoute, thrownResponse} from './route-test-utils';
 
 describe('isCustomerAccountConfigured', () => {
   it.each([

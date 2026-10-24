@@ -160,7 +160,7 @@ function OrderSearchForm({
 }: {
   currentFilters: OrderFilterParams;
 }) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const navigation = useNavigation();
   const isSearching =
     navigation.state !== 'idle' &&
