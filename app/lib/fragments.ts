@@ -208,15 +208,9 @@ export const PRODUCT_CARD_FRAGMENT = `#graphql
       minVariantPrice {
         ...MoneyProductCard
       }
-      maxVariantPrice {
-        ...MoneyProductCard
-      }
     }
     compareAtPriceRange {
       minVariantPrice {
-        ...MoneyProductCard
-      }
-      maxVariantPrice {
         ...MoneyProductCard
       }
     }

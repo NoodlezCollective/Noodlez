@@ -388,7 +388,6 @@ const PREDICTIVE_SEARCH_QUERY_FRAGMENT = `#graphql
   fragment PredictiveQuery on SearchQuerySuggestion {
     __typename
     text
-    styledText
     trackingParameters
   }
 ` as const;

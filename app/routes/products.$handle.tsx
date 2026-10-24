@@ -429,10 +429,6 @@ const PRODUCT_VARIANT_FRAGMENT = `#graphql
     }
     sku
     title
-    unitPrice {
-      amount
-      currencyCode
-    }
   }
 ` as const;
 
@@ -462,7 +458,6 @@ const PRODUCT_FRAGMENT = `#graphql
         __typename
         id
         alt
-        mediaContentType
         previewImage {
           id
           url
