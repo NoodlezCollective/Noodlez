@@ -1787,6 +1787,13 @@ Coverage: `include` stays at `app/lib/**/*.ts` with 80% thresholds. `.tsx` wrapp
 17. The Hydrogen channel admin exposes the token, storefront id and account ids without the Hydrogen CLI (affects the docs).
 18. A Wrangler 4.x release exists that satisfies both the plugin's peer and `@react-router/dev`'s `^3.28.2 || ^4.0.0`.
 
+Verified against the npm registry on 2026-10-24 (resolves assumptions 1, 15 and 18):
+
+- `@shopify/hydrogen-react@2026.4.4` (latest) peers: vite ^5.1 || ^6.2 || ^7 || ^8, react/react-dom ^18.3.1 || 19.x; `npm ls` already shows a single copy.
+- `@cloudflare/vite-plugin@1.65.0` (latest) peers: vite ^6.1 || ^7 || ^8, wrangler ^4.152.0; `wrangler@4.152.0` and `@cloudflare/workers-types@5.20261024.1` are current.
+- `@react-router/dev@7.18.4` peers: vite ^5.1 || ^6 || ^7 || ^8, wrangler ^3.28.2 || ^4.0.0, react-router ^7.18.4; react-router 7.18.0–7.18.4 are published.
+- `@shopify/graphql-codegen@0.1.0` is the latest release (0.0.2 is the one installed transitively).
+
 Verified by reading the installed packages:
 
 - Hydrogen's peer `react-router ~7.16.0` and the preset contents.
