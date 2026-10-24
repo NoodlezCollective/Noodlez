@@ -20,14 +20,51 @@ collections, metafields and metaobjects the storefront reads.
 
 ## Scripts
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Hydrogen dev server with GraphQL codegen |
-| `npm run build` | Production build (Oxygen worker) |
-| `npm run preview` | Build and preview with MiniOxygen |
-| `npm run typecheck` | React Router typegen + `tsc` |
-| `npm run lint` | ESLint |
-| `npm run codegen` | Regenerate Storefront / Customer Account API types |
+| Command                      | Description                                                                                                    |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                | Hydrogen dev server with GraphQL codegen                                                                       |
+| `npm run dev:e2e`            | Dev server on port 3100 in mock mode, with the committed `tests/e2e/e2e.env` (the server the e2e suite starts) |
+| `npm run build`              | Production build (Oxygen worker)                                                                               |
+| `npm run preview`            | Build and preview with MiniOxygen                                                                              |
+| `npm run typecheck`          | React Router typegen + `tsc`                                                                                   |
+| `npm run lint`               | ESLint                                                                                                         |
+| `npm run codegen`            | Regenerate Storefront / Customer Account API types                                                             |
+| `npm test`                   | Unit tests, then the end-to-end suite                                                                          |
+| `npm run test:unit`          | Vitest unit tests                                                                                              |
+| `npm run test:unit:coverage` | Unit tests with a coverage report (80% thresholds on `app/lib`)                                                |
+| `npm run test:watch`         | Vitest in watch mode                                                                                           |
+| `npm run test:e2e`           | Playwright end-to-end suite (Chromium only)                                                                    |
+| `npm run test:e2e:ui`        | Playwright UI mode                                                                                             |
+| `npm run test:e2e:report`    | Open the last Playwright HTML report                                                                           |
+
+`react-router-dom` and `graphql-tag` were removed from the dependencies because nothing imported them.
+
+## Testing
+
+- **Prerequisites:** Node 22 or 24 (see `engines`) and Chromium for Playwright.
+  The cloud container has Chromium preinstalled, so do not run
+  `playwright install` there. CI installs it with
+  `npx playwright install --with-deps chromium`.
+- **Unit tests:** `npm run test:unit` runs Vitest over `app/**/*.test.ts(x)`
+  (1,434 tests in 38 files). `npm run test:unit:coverage` enforces 80% on
+  statements, branches, functions and lines in `app/lib`.
+- **End-to-end tests:** `npm run test:e2e` runs Playwright in three projects,
+  selected by tags: `desktop-1440` (370 tests), `tablet-820` (26, `@smoke`) and
+  `mobile-390` (119, `@smoke` or `@mobile`). Playwright starts its own dev server
+  in mock mode on port 3100 with the committed `tests/e2e/e2e.env`, so no store
+  credentials are needed. Locally it reuses a server already on that port; CI
+  always starts its own.
+- **Another server:** `E2E_BASE_URL=http://localhost:3000 npm run test:e2e`
+  tests the server you name instead. It must be in mock mode with a 32-character
+  `PUBLIC_STOREFRONT_API_TOKEN`.
+- **Artefacts:** `test-results/` (traces, screenshots and `junit.xml` in CI),
+  `playwright-report/` (the HTML report, `npm run test:e2e:report`) and
+  `coverage/` (unit coverage) are git-ignored.
+- Do not edit `app/` while the e2e suite runs: the dev server hot-reloads, and
+  the mock keeps carts in memory.
+
+The spec list, console policy and helpers are described in
+[tests/e2e/README.md](tests/e2e/README.md).
 
 ## Project structure
 
@@ -39,4 +76,12 @@ app/
   routes/            React Router routes (flat routes convention)
   styles/            tokens.css (design tokens), app.css (shared), per-area stylesheets
 docs/shopify-setup.md  Shopify configuration reference
+playwright.config.ts   Playwright projects, tags and the dev server Playwright starts
+tests/e2e/             Playwright specs, support/ helpers, global setup and the mock-mode e2e.env
+vitest.config.ts       Unit test setup (app/**/*.test.ts(x)) and the coverage thresholds for app/lib
 ```
+
+Planned next step (not started): replace Hydrogen with React Router 7 and
+`@shopify/hydrogen-react` on Cloudflare Workers. See
+[docs/hydrogen-removal-architecture.md](docs/hydrogen-removal-architecture.md)
+and [docs/hydrogen-removal-plan.md](docs/hydrogen-removal-plan.md).

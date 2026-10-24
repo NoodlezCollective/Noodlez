@@ -142,8 +142,8 @@ from `app/lib/mock`. A badge in the corner of every page indicates mock mode.
 - Cart permalinks accept mock variant ids, for example
   `/cart/cloudalign-pillow-1:1?discount=MELLOW10`.
 - The demo catalog has 13 products. Three of them (Silk Sleep Mask, Linen Sheet
-  Set and Weighted Blanket) appear only under Shop All, which therefore has two
-  pages of 12 products.
+  Set and Weighted Blanket) appear only under Shop All, which therefore has a
+  second page: 12 products, then one more after "Load more".
 - A Storefront API query that fails with GraphQL errors and no data returns a
   502, as it does on a live store.
 
