@@ -11,7 +11,7 @@ import {
 } from '~/lib/collectionFilters';
 import {PRODUCT_CARD_FRAGMENT} from '~/lib/fragments';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {DEFAULT_DESCRIPTION} from '~/root';
+import {DEFAULT_DESCRIPTION} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = ({data}) => {
   if (!data?.collection) {

@@ -12,7 +12,7 @@ import {NewsletterBand} from '~/components/home/NewsletterBand';
 import {PRODUCT_CARD_FRAGMENT} from '~/lib/fragments';
 import {HOME_CONTENT_QUERY, mapHomeContent} from '~/lib/content/metaobjects';
 import {FEATURED_PRODUCTS_COUNT} from '~/lib/content/config';
-import {DEFAULT_DESCRIPTION, DEFAULT_TITLE} from '~/root';
+import {DEFAULT_DESCRIPTION, DEFAULT_TITLE} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = ({data}) => {
   const description = data?.content.hero.subheadline ?? DEFAULT_DESCRIPTION;

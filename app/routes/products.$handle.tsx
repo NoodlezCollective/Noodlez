@@ -37,8 +37,7 @@ import {
 } from '~/lib/content/metafields';
 import {PRODUCT_CARD_FRAGMENT} from '~/lib/fragments';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-
-const SITE_NAME = 'Mellow';
+import {SITE_NAME} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = ({data}) => {
   const product = data?.product;

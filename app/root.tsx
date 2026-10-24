@@ -15,6 +15,7 @@ import favicon from '~/assets/favicon.svg';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {SITE_SETTINGS_QUERY, mapSiteSettings} from '~/lib/content/metaobjects';
 import {SHOPIFY_RESOURCES} from '~/lib/content/config';
+import {DEFAULT_DESCRIPTION, DEFAULT_TITLE} from '~/lib/seo';
 import tokenStyles from '~/styles/tokens.css?url';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
@@ -30,11 +31,6 @@ export type RootLoader = typeof loader;
 
 const FONTS_URL =
   'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap';
-
-export const DEFAULT_TITLE =
-  'Mellow | Premium Cooling Comforters & Pillows For Better Sleep';
-export const DEFAULT_DESCRIPTION =
-  'Pillows that align. Comforters that adapt. Smarter sleep essentials, designed for every night. Shop award-winning cooling comforters and ergonomic pillows.';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations

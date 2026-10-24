@@ -4,6 +4,15 @@
 
 export const SITE_NAME = 'Mellow';
 
+/**
+ * Site-wide `<title>` and description: the root `meta` and the fallback for
+ * routes that have nothing better.
+ */
+export const DEFAULT_TITLE =
+  'Mellow | Premium Cooling Comforters & Pillows For Better Sleep';
+export const DEFAULT_DESCRIPTION =
+  'Pillows that align. Comforters that adapt. Smarter sleep essentials, designed for every night. Shop award-winning cooling comforters and ergonomic pillows.';
+
 type CanonicalLink = {tagName: 'link'; rel: 'canonical'; href: string};
 
 /**
