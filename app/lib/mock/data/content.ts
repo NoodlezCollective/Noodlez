@@ -9,7 +9,11 @@ import {
   DEFAULT_SITE_SETTINGS,
 } from '~/lib/content/defaults';
 import type {ImageContent} from '~/lib/content/types';
-import type {MediaImageSeed, MetaobjectFieldSeed, MetaobjectSeed} from './types';
+import type {
+  MediaImageSeed,
+  MetaobjectFieldSeed,
+  MetaobjectSeed,
+} from './types';
 
 const mediaImages: MediaImageSeed[] = [];
 
@@ -31,7 +35,11 @@ function media(id: string, image: ImageContent | null): string | null {
   return gid;
 }
 
-function text(key: string, value: string | null | undefined, type = 'single_line_text_field'): MetaobjectFieldSeed {
+function text(
+  key: string,
+  value: string | null | undefined,
+  type = 'single_line_text_field',
+): MetaobjectFieldSeed {
   return {key, type, value: value ?? null};
 }
 
@@ -39,7 +47,10 @@ function fileRef(key: string, gid: string | null): MetaobjectFieldSeed {
   return {key, type: 'file_reference', value: gid, reference: gid};
 }
 
-function productRef(key: string, handle: string | null | undefined): MetaobjectFieldSeed {
+function productRef(
+  key: string,
+  handle: string | null | undefined,
+): MetaobjectFieldSeed {
   const gid = handle ? `gid://shopify/Product/handle:${handle}` : null;
   return {key, type: 'product_reference', value: gid, reference: gid};
 }
@@ -54,13 +65,34 @@ export const METAOBJECT_SEEDS: MetaobjectSeed[] = [
     handle: 'storefront',
     type: 'mellow_settings',
     fields: [
-      text('announcements', JSON.stringify(settings.announcements), 'list.single_line_text_field'),
-      text('trust_badges', JSON.stringify(settings.trustBadges.map((b) => `${b.icon}|${b.label}`)), 'list.single_line_text_field'),
+      text(
+        'announcements',
+        JSON.stringify(settings.announcements),
+        'list.single_line_text_field',
+      ),
+      text(
+        'trust_badges',
+        JSON.stringify(settings.trustBadges.map((b) => `${b.icon}|${b.label}`)),
+        'list.single_line_text_field',
+      ),
       text('savings_note', settings.savingsNote),
-      text('savings_explanation', settings.savingsExplanation, 'multi_line_text_field'),
+      text(
+        'savings_explanation',
+        settings.savingsExplanation,
+        'multi_line_text_field',
+      ),
       text('featured_heading', home.featured.heading),
-      text('featured_subheading', home.featured.subheading, 'multi_line_text_field'),
-      {key: 'featured_collection', type: 'collection_reference', value: 'gid://shopify/Collection/2002', reference: 'gid://shopify/Collection/2002'},
+      text(
+        'featured_subheading',
+        home.featured.subheading,
+        'multi_line_text_field',
+      ),
+      {
+        key: 'featured_collection',
+        type: 'collection_reference',
+        value: 'gid://shopify/Collection/2002',
+        reference: 'gid://shopify/Collection/2002',
+      },
       text('featured_cta_label', home.featured.ctaLabel),
       text('ugc_heading', home.ugc.heading),
       text('ugc_subheading', home.ugc.subheading),
@@ -90,7 +122,11 @@ export const METAOBJECT_SEEDS: MetaobjectSeed[] = [
     id: `gid://shopify/Metaobject/press-${index + 1}`,
     handle: logo.id,
     type: 'mellow_press_logo',
-    fields: [text('name', logo.name), fileRef('image', media(`press-${logo.id}`, logo.image)), text('url', logo.url ?? null, 'url')],
+    fields: [
+      text('name', logo.name),
+      fileRef('image', media(`press-${logo.id}`, logo.image)),
+      text('url', logo.url ?? null, 'url'),
+    ],
   })),
   {
     id: 'gid://shopify/Metaobject/story',
@@ -101,7 +137,10 @@ export const METAOBJECT_SEEDS: MetaobjectSeed[] = [
       text('body', home.story.body, 'multi_line_text_field'),
       fileRef('video', null),
       text('video_url', null, 'url'),
-      fileRef('poster', media('story-poster', home.story.video?.poster ?? null)),
+      fileRef(
+        'poster',
+        media('story-poster', home.story.video?.poster ?? null),
+      ),
       text('cta_label', home.story.cta?.label ?? null),
       text('cta_url', home.story.cta?.url ?? null, 'url'),
     ],
@@ -122,7 +161,10 @@ export const METAOBJECT_SEEDS: MetaobjectSeed[] = [
     id: `gid://shopify/Metaobject/lifestyle-${index + 1}`,
     handle: item.id,
     type: 'mellow_lifestyle_image',
-    fields: [fileRef('image', media(`lifestyle-${index + 1}`, item)), text('caption', item.caption ?? null)],
+    fields: [
+      fileRef('image', media(`lifestyle-${index + 1}`, item)),
+      text('caption', item.caption ?? null),
+    ],
   })),
   ...home.testimonials.items.map((item, index) => ({
     id: `gid://shopify/Metaobject/testimonial-${index + 1}`,
@@ -131,7 +173,11 @@ export const METAOBJECT_SEEDS: MetaobjectSeed[] = [
     fields: [
       text('quote', item.quote, 'multi_line_text_field'),
       text('author', item.author),
-      text('rating', String(item.rating), 'number_decimal'),
+      text(
+        'rating',
+        item.rating == null ? null : String(item.rating),
+        'number_decimal',
+      ),
       productRef('product', item.productHandle),
     ],
   })),
@@ -139,7 +185,10 @@ export const METAOBJECT_SEEDS: MetaobjectSeed[] = [
     id: `gid://shopify/Metaobject/faq-${index + 1}`,
     handle: item.id,
     type: 'mellow_faq',
-    fields: [text('question', item.question), text('answer', item.answer, 'multi_line_text_field')],
+    fields: [
+      text('question', item.question),
+      text('answer', item.answer, 'multi_line_text_field'),
+    ],
   })),
   {
     id: 'gid://shopify/Metaobject/about',
@@ -156,7 +205,13 @@ export const METAOBJECT_SEEDS: MetaobjectSeed[] = [
       text('story_highlight', about.story.highlight),
       fileRef('image_left', media('about-left', about.imageLeft)),
       fileRef('image_bottom', media('about-bottom', about.imageBottom)),
-      text('values', JSON.stringify(about.values.map((v) => `${v.icon}|${v.title}|${v.body}`)), 'list.single_line_text_field'),
+      text(
+        'values',
+        JSON.stringify(
+          about.values.map((v) => `${v.icon}|${v.title}|${v.body}`),
+        ),
+        'list.single_line_text_field',
+      ),
       text('closing_heading', about.closing.heading),
       text('closing_body', about.closing.body, 'multi_line_text_field'),
       text('closing_cta_label', about.closing.cta.label),
@@ -164,18 +219,52 @@ export const METAOBJECT_SEEDS: MetaobjectSeed[] = [
     ],
   },
   ...[
-    {rating: 5, title: 'Finally, no neck pain', body: 'I wake up without neck pain for the first time in years. The CloudAlign actually keeps my head where it should be.', author: 'Jenna R.'},
-    {rating: 5, title: 'Worth every penny', body: 'Soft but supportive. I ordered a second one for my partner after one night.', author: 'Daniel K.'},
-    {rating: 5, title: 'Fluffiest comforter ever', body: 'It washed beautifully and came out of the dryer just as fluffy. Hotel-bed feel at home.', author: 'Priya S.'},
-    {rating: 5, title: 'Goes everywhere with me', body: 'Couch, car, desk. The cool side is a lifesaver on hot afternoons.', author: 'Sam O.'},
-    {rating: 4, title: 'Cute and comfy', body: 'Love the baby blue. Slightly smaller than I expected but it is perfect for the couch.', author: 'Maria L.'},
-    {rating: 5, title: 'My new favourite', body: 'The lush cover is unbelievably soft. I bought the cream one and then the stone one.', author: 'Chris B.'},
+    {
+      rating: 5,
+      title: 'Finally, no neck pain',
+      body: 'I wake up without neck pain for the first time in years. The CloudAlign actually keeps my head where it should be.',
+      author: 'Jenna R.',
+    },
+    {
+      rating: 5,
+      title: 'Worth every penny',
+      body: 'Soft but supportive. I ordered a second one for my partner after one night.',
+      author: 'Daniel K.',
+    },
+    {
+      rating: 5,
+      title: 'Fluffiest comforter ever',
+      body: 'It washed beautifully and came out of the dryer just as fluffy. Hotel-bed feel at home.',
+      author: 'Priya S.',
+    },
+    {
+      rating: 5,
+      title: 'Goes everywhere with me',
+      body: 'Couch, car, desk. The cool side is a lifesaver on hot afternoons.',
+      author: 'Sam O.',
+    },
+    {
+      rating: 4,
+      title: 'Cute and comfy',
+      body: 'Love the baby blue. Slightly smaller than I expected but it is perfect for the couch.',
+      author: 'Maria L.',
+    },
+    {
+      rating: 5,
+      title: 'My new favourite',
+      body: 'The lush cover is unbelievably soft. I bought the cream one and then the stone one.',
+      author: 'Chris B.',
+    },
   ].map((review, index) => ({
     id: `gid://shopify/Metaobject/review-${index + 1}`,
     handle: `review-${index + 1}`,
     type: 'mellow_review',
     fields: [
-      text('rating', String(review.rating), 'number_integer'),
+      text(
+        'rating',
+        review.rating == null ? null : String(review.rating),
+        'number_integer',
+      ),
       text('title', review.title),
       text('body', review.body, 'multi_line_text_field'),
       text('author', review.author),

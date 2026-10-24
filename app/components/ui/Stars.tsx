@@ -2,7 +2,7 @@ import {useId} from 'react';
 import {StarIcon} from './Icons';
 
 export type StarsProps = {
-  /** Rating between 0 and `max`. Defaults to 5. */
+  /** Rating between 0 and `max`. Nothing is rendered without a rating. */
   rating?: number | null;
   max?: number;
   /** Number of ratings; rendered as "(51,644)" or with a custom label. */
@@ -20,10 +20,11 @@ export function formatCount(value: number) {
 }
 
 /**
- * Five coral stars with optional partial fill and a count/label.
+ * Five coral stars with optional partial fill and a count/label. Renders
+ * nothing when there is no rating.
  */
 export function Stars({
-  rating = 5,
+  rating,
   max = 5,
   count,
   label,
@@ -31,7 +32,9 @@ export function Stars({
   className,
 }: StarsProps) {
   const id = useId();
-  const safeRating = Math.max(0, Math.min(max, rating ?? max));
+  // A missing rating must never look like a perfect one.
+  if (typeof rating !== 'number' || Number.isNaN(rating)) return null;
+  const safeRating = Math.max(0, Math.min(max, rating));
   const text =
     label ??
     (typeof count === 'number' ? `(${formatCount(count)})` : undefined);
@@ -53,10 +56,7 @@ export function Stars({
             <span className="stars__star" key={clipId} style={{width: px}}>
               <StarIcon size={px} className="stars__base" />
               {fill > 0 ? (
-                <span
-                  className="stars__fill"
-                  style={{width: `${fill * 100}%`}}
-                >
+                <span className="stars__fill" style={{width: `${fill * 100}%`}}>
                   <StarIcon size={px} />
                 </span>
               ) : null}

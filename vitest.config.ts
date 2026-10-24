@@ -16,6 +16,21 @@ export default defineConfig({
     },
   },
   test: {
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: './coverage',
+      reporter: ['text-summary', 'html'],
+      // The unit layer targets the pure modules; components and routes are
+      // covered by the Playwright suite (tests/e2e).
+      include: ['app/lib/**/*.ts'],
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        'app/lib/__tests__/**',
+        'app/lib/mock/**',
+      ],
+      // ECC baseline: 80%+ on the unit-tested surface.
+      thresholds: {statements: 80, branches: 80, functions: 80, lines: 80},
+    },
     environment: 'node',
     include: ['app/**/*.test.{ts,tsx}'],
   },
