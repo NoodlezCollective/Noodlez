@@ -43,11 +43,9 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
     CATALOG_SORT_OPTIONS,
   );
 
-  const [{products}] = await Promise.all([
-    storefront.query(CATALOG_QUERY, {
-      variables: {sortKey, reverse, ...paginationVariables},
-    }),
-  ]);
+  const {products} = await storefront.query(CATALOG_QUERY, {
+    variables: {sortKey, reverse, ...paginationVariables},
+  });
 
   return {origin: new URL(request.url).origin, products};
 }

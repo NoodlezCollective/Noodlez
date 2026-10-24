@@ -46,14 +46,11 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
     pageBy: 10,
   });
 
-  const [{blogs}] = await Promise.all([
-    context.storefront.query(BLOGS_QUERY, {
-      variables: {
-        ...paginationVariables,
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+  const {blogs} = await context.storefront.query(BLOGS_QUERY, {
+    variables: {
+      ...paginationVariables,
+    },
+  });
 
   return {blogs, origin: new URL(request.url).origin};
 }

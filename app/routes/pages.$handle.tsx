@@ -36,14 +36,11 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
     throw new Error('Missing page handle');
   }
 
-  const [{page}] = await Promise.all([
-    context.storefront.query(PAGE_QUERY, {
-      variables: {
-        handle: params.handle,
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+  const {page} = await context.storefront.query(PAGE_QUERY, {
+    variables: {
+      handle: params.handle,
+    },
+  });
 
   if (!page) {
     throw new Response('Not Found', {status: 404});

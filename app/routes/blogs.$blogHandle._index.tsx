@@ -50,15 +50,12 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
     throw new Response(`blog not found`, {status: 404});
   }
 
-  const [{blog}] = await Promise.all([
-    context.storefront.query(BLOGS_QUERY, {
-      variables: {
-        blogHandle: params.blogHandle,
-        ...paginationVariables,
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+  const {blog} = await context.storefront.query(BLOGS_QUERY, {
+    variables: {
+      blogHandle: params.blogHandle,
+      ...paginationVariables,
+    },
+  });
 
   if (!blog?.articles) {
     throw new Response('Not found', {status: 404});

@@ -1,9 +1,4 @@
-import {
-  isRouteErrorResponse,
-  redirect,
-  useLoaderData,
-  useRouteError,
-} from 'react-router';
+import {isRouteErrorResponse, useLoaderData, useRouteError} from 'react-router';
 import type {Route} from './+types/collections.$handle';
 import {Analytics, getPaginationVariables} from '@shopify/hydrogen';
 import {CollectionHeader} from '~/components/collection/CollectionHeader';
@@ -64,10 +59,6 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {handle} = params;
   const {storefront} = context;
 
-  if (!handle) {
-    throw redirect('/collections');
-  }
-
   const url = new URL(request.url);
   const paginationVariables = getPaginationVariables(request, {pageBy: 12});
   const filters = getProductFilters(url.searchParams);
@@ -76,11 +67,9 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     COLLECTION_SORT_OPTIONS,
   );
 
-  const [{collection}] = await Promise.all([
-    storefront.query(COLLECTION_QUERY, {
-      variables: {handle, filters, sortKey, reverse, ...paginationVariables},
-    }),
-  ]);
+  const {collection} = await storefront.query(COLLECTION_QUERY, {
+    variables: {handle, filters, sortKey, reverse, ...paginationVariables},
+  });
 
   if (!collection) {
     throw new Response(`Collection ${handle} not found`, {status: 404});
