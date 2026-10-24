@@ -26,6 +26,8 @@ export default defineConfig({
   testDir: './tests/e2e',
   testMatch: '**/*.spec.ts',
   outputDir: './test-results/e2e',
+  // Preflight (mock mode?), server and client warm-up, token-length hint.
+  globalSetup: './tests/e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: IS_CI,
   retries: IS_CI ? 2 : 0,
