@@ -1,31 +1,7 @@
 import {matchRoutes} from 'react-router';
-import {describe, expect, it, vi} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import Orders from '../../routes/account.orders._index';
 import {ORIGIN, renderRoute} from './route-test-utils';
-
-// Hydrogen's <Pagination> needs a second copy of the router context, which
-// does not matter for the links this file checks.
-vi.mock('@shopify/hydrogen', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@shopify/hydrogen')>();
-  return {
-    ...actual,
-    Pagination: ({
-      connection,
-      children,
-    }: {
-      connection: {nodes: unknown[]};
-      children: (state: Record<string, unknown>) => unknown;
-    }) =>
-      children({
-        nodes: connection.nodes,
-        isLoading: false,
-        hasNextPage: false,
-        hasPreviousPage: false,
-        PreviousLink: () => null,
-        NextLink: () => null,
-      }),
-  };
-});
 
 const ORDER_GID = 'gid://shopify/Order/123456789012?key=abcdef0123456789';
 

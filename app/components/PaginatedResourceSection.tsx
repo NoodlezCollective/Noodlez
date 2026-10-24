@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Pagination} from '@shopify/hydrogen';
+import {Pagination} from '~/lib/pagination';
 import {useNavigation} from 'react-router';
 import {buttonClassName} from '~/components/ui/Button';
 

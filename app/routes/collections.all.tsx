@@ -1,6 +1,6 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/collections.all';
-import {getPaginationVariables} from '@shopify/hydrogen';
+import {getPaginationVariables} from '~/lib/pagination';
 import {CollectionHeader} from '~/components/collection/CollectionHeader';
 import {ProductListing} from '~/components/collection/ProductListing';
 import {CATALOG_SORT_OPTIONS, getSortVariables} from '~/lib/collectionFilters';

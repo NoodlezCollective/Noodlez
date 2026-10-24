@@ -1,6 +1,7 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/collections.$handle';
-import {Analytics, getPaginationVariables} from '@shopify/hydrogen';
+import {Analytics} from '@shopify/hydrogen';
+import {getPaginationVariables} from '~/lib/pagination';
 import {CollectionHeader} from '~/components/collection/CollectionHeader';
 import {ProductListing} from '~/components/collection/ProductListing';
 import {

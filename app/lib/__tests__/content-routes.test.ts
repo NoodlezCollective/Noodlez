@@ -28,30 +28,6 @@ import {
   thrownResponse,
 } from './route-test-utils';
 
-// Hydrogen's <Pagination> needs a second copy of the router context under
-// Vitest; render its children directly (the list items are what matter here).
-vi.mock('@shopify/hydrogen', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@shopify/hydrogen')>();
-  return {
-    ...actual,
-    Pagination: ({
-      connection,
-      children,
-    }: {
-      connection: {nodes: unknown[]};
-      children: (state: Record<string, unknown>) => unknown;
-    }) =>
-      children({
-        nodes: connection.nodes,
-        isLoading: false,
-        hasNextPage: false,
-        hasPreviousPage: false,
-        PreviousLink: () => null,
-        NextLink: () => null,
-      }),
-  };
-});
-
 afterEach(() => {
   vi.unstubAllEnvs();
 });

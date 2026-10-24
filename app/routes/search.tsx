@@ -1,7 +1,8 @@
 import {useEffect, useRef} from 'react';
 import {data, useLoaderData, useNavigation} from 'react-router';
 import type {Route} from './+types/search';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
+import {Analytics} from '@shopify/hydrogen';
+import {getPaginationVariables} from '~/lib/pagination';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
 import {Button} from '~/components/ui/Button';

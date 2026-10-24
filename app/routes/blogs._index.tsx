@@ -1,6 +1,6 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs._index';
-import {Pagination, getPaginationVariables} from '@shopify/hydrogen';
+import {Pagination, getPaginationVariables} from '~/lib/pagination';
 import type {BlogsQuery} from 'storefrontapi.generated';
 import {Button} from '~/components/ui/Button';
 import {ArrowRightIcon} from '~/components/ui/Icons';

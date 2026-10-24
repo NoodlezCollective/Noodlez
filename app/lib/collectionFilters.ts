@@ -25,7 +25,10 @@ import {isNonEmptyString, isRecord} from '~/lib/guards';
 export const FILTER_URL_PREFIX = 'filter.';
 export const SORT_KEY_PARAM = 'sort_key';
 export const REVERSE_PARAM = 'reverse';
-/** Parameters Hydrogen's <Pagination> appends; dropped when filters change. */
+/**
+ * Parameters <Pagination> (lib/pagination.tsx) appends; dropped when filters
+ * change.
+ */
 export const PAGINATION_PARAMS = ['cursor', 'direction'] as const;
 
 export type FilterKey = keyof ProductFilter;

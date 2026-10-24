@@ -6,7 +6,7 @@ import {
 } from 'react-router';
 import type {Route} from './+types/account.orders._index';
 import {useId, useRef} from 'react';
-import {Pagination, getPaginationVariables} from '@shopify/hydrogen';
+import {Pagination, getPaginationVariables} from '~/lib/pagination';
 import {Money, flattenConnection} from '@shopify/hydrogen-react';
 import {
   buildOrderSearchQuery,
