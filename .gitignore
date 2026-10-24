@@ -5,11 +5,16 @@ node_modules
 /public/build
 /.mf
 .env
+.env.*
 .shopify
 .react-router
-.env
-.env.*
-!.env.example
+
+# Cloudflare Workers: local state and the developer's variables
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.e2e
+!.dev.vars.example
 .DS_Store
 *.log
 

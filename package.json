@@ -5,10 +5,10 @@
   "version": "2026.4.8",
   "type": "module",
   "scripts": {
-    "build": "shopify hydrogen build --codegen",
-    "dev": "shopify hydrogen dev --codegen",
-    "dev:e2e": "shopify hydrogen dev --port 3100 --env-file tests/e2e/e2e.env --disable-version-check",
-    "preview": "shopify hydrogen preview --build",
+    "build": "react-router build",
+    "dev": "react-router dev --port 3000",
+    "dev:e2e": "CLOUDFLARE_ENV=e2e react-router dev --port 3100 --strictPort",
+    "preview": "npm run build && vite preview",
     "lint": "eslint --no-error-on-unmatched-pattern .",
     "format": "prettier --write .",
     "typecheck": "react-router typegen && tsc --noEmit",
@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "codegen": "shopify hydrogen codegen && react-router typegen"
+    "codegen": "graphql-codegen --config codegen.ts && react-router typegen",
+    "deploy": "npm run build && wrangler deploy"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
+    "@cloudflare/vite-plugin": "1.65.0",
     "@eslint/compat": "^1.2.5",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
@@ -41,6 +43,7 @@
     "@react-router/dev": "7.16.0",
     "@react-router/fs-routes": "7.16.0",
     "@shopify/cli": "3.93.2",
+    "@shopify/graphql-codegen": "0.0.2",
     "@shopify/hydrogen-codegen": "0.3.3",
     "@shopify/mini-oxygen": "4.2.3",
     "@shopify/oxygen-workers-types": "^4.1.6",
@@ -66,7 +69,8 @@
     "prettier": "^3.4.2",
     "typescript": "^5.9.2",
     "vite": "^8.0.1",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "wrangler": "4.152.0"
   },
   "engines": {
     "node": "^22 || ^24"

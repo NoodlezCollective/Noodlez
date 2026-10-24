@@ -30,9 +30,9 @@ be developed and reviewed before a Shopify store is linked.
 Mock mode needs a 32-character `PUBLIC_STOREFRONT_API_TOKEN` placeholder that
 does not start with `shpat_`, for example `mockmockmockmockmockmockmockmock`.
 Hydrogen's `useCustomerPrivacy` logs a console error for any other length (or a
-`shpat_` token). `.env.example` states the same rule, and `tests/e2e/e2e.env` is
-a committed mock-mode environment: `npm run dev:e2e` and the Playwright suite
-(port 3100) use it.
+`shpat_` token). `.dev.vars.example` states the same rule, and `.dev.vars.e2e`
+is a committed mock-mode environment: `npm run dev:e2e` and the Playwright
+suite (port 3100) use it through `CLOUDFLARE_ENV=e2e`.
 
 When `data/catalog.ts` changes, update `tests/e2e/support/catalog.ts` in the same
 commit. The Playwright suite checks against the hand-typed constants in that

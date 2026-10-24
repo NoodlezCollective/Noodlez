@@ -10,8 +10,10 @@ site renders before configuration is complete.
 
 ## 1. Environment variables
 
-Run `npx shopify hydrogen link` then `npx shopify hydrogen env pull` to create
-`.env`, or fill it from `.env.example`:
+Copy `.dev.vars.example` to `.dev.vars` (gitignored) and fill it from the
+Hydrogen sales channel's storefront settings in the Shopify admin. In
+production, set the same variables on the Worker (`npx wrangler secret put
+<NAME>` for secrets):
 
 | Variable                                                                              | Purpose                                                                                                           |
 | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -128,15 +130,16 @@ rejected with status 413.
 
 ## 10. Local development without a store
 
-Set `MOCK_STOREFRONT=true` in `.env` and run `npm run dev`. The storefront
+Set `MOCK_STOREFRONT=true` in `.dev.vars` and run `npm run dev`. The storefront
 serves the Mellow demo catalog (products, collections, metaobjects, cart)
 from `app/lib/mock`. A badge in the corner of every page indicates mock mode.
 
 - `PUBLIC_STOREFRONT_API_TOKEN` must be a 32-character placeholder that does not
   start with `shpat_`, for example `mockmockmockmockmockmockmockmock`. Hydrogen
   logs a console error otherwise.
-- `tests/e2e/e2e.env` is a committed mock-mode environment, used by
-  `npm run dev:e2e` and the Playwright suite on port 3100.
+- `.dev.vars.e2e` is a committed mock-mode environment, used by
+  `npm run dev:e2e` and the Playwright suite on port 3100 (Wrangler loads it
+  instead of `.dev.vars` when `CLOUDFLARE_ENV=e2e`).
 - Checkout is not available in mock mode: `/dev/mock-checkout` explains that a
   real store is needed.
 - Cart permalinks accept mock variant ids, for example

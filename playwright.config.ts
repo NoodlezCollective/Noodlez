@@ -3,12 +3,14 @@ import {defineConfig, devices} from '@playwright/test';
 /**
  * End-to-end tests for the Mellow storefront (tests/e2e).
  *
- * The suite runs against the Hydrogen dev server in mock mode
+ * The suite runs against the React Router dev server (the Worker runs in
+ * workerd through the Cloudflare Vite plugin) in mock mode
  * (MOCK_STOREFRONT=true, see app/lib/mock/README.md). The mock only exists in
- * development builds, so Playwright starts `shopify hydrogen dev` itself with
- * the committed placeholder environment in tests/e2e/e2e.env on port 3100 and
- * never reads the developer's .env. Set E2E_BASE_URL to test an already
- * running server instead; it must be in mock mode with a 32-character token.
+ * development builds, so Playwright starts `react-router dev` itself with
+ * CLOUDFLARE_ENV=e2e, which makes Wrangler load the committed placeholders in
+ * .dev.vars.e2e instead of the developer's .dev.vars, on port 3100. Set
+ * E2E_BASE_URL to test an already running server instead; it must be in mock
+ * mode with a 32-character token.
  *
  * Browsers: Chromium only (the preinstalled build; never run
  * `playwright install` in the cloud container). Projects and tags:
@@ -45,7 +47,7 @@ export default defineConfig({
     ...devices['Desktop Chrome'],
     baseURL: BASE_URL,
     locale: 'en-US',
-    // A zone west of UTC: Oxygen renders in UTC, so any server/client date
+    // A zone west of UTC: the Worker renders in UTC, so any server/client date
     // formatting difference shows up as a hydration error here.
     timezoneId: 'America/Los_Angeles',
     colorScheme: 'light',
@@ -85,7 +87,7 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: `npx shopify hydrogen dev --env-file tests/e2e/e2e.env --port ${PORT} --disable-version-check`,
+        command: `npx react-router dev --port ${PORT} --strictPort`,
         url: `${BASE_URL}/`,
         reuseExistingServer: !IS_CI,
         timeout: 180_000,
@@ -95,7 +97,8 @@ export default defineConfig({
         // or run `npm run dev:e2e` yourself when the server does not start.
         stderr: process.env.E2E_SERVER_LOGS ? 'pipe' : 'ignore',
         gracefulShutdown: {signal: 'SIGTERM', timeout: 10_000},
-        // Vite derives import.meta.env.DEV (which gates the mock) from NODE_ENV.
-        env: {NODE_ENV: 'development'},
+        // Vite derives import.meta.env.DEV (which gates the mock) from NODE_ENV;
+        // CLOUDFLARE_ENV selects the e2e Worker environment and .dev.vars.e2e.
+        env: {NODE_ENV: 'development', CLOUDFLARE_ENV: 'e2e'},
       },
 });

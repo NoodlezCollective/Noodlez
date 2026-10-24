@@ -1,15 +1,24 @@
 import {fileURLToPath} from 'node:url';
 import {defineConfig} from 'vite';
-import {hydrogen} from '@shopify/hydrogen/vite';
-import {oxygen} from '@shopify/mini-oxygen/vite';
+import {cloudflare} from '@cloudflare/vite-plugin';
 import {reactRouter} from '@react-router/dev/vite';
 
 export default defineConfig({
-  plugins: [hydrogen(), oxygen(), reactRouter()],
+  plugins: [
+    // Runs server.ts in workerd (the Workers runtime) in dev and preview, and
+    // builds the Worker for `wrangler deploy`. React Router's SSR environment
+    // is the Worker environment.
+    cloudflare({
+      viteEnvironment: {name: 'ssr'},
+      // Honour public/_headers in dev as production does.
+      experimental: {headersAndRedirectsDevModeSupport: true},
+    }),
+    reactRouter(),
+  ],
   resolve: {
     alias: {
       // Vite's native tsconfig path resolver does not cover JavaScript
-      // projects that use jsconfig.json, so define Hydrogen's app alias here.
+      // projects that use jsconfig.json, so define the app alias here.
       '~': fileURLToPath(new URL('./app', import.meta.url)),
     },
     tsconfigPaths: true,
@@ -39,7 +48,6 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['.tryhydrogen.dev'],
     // Playwright and coverage write into the repo while the dev server runs;
     // watching them triggers full reloads in every connected browser.
     watch: {

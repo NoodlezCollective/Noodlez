@@ -1,7 +1,8 @@
 # End-to-end tests
 
-Playwright specs for the Mellow storefront. They run against the Hydrogen dev
-server in **mock mode** (`MOCK_STOREFRONT=true`, see `app/lib/mock/README.md`):
+Playwright specs for the Mellow storefront. They run against the React Router
+dev server (the Worker runs in workerd through the Cloudflare Vite plugin) in
+**mock mode** (`MOCK_STOREFRONT=true`, see `app/lib/mock/README.md`):
 no Shopify credentials, no network. Chromium only.
 
 ## Running
@@ -17,9 +18,10 @@ npm run test:e2e:report                            # open the HTML report
 npm test                                           # unit tests, then e2e
 ```
 
-Playwright starts the dev server itself (`npx shopify hydrogen dev --env-file
-tests/e2e/e2e.env --port 3100`) and reuses one that is already running on that
-port locally (never in CI). `tests/e2e/global-setup.ts` then checks that the
+Playwright starts the dev server itself (`npx react-router dev --port 3100
+--strictPort` with `CLOUDFLARE_ENV=e2e`, so Wrangler reads the committed
+`.dev.vars.e2e` instead of your `.dev.vars`) and reuses one that is already
+running on that port locally (never in CI). `tests/e2e/global-setup.ts` then checks that the
 server really is in mock mode, requests every route once and loads the main
 pages in a browser, so Vite's on-demand compilation and dependency
 optimisation do not happen in the middle of a test. The first run on a cold
@@ -28,9 +30,9 @@ The server's own log (one line per request) is hidden; set `E2E_SERVER_LOGS=1`
 to see it, or run `npm run dev:e2e` in another terminal when the server does
 not come up.
 
-`tests/e2e/e2e.env` is committed on purpose: placeholders only. The public
-token must stay exactly **32 characters**, otherwise Hydrogen logs "It looks
-like you passed a private access token" on every page.
+`.dev.vars.e2e` is committed on purpose: placeholders only. The public token
+must stay exactly **32 characters**, otherwise Hydrogen logs "It looks like
+you passed a private access token" on every page.
 
 **Do not edit `app/` while the suite runs.** The dev server hot-reloads, and
 the mock keeps carts in memory: a reload mid-run drops them and fails

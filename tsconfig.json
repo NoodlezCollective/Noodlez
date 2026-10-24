@@ -26,7 +26,6 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "types": [
-      "@shopify/oxygen-workers-types",
       "react-router",
       "@shopify/hydrogen/react-router-types",
       "vite/client"

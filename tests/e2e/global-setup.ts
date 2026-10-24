@@ -1,8 +1,8 @@
 /**
  * Runs once before the suite (after Playwright has started the dev server).
  *
- * 1. Preflight: the server answering on the base URL must be the Hydrogen dev
- *    server in mock mode. Anything else (a stale process on the port, a
+ * 1. Preflight: the server answering on the base URL must be the React Router
+ *    dev server in mock mode. Anything else (a stale process on the port, a
  *    server linked to a real store, a deployed site) would make the whole
  *    suite fail in confusing ways, so fail here with an explanation.
  * 2. Warm the server side: request every route module once, so the first
@@ -90,9 +90,10 @@ const PREFLIGHT_HINTS: Record<PreflightProblem, string[]> = {
     'may have failed to compile the app (`npm run dev:e2e` shows the error).',
   ],
   'not-mock': [
-    'Something else is serving this address. The suite needs the Hydrogen dev',
-    'server in mock mode (MOCK_STOREFRONT=true, 32-character token), which',
-    'Playwright starts itself from tests/e2e/e2e.env on port 3100:',
+    'Something else is serving this address. The suite needs the React Router',
+    'dev server in mock mode (MOCK_STOREFRONT=true, 32-character token), which',
+    'Playwright starts itself with CLOUDFLARE_ENV=e2e (values from .dev.vars.e2e)',
+    'on port 3100:',
     '  - stop whatever is listening there, or set E2E_PORT to a free port;',
     '  - to test your own server, set E2E_BASE_URL and make sure it shows the',
     `    "${MOCK_BADGE_TEXT}" badge (see tests/e2e/README.md).`,
@@ -246,8 +247,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       [
         `Hydrogen logged "It looks like you passed a private access token" on ${tokenErrors.size} warm-up page(s), e.g. ${[...tokenErrors][0]}.`,
         'The server under test has a PUBLIC_STOREFRONT_API_TOKEN that is not exactly 32 characters,',
-        'so every test would fail on that console error. tests/e2e/e2e.env uses a 32-character',
-        "placeholder; if you set E2E_BASE_URL, fix that server's .env (any 32 characters in mock mode).",
+        'so every test would fail on that console error. .dev.vars.e2e uses a 32-character',
+        "placeholder; if you set E2E_BASE_URL, fix that server's .dev.vars (any 32 characters in mock mode).",
       ].join('\n'),
     );
   }

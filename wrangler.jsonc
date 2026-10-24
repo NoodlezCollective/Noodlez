@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "mellow-storefront",
+  // The module worker: it imports the React Router server build that the
+  // Cloudflare Vite plugin produces from app/ and handles every request.
+  "main": "./server.ts",
+  // The newest date the installed workerd (wrangler 4.152.0) supports; dev
+  // and production then run the same runtime behaviour.
+  "compatibility_date": "2026-10-19",
+  "observability": {"enabled": true},
+  // Source maps are uploaded for readable stack traces in the dashboard; they
+  // are never served to visitors.
+  "upload_source_maps": true,
+  // Variables set in the Cloudflare dashboard survive `wrangler deploy`.
+  "keep_vars": true,
+  // Production needs a custom domain: the Cache API is inactive on
+  // *.workers.dev. Add, for example:
+  //   "workers_dev": false,
+  //   "routes": [{"pattern": "shop.example.com", "custom_domain": true}],
+  "env": {
+    // Selected by CLOUDFLARE_ENV=e2e (`npm run dev:e2e` and the Playwright
+    // webServer). Its variables come from the committed .dev.vars.e2e
+    // placeholders; this environment is never deployed.
+    "e2e": {},
+  },
+}
