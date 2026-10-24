@@ -1,10 +1,10 @@
 import {useId} from 'react';
 import {Link, useNavigate} from 'react-router';
-import {type MappedProductOptions} from '@shopify/hydrogen';
+import type {MappedProductOptions} from '@shopify/hydrogen-react';
 import type {
   Maybe,
   ProductOptionValueSwatch,
-} from '@shopify/hydrogen/storefront-api-types';
+} from '@shopify/hydrogen-react/storefront-api-types';
 import type {SwatchGroups} from '~/lib/content/metafields';
 
 type OptionValue = MappedProductOptions['optionValues'][number];

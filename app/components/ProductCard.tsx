@@ -1,5 +1,5 @@
 import {Link} from 'react-router';
-import {Image} from '@shopify/hydrogen';
+import {Image} from '@shopify/hydrogen-react';
 import type {ProductCardFragment} from 'storefrontapi.generated';
 import {Badge} from '~/components/ui/Badge';
 import {Button} from '~/components/ui/Button';

@@ -1,4 +1,4 @@
-import {Image} from '@shopify/hydrogen';
+import {Image} from '@shopify/hydrogen-react';
 import type {ImageContent} from '~/lib/content/types';
 
 type ContentImageProps = {

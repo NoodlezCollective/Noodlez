@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import {Image} from '@shopify/hydrogen';
+import {Image} from '@shopify/hydrogen-react';
 
 export type CollectionHeaderImage = {
   id?: string | null;

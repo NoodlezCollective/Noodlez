@@ -1,6 +1,6 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs.$blogHandle.$articleHandle';
-import {Image} from '@shopify/hydrogen';
+import {Image} from '@shopify/hydrogen-react';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {LONG_DATE_FORMAT, formatDate} from '~/lib/dates';
 import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';

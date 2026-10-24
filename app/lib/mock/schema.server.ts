@@ -3,7 +3,7 @@ import {
   type GraphQLSchema,
   type IntrospectionQuery,
 } from 'graphql';
-import storefrontSchema from '@shopify/hydrogen/storefront.schema.json';
+import storefrontSchema from '@shopify/hydrogen-react/storefront.schema.json';
 
 let cached: GraphQLSchema | undefined;
 

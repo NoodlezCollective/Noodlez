@@ -5,7 +5,7 @@ import type {
   CartBuyerIdentityInput,
   CartLineInput,
   CartLineUpdateInput,
-} from '@shopify/hydrogen/storefront-api-types';
+} from '@shopify/hydrogen-react/storefront-api-types';
 import {CartForm, useOptimisticCart} from '@shopify/hydrogen';
 import {CartMain, formatItemCount} from '~/components/CartMain';
 import {STOREFRONT_API_ERROR_STATUS} from '~/lib/storefront-errors';

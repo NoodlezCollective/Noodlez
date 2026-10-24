@@ -6,10 +6,12 @@ import {
   getSelectedProductOptions,
   Analytics,
   useOptimisticVariant,
-  getProductOptions,
-  getAdjacentAndFirstAvailableVariants,
   useNonce,
 } from '@shopify/hydrogen';
+import {
+  getProductOptions,
+  getAdjacentAndFirstAvailableVariants,
+} from '@shopify/hydrogen-react';
 import type {ProductFragment} from 'storefrontapi.generated';
 import {ProductForm} from '~/components/ProductForm';
 import {ProductPrice} from '~/components/ProductPrice';

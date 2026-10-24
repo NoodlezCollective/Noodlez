@@ -1,4 +1,4 @@
-import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
+import type {MoneyV2} from '@shopify/hydrogen-react/storefront-api-types';
 import {Price} from '~/components/ui/Price';
 
 type MoneyLike = Pick<MoneyV2, 'amount' | 'currencyCode'>;

@@ -2,7 +2,7 @@ import type {
   ProductCollectionSortKeys,
   ProductFilter,
   ProductSortKeys,
-} from '@shopify/hydrogen/storefront-api-types';
+} from '@shopify/hydrogen-react/storefront-api-types';
 import {isNonEmptyString, isRecord} from '~/lib/guards';
 
 /**

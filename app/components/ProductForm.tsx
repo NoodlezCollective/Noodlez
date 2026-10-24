@@ -1,5 +1,5 @@
 import {useState, type ReactNode} from 'react';
-import {type MappedProductOptions} from '@shopify/hydrogen';
+import type {MappedProductOptions} from '@shopify/hydrogen-react';
 import type {ProductFragment} from 'storefrontapi.generated';
 import type {SwatchGroups} from '~/lib/content/metafields';
 import {AddToCartButton} from './AddToCartButton';

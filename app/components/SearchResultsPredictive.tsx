@@ -1,5 +1,5 @@
 import {Link, useFetcher, type Fetcher} from 'react-router';
-import {Image} from '@shopify/hydrogen';
+import {Image} from '@shopify/hydrogen-react';
 import React, {useRef, useEffect, useId} from 'react';
 import {
   getEmptyPredictiveSearchResult,

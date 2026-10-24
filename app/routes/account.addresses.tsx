@@ -1,4 +1,4 @@
-import type {CustomerAddressInput} from '@shopify/hydrogen/customer-account-api-types';
+import type {CustomerAddressInput} from '@shopify/hydrogen-react/customer-account-api-types';
 import type {
   AddressFragment,
   CustomerFragment,

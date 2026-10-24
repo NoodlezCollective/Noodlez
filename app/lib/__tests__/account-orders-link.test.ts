@@ -1,11 +1,10 @@
-import {createElement} from 'react';
 import {matchRoutes} from 'react-router';
 import {describe, expect, it, vi} from 'vitest';
 import Orders from '../../routes/account.orders._index';
 import {ORIGIN, renderRoute} from './route-test-utils';
 
-// Hydrogen's <Pagination> and <Money> need a second copy of the router context
-// and a ShopifyProvider; neither matters for the links this file checks.
+// Hydrogen's <Pagination> needs a second copy of the router context, which
+// does not matter for the links this file checks.
 vi.mock('@shopify/hydrogen', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@shopify/hydrogen')>();
   return {
@@ -25,8 +24,6 @@ vi.mock('@shopify/hydrogen', async (importOriginal) => {
         PreviousLink: () => null,
         NextLink: () => null,
       }),
-    Money: ({data}: {data: {amount: string; currencyCode: string}}) =>
-      createElement('span', null, `${data.amount} ${data.currencyCode}`),
   };
 });
 

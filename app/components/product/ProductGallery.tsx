@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState, type CSSProperties} from 'react';
-import {Image} from '@shopify/hydrogen';
+import {Image} from '@shopify/hydrogen-react';
 import {ChevronLeftIcon, ChevronRightIcon} from '~/components/ui/Icons';
 import {ProductImage, type ProductImageData} from '~/components/ProductImage';
 

@@ -1,4 +1,4 @@
-import {Image} from '@shopify/hydrogen';
+import {Image} from '@shopify/hydrogen-react';
 
 export type ProductImageData = {
   id?: string | null;
