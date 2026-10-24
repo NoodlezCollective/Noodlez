@@ -407,16 +407,6 @@ export function currencySymbol(currencyCode = 'USD') {
   );
 }
 
-export function pluralize(
-  count: number,
-  singular: string,
-  plural = `${singular}s`,
-) {
-  return `${new Intl.NumberFormat('en-US').format(count)} ${
-    count === 1 ? singular : plural
-  }`;
-}
-
 /**
  * Fragment for `collection.products(...).filters`. Interpolate it into
  * collection queries next to `PRODUCT_CARD_FRAGMENT`.

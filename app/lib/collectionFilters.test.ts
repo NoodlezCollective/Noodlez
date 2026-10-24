@@ -16,7 +16,6 @@ import {
   isFilterValueActive,
   parseAppliedFilters,
   parseFilterInput,
-  pluralize,
   removeFilterParam,
   toPriceFilter,
 } from './collectionFilters';
@@ -668,21 +667,5 @@ describe('currencySymbol', () => {
     expect(currencySymbol()).toBe('$');
     expect(currencySymbol('EUR')).toBe('€');
     expect(currencySymbol('GBP')).toBe('£');
-  });
-});
-
-describe('pluralize', () => {
-  it('uses the singular for exactly one', () => {
-    expect(pluralize(1, 'product')).toBe('1 product');
-  });
-
-  it('uses the plural for zero and many, with grouping', () => {
-    expect(pluralize(0, 'product')).toBe('0 products');
-    expect(pluralize(2, 'product')).toBe('2 products');
-    expect(pluralize(1234, 'product')).toBe('1,234 products');
-  });
-
-  it('accepts an irregular plural', () => {
-    expect(pluralize(3, 'category', 'categories')).toBe('3 categories');
   });
 });
