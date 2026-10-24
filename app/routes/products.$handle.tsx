@@ -1,13 +1,13 @@
 import {useMemo} from 'react';
-import {useLoaderData} from 'react-router';
+import {useLoaderData, useLocation} from 'react-router';
 import type {Route} from './+types/products.$handle';
+import {useSelectedOptionsInUrl} from '~/lib/useSelectedOptionsInUrl';
 import {
   getSelectedProductOptions,
   Analytics,
   useOptimisticVariant,
   getProductOptions,
   getAdjacentAndFirstAvailableVariants,
-  useSelectedOptionInUrlParam,
   useNonce,
 } from '@shopify/hydrogen';
 import type {ProductFragment} from 'storefrontapi.generated';
@@ -130,6 +130,7 @@ function loadDeferredData({context}: Route.LoaderArgs, productId: string) {
 
 export default function Product() {
   const {product, recommendations, origin} = useLoaderData<typeof loader>();
+  const {pathname} = useLocation();
   const nonce = useNonce();
 
   // Optimistically selects a variant with given available variant information
@@ -138,9 +139,9 @@ export default function Product() {
     getAdjacentAndFirstAvailableVariants(product),
   );
 
-  // Sets the search param to the selected variant without navigation
-  // only when no search params are set in the url
-  useSelectedOptionInUrlParam(selectedVariant.selectedOptions);
+  // Mirrors the selected variant into the URL without a navigation (guarded so
+  // a cancelled navigation never writes it into another page's URL).
+  useSelectedOptionsInUrl(selectedVariant.selectedOptions, pathname);
 
   // Get the product options array
   const productOptions = getProductOptions({

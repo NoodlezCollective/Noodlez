@@ -10,4 +10,9 @@ import {hydrogenPreset} from '@shopify/hydrogen/react-router-preset';
  */
 export default {
   presets: [hydrogenPreset()],
+  // Ship the whole route manifest with the document instead of fetching
+  // /__manifest patches on every navigation: the storefront has few routes,
+  // it removes a request per navigation, and it keeps the dev worker from
+  // wedging under the e2e suite's request volume.
+  routeDiscovery: {mode: 'initial'},
 } satisfies Config;

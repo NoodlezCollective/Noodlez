@@ -419,13 +419,6 @@ test.describe('filters', () => {
   test('an option with a single product reads "1 product" to screen readers', async ({
     page,
   }) => {
-    test.fixme(
-      true,
-      'BUG: the visually hidden suffix of a filter option count is the fixed ' +
-        'text " products" (app/components/collection/FilterPanel.tsx:280), so ' +
-        'the checkbox is named "Standard 1 products". Suggested fix: ' +
-        "{value.count === 1 ? ' product' : ' products'}.",
-    );
     await gotoHydrated(page, collectionPath(COLLECTIONS.pillows));
 
     await expect(
@@ -974,16 +967,6 @@ test.describe('pagination on Shop All', () => {
   test('Load more hands keyboard focus to the list instead of dropping it', async ({
     page,
   }) => {
-    test.fixme(
-      true,
-      'BUG: activating "Load more" on the last page of results drops focus to ' +
-        '<body>: the link is the focused element and unmounts when hasNextPage ' +
-        'turns false (app/components/PaginatedResourceSection.tsx:120). Keyboard ' +
-        'and screen-reader users lose their place at the end of the list, ' +
-        'unlike the cart, discount and filter-chip removals that restore focus. ' +
-        'Suggested fix: when the link disappears, focus the first newly loaded ' +
-        'card heading (or the result count, which has tabIndex -1).',
-    );
     await gotoHydrated(page, collectionPath(COLLECTIONS.all));
     await loadMore(page).focus();
 
@@ -996,12 +979,6 @@ test.describe('pagination on Shop All', () => {
   test('Load previous hands keyboard focus to the list instead of dropping it', async ({
     page,
   }) => {
-    test.fixme(
-      true,
-      'BUG: same cause as "Load more": the focused "Load previous" link unmounts ' +
-        'when hasPreviousPage turns false ' +
-        '(app/components/PaginatedResourceSection.tsx:88) and focus falls to <body>.',
-    );
     await gotoHydrated(page, collectionPath(COLLECTIONS.all));
     await loadMore(page).click();
     await expect(cards(page)).toHaveCount(PAGE_SIZE + 1);

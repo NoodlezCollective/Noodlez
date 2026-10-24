@@ -277,7 +277,9 @@ function ListOptions({filter, uid, params, onChange}: OptionsProps) {
               <span className="filter-option__label">{value.label}</span>
               <span className="filter-option__count">
                 {value.count}
-                <span className="sr-only"> products</span>
+                <span className="sr-only">
+                  {value.count === 1 ? ' product' : ' products'}
+                </span>
               </span>
             </label>
           </li>

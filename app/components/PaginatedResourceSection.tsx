@@ -3,6 +3,8 @@ import {Pagination} from '@shopify/hydrogen';
 import {useNavigation} from 'react-router';
 import {buttonClassName} from '~/components/ui/Button';
 
+type PendingFocus = {direction: 'next' | 'previous'; count: number};
+
 type PaginationToolbarInfo = {
   /** Number of nodes currently rendered (including appended pages). */
   count: number;
@@ -42,6 +44,7 @@ export function PaginatedResourceSection<NodesType>({
   loadPreviousLabel?: string;
 }) {
   const navigation = useNavigation();
+  const resourcesRef = React.useRef<HTMLDivElement>(null);
   const pendingParams = navigation.location
     ? new URLSearchParams(navigation.location.search)
     : null;
@@ -77,6 +80,12 @@ export function PaginatedResourceSection<NodesType>({
 
         return (
           <div className="paginated-section">
+            <PaginationFocus
+              count={nodes.length}
+              isLoading={isLoading}
+              direction={pendingDirection}
+              container={resourcesRef}
+            />
             {toolbar
               ? toolbar({
                   count: nodes.length,
@@ -107,6 +116,7 @@ export function PaginatedResourceSection<NodesType>({
               emptyState
             ) : resourcesClassName ? (
               <div
+                ref={resourcesRef}
                 aria-label={ariaLabel}
                 aria-busy={loadingNext || loadingPrevious || undefined}
                 className={resourcesClassName}
@@ -140,4 +150,45 @@ export function PaginatedResourceSection<NodesType>({
       }}
     </Pagination>
   );
+}
+
+/**
+ * After "Load more" / "Load previous" the clicked link unmounts when no further
+ * page exists, which drops keyboard focus to <body>. Hand it to the first newly
+ * loaded resource instead (the link keeps focus while more pages remain).
+ * Hydrogen's pagination links override any `onClick` passed to them, so the
+ * pending load is detected from the loading state rather than from the click.
+ */
+function PaginationFocus({
+  count,
+  isLoading,
+  direction,
+  container,
+}: {
+  count: number;
+  isLoading: boolean;
+  direction: 'next' | 'previous';
+  container: React.RefObject<HTMLDivElement | null>;
+}) {
+  const pending = React.useRef<PendingFocus | null>(null);
+  React.useEffect(() => {
+    if (isLoading) {
+      pending.current ??= {direction, count};
+      return;
+    }
+    const request = pending.current;
+    pending.current = null;
+    if (!request || count === request.count) return;
+    if (document.activeElement && document.activeElement !== document.body) {
+      return;
+    }
+    const items = container.current?.children;
+    if (!items) return;
+    const target = items[request.direction === 'next' ? request.count : 0];
+    const focusable = target?.querySelector<HTMLElement>(
+      'a[href]:not([aria-hidden="true"]):not([tabindex="-1"]), button',
+    );
+    (focusable ?? (target instanceof HTMLElement ? target : null))?.focus();
+  }, [count, isLoading, direction, container]);
+  return null;
 }

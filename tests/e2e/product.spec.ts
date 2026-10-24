@@ -198,23 +198,6 @@ test.describe('variants and price', () => {
   test('going Back while a variant change is still loading leaves the previous URL clean', async ({
     page,
   }) => {
-    test.fixme(
-      true,
-      'BUG: pressing Back before a variant change has loaded appends ' +
-        '"?Size=Standard" to the previous page (/collections/pillows becomes ' +
-        "/collections/pillows?Size=Standard). Hydrogen's " +
-        'useSelectedOptionInUrlParam (called at app/routes/products.$handle.tsx:143; ' +
-        'hydrogen-react useSelectedOptionInUrlParam.js:14) writes the selected ' +
-        'options with window.history.replaceState onto whatever URL the browser ' +
-        'has at that moment. useOptimisticVariant shows King (and the hook ' +
-        'writes ?Size=King) while the navigation is in flight; Back cancels ' +
-        'that navigation, the loader data is still Standard, the hook re-runs ' +
-        'and rewrites the already-restored previous URL. Reproduces whenever the ' +
-        'product loader answers slower than the shopper presses Back (slow ' +
-        'network). Suggested fix: replace the hook with a local effect that ' +
-        'returns early unless window.location.pathname still is the product ' +
-        'page.',
-    );
     await gotoHydrated(page, '/collections/pillows');
     await page
       .getByRole('link', {name: `Shop Now: ${cloudAlign.title}`})

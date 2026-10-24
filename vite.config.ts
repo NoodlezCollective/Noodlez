@@ -40,5 +40,14 @@ export default defineConfig({
   },
   server: {
     allowedHosts: ['.tryhydrogen.dev'],
+    // Playwright and coverage write into the repo while the dev server runs;
+    // watching them triggers full reloads in every connected browser.
+    watch: {
+      ignored: [
+        '**/playwright-report/**',
+        '**/test-results/**',
+        '**/coverage/**',
+      ],
+    },
   },
 });
