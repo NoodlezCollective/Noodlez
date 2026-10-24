@@ -556,13 +556,9 @@
   min-width: 0;
 }
 
-/* Pause while the pointer is over the bar (including its toggle) or focus is
-   anywhere inside it. */
-.announcement-bar:hover .marquee__track,
-.announcement-bar:focus-within .marquee__track {
-  animation-play-state: paused;
-}
-
+/* Hover/focus pausing is scoped to the marquee itself (.marquee--pause): a
+   bar-level :focus-within rule would keep the strip frozen while the toggle
+   button holds focus after "resume". */
 .announcement-bar__item {
   display: inline-flex;
   align-items: center;

@@ -114,12 +114,21 @@ export function useModalDialog({
       .filter((element) => !element.hasAttribute('inert'));
     inerted.forEach((element) => element.setAttribute('inert', ''));
 
-    const focusInitial = () =>
+    const focusInitial = () => {
       (initialFocusRef?.current ?? getFocusable(dialog)[0] ?? dialog).focus();
+      return dialog.contains(document.activeElement);
+    };
 
-    // Drawers only become visible once their CSS transition starts, so focus
-    // on the next frame.
-    const frame = requestAnimationFrame(focusInitial);
+    // Drawers only become visible once their CSS transition starts, and under
+    // prefers-reduced-motion the visibility flip can take a couple of frames
+    // (focusing a hidden element is silently ignored): retry on successive
+    // frames until the focus sticks.
+    let attempts = 0;
+    let frame = requestAnimationFrame(function tryFocus() {
+      if (!focusInitial() && attempts++ < 10) {
+        frame = requestAnimationFrame(tryFocus);
+      }
+    });
 
     const abortController = new AbortController();
     document.addEventListener(

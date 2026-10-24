@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  startTransition,
 } from 'react';
 import {CloseIcon} from '~/components/ui/Icons';
 import {useModalDialog} from '~/lib/useModalDialog';
@@ -94,8 +95,15 @@ const AsideContext = createContext<AsideContextValue | null>(null);
 
 Aside.Provider = function AsideProvider({children}: {children: ReactNode}) {
   const [type, setType] = useState<AsideType>('closed');
-  const close = useCallback(() => setType('closed'), []);
-  const value = useMemo(() => ({type, open: setType, close}), [type, close]);
+  // A drawer can open before the deferred Suspense boundaries (cart, footer)
+  // have hydrated; a transition keeps React from throwing "received an update
+  // before it finished hydrating" in that window.
+  const open = useCallback(
+    (mode: AsideType) => startTransition(() => setType(mode)),
+    [],
+  );
+  const close = useCallback(() => open('closed'), [open]);
+  const value = useMemo(() => ({type, open, close}), [type, open, close]);
 
   return (
     <AsideContext.Provider value={value}>{children}</AsideContext.Provider>

@@ -34,6 +34,7 @@ import {
   MOCK_SHOP_WARNING,
 } from './support/console';
 import {
+  WITH_MOTION,
   clickBackdrop,
   drawer,
   expectFocusTrapped,
@@ -73,6 +74,7 @@ test.describe('console guard', () => {
     baseURL,
   }) => {
     await withGuard(browser, baseURL, async (guard, page) => {
+      /* eslint-disable no-console -- deliberately exercises every console method */
       await page.evaluate(() => {
         console.log('chatter-log');
         console.info('chatter-info');
@@ -84,6 +86,7 @@ test.describe('console guard', () => {
           throw new Error('recorded-uncaught');
         }, 0);
       });
+      /* eslint-enable no-console */
 
       await expect
         .poll(() => guard.records().map(({type}) => type))
@@ -255,6 +258,9 @@ test.describe('hydration gate', {tag: '@mobile'}, () => {
 });
 
 test.describe('dialog helpers', {tag: '@mobile'}, () => {
+  // Runs under the suite default (prefers-reduced-motion: reduce) on purpose:
+  // the drawers must take focus even when their transitions are collapsed.
+
   test('cart drawer: opens, traps focus, closes on Escape and gives focus back', async ({
     page,
   }) => {
@@ -319,6 +325,17 @@ test.describe('dialog helpers', {tag: '@mobile'}, () => {
     await expectModalClosed(page, cart);
   });
 });
+
+test(
+  'a drawer takes focus when the visitor prefers reduced motion',
+  {tag: '@mobile'},
+  async ({page}) => {
+    await gotoHydrated(page, '/'); // reducedMotion: 'reduce', the suite default
+    await page.getByRole('link', {name: CART_LINK}).click();
+
+    await expectModalOpen(page, drawer(page, 'Your cart'));
+  },
+);
 
 test.describe('seedCart', () => {
   test('puts lines (and a discount) into the browser cart', async ({page}) => {
@@ -446,9 +463,10 @@ test.describe('catalog constants match the running mock', () => {
       await page.goto(collectionPath(collection));
 
       await expect(page.locator('h1')).toHaveText(collection.title);
-      await expect(
-        page.getByRole('main').getByText(countLabel(collection)),
-      ).toBeVisible();
+      // (Not getByText: filter options repeat "3 products" in their counts.)
+      await expect(page.locator('.collection-toolbar__count')).toHaveText(
+        countLabel(collection),
+      );
       await expect(
         page
           .getByRole('region', {name: 'Products'})

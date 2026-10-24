@@ -128,9 +128,19 @@
 
 .collection-toolbar__actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
   margin-left: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* The sort control must be able to shrink on narrow phones. */
+.collection-toolbar__actions select {
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
 }
 
 .filters-toggle {

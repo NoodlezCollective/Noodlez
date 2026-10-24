@@ -77,17 +77,38 @@ const MOCK_BADGE_TEXT = 'Development mock data';
 const CLIENT_WARM_CONCURRENCY = 3;
 const MAX_VISITS_PER_PAGE = 3;
 
-function preflightError(baseURL: string, problem: string): Error {
+type PreflightProblem = 'unreachable' | 'bad-status' | 'not-mock';
+
+const PREFLIGHT_HINTS: Record<PreflightProblem, string[]> = {
+  unreachable: [
+    'Nothing answered. If you set E2E_BASE_URL, start that server first',
+    '(`npm run dev:e2e`). Otherwise Playwright should have started its own:',
+    're-run with E2E_SERVER_LOGS=1 to see why it did not.',
+  ],
+  'bad-status': [
+    'The server answered, but not with a page. Check its log: the dev server',
+    'may have failed to compile the app (`npm run dev:e2e` shows the error).',
+  ],
+  'not-mock': [
+    'Something else is serving this address. The suite needs the Hydrogen dev',
+    'server in mock mode (MOCK_STOREFRONT=true, 32-character token), which',
+    'Playwright starts itself from tests/e2e/e2e.env on port 3100:',
+    '  - stop whatever is listening there, or set E2E_PORT to a free port;',
+    '  - to test your own server, set E2E_BASE_URL and make sure it shows the',
+    `    "${MOCK_BADGE_TEXT}" badge (see tests/e2e/README.md).`,
+  ],
+};
+
+function preflightError(
+  baseURL: string,
+  kind: PreflightProblem,
+  problem: string,
+): Error {
   return new Error(
     [
       `E2E preflight failed for ${baseURL}: ${problem}`,
       '',
-      'The suite needs the Hydrogen dev server running in mock mode',
-      '(MOCK_STOREFRONT=true, 32-character PUBLIC_STOREFRONT_API_TOKEN).',
-      'Playwright starts it itself from tests/e2e/e2e.env on port 3100.',
-      '  - Something else is listening there: stop it, or set E2E_PORT.',
-      '  - To test your own server, set E2E_BASE_URL and make sure it shows',
-      `    the "${MOCK_BADGE_TEXT}" badge (see tests/e2e/README.md).`,
+      ...PREFLIGHT_HINTS[kind],
     ].join('\n'),
   );
 }
@@ -102,15 +123,21 @@ async function preflight(baseURL: string): Promise<void> {
         const reason = error instanceof Error ? error.message : String(error);
         throw preflightError(
           baseURL,
+          'unreachable',
           `GET / failed (${reason.split('\n')[0]})`,
         );
       });
     if (response.status() !== 200) {
-      throw preflightError(baseURL, `GET / answered ${response.status()}`);
+      throw preflightError(
+        baseURL,
+        'bad-status',
+        `GET / answered ${response.status()}`,
+      );
     }
     if (!(await response.text()).includes(MOCK_BADGE_TEXT)) {
       throw preflightError(
         baseURL,
+        'not-mock',
         `the home page has no "${MOCK_BADGE_TEXT}" badge, so the server is not in mock mode`,
       );
     }
@@ -147,7 +174,7 @@ async function warmServer(baseURL: string): Promise<void> {
 async function warmPage(
   context: BrowserContext,
   path: string,
-  tokenErrors: string[],
+  tokenErrors: Set<string>,
 ): Promise<void> {
   const page = await context.newPage();
   try {
@@ -156,7 +183,7 @@ async function warmPage(
         message.type() === 'error' &&
         message.text().includes('private access token')
       ) {
-        tokenErrors.push(path);
+        tokenErrors.add(path);
       }
     });
     for (let visit = 1; visit <= MAX_VISITS_PER_PAGE; visit++) {
@@ -181,9 +208,9 @@ async function warmPage(
   }
 }
 
-async function warmClient(baseURL: string): Promise<string[]> {
+async function warmClient(baseURL: string): Promise<Set<string>> {
   const browser = await chromium.launch();
-  const tokenErrors: string[] = [];
+  const tokenErrors = new Set<string>();
   try {
     const context = await browser.newContext({baseURL});
     await installNetworkStubs(context, new URL(baseURL).origin);
@@ -214,10 +241,10 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   await warmServer(baseURL);
   const tokenErrors = await warmClient(baseURL);
 
-  if (tokenErrors.length > 0) {
+  if (tokenErrors.size > 0) {
     throw new Error(
       [
-        `Hydrogen logged "It looks like you passed a private access token" on ${tokenErrors.length} warm-up page(s), e.g. ${tokenErrors[0]}.`,
+        `Hydrogen logged "It looks like you passed a private access token" on ${tokenErrors.size} warm-up page(s), e.g. ${[...tokenErrors][0]}.`,
         'The server under test has a PUBLIC_STOREFRONT_API_TOKEN that is not exactly 32 characters,',
         'so every test would fail on that console error. tests/e2e/e2e.env uses a 32-character',
         "placeholder; if you set E2E_BASE_URL, fix that server's .env (any 32 characters in mock mode).",
@@ -225,7 +252,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     );
   }
 
-  process.stdout.write(
+  process.stderr.write(
     `[e2e] ${baseURL} is a mock-mode dev server; warmed ${WARM_SERVER_PATHS.length} routes in ${((Date.now() - started) / 1000).toFixed(1)}s\n`,
   );
 }

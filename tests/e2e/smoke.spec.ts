@@ -28,6 +28,7 @@ interface SmokeRoute {
   logged?: ReadonlyArray<{status: number; urlIncludes: string}>;
   /** Route-specific checks, run after the generic ones. */
   extra?: (page: Page) => Promise<void>;
+  /** A product bug that fails this row at viewports up to `maxViewportWidth`. */
 }
 
 const notFound = (path: string): SmokeRoute => ({
@@ -83,6 +84,29 @@ const ROUTES: readonly SmokeRoute[] = [
       ).toContainText(PRODUCTS.silkSleepMask.variants[0].price);
     },
   },
+  // URL state rendered on the server and hydrated on the client: any
+  // server/client difference fails the console guard.
+  {
+    path: '/collections/pillows?sort_key=PRICE&reverse=true',
+    status: 200,
+    h1: 'Pillows',
+  },
+  {
+    path: '/collections/pillows?filter.available=true',
+    status: 200,
+    h1: 'Pillows',
+  },
+  {
+    path: `${productPath(PRODUCTS.cloudAlign)}?Size=King`,
+    status: 200,
+    h1: 'CloudAlign Pillow',
+    extra: async (page) => {
+      await expect(
+        page.locator('.product-info').getByRole('group', {name: 'Price'}),
+      ).toContainText(PRODUCTS.cloudAlign.variants[1].price);
+    },
+  },
+  {path: '/search?q=bath%26body', status: 200, h1: 'Search'},
   {path: '/search', status: 200, h1: 'Search'},
   {path: '/search?q=pillow', status: 200, h1: 'Search'},
   {path: '/cart', status: 200, h1: 'Your cart'},
@@ -116,21 +140,6 @@ test.describe('routes', {tag: '@smoke'}, () => {
   test('/search?q=body%20pillow hydrates without a mismatch', async ({
     page,
   }) => {
-    test.fixme(
-      true,
-      'BUG: GET /search?q=body%20pillow logs a React hydration error ' +
-        '("Prop `action` did not match. Server: /search?q=body+pillow Client: ' +
-        '/search?q=body%20pillow"). react-router rewrites the request URL ' +
-        'through URLSearchParams on the server (%20 becomes +, see ' +
-        'stripIndexParam in its request handler) while the browser keeps %20, ' +
-        'and <SearchForm> renders <Form> without an `action`, so the form ' +
-        'action is derived from location.search. The app itself links to such ' +
-        'URLs: PageLayout.tsx:210, SearchFormPredictive.tsx:41 and ' +
-        'SearchResults.tsx:185 use encodeURIComponent(term). Suggested fix: ' +
-        'pass action="/search" to <SearchForm> in app/routes/search.tsx (a GET ' +
-        'form discards the action query anyway).',
-    );
-
     await gotoHydrated(page, '/search?q=body%20pillow');
 
     await expectSingleH1(page, 'Search');

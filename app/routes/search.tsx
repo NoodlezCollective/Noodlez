@@ -91,6 +91,7 @@ export default function SearchPage() {
         {/* Keyed by the term so the input follows the URL (chips, Back). */}
         <SearchForm
           key={term}
+          action="/search"
           className="search-form"
           onSubmit={() => {
             refocusInput.current = true;

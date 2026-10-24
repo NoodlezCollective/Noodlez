@@ -4,12 +4,28 @@
  * behind is `inert`, focus moves in, Tab is trapped, Escape closes, focus
  * returns to the opener.
  *
- *   await page.getByRole('link', {name: 'Cart, 0 items'}).click();
+ *   const opener = page.getByRole('link', {name: 'Cart, 0 items'});
+ *   await opener.click();
  *   const cart = drawer(page, 'Your cart');
  *   await expectModalOpen(page, cart);
  *   await expectFocusTrapped(page, cart);
  *   await page.keyboard.press('Escape');
  *   await expectModalClosed(page, cart, opener);
+ *
+ * Reduced motion and focus (known app bug)
+ * The suite runs with `reducedMotion: 'reduce'`. In that mode a drawer does
+ * NOT take focus when it opens: app/styles/reset.css forces
+ * `transition-duration: 0.01ms !important`, which turns the overlay's
+ * `visibility 0s` switch (app.css `.overlay.expanded`) into a tiny transition
+ * that starts at `hidden`, and `useModalDialog` calls `focus()` in the first
+ * animation frame, when the close button is still invisible. Specs that open
+ * a drawer and assert where focus lands must therefore opt out:
+ *
+ *   test.use(WITH_MOTION);
+ *
+ * Since useModalDialog retries the initial focus across frames, drawers take
+ * focus under reduced motion as well; WITH_MOTION remains for specs that
+ * assert transition-dependent behaviour (support.spec.ts covers both modes).
  *
  * Locator notes
  * - A closed drawer is `aria-hidden="true"`, so `drawer()` only resolves
@@ -23,6 +39,13 @@
 import {expect, type Locator, type Page} from '@playwright/test';
 
 export type DrawerName = 'Your cart' | 'Search' | 'Menu';
+
+/**
+ * `test.use()` options for specs that assert drawer focus: re-enables motion
+ * (see "Reduced motion and focus" above). Drawers then animate for ~0.3s;
+ * Playwright's actionability checks wait for that.
+ */
+export const WITH_MOTION = {reducedMotion: 'no-preference'} as const;
 
 /** Page regions the drawers make `inert` while open (Aside.tsx PAGE_REGIONS). */
 export const INERT_REGIONS = [

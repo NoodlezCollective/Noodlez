@@ -90,7 +90,10 @@ export default defineConfig({
         reuseExistingServer: !IS_CI,
         timeout: 180_000,
         stdout: 'ignore',
-        stderr: 'pipe',
+        // The dev server logs every request to stderr (about 1,100 lines per
+        // run) and would bury the test output. Set E2E_SERVER_LOGS=1 to see it,
+        // or run `npm run dev:e2e` yourself when the server does not start.
+        stderr: process.env.E2E_SERVER_LOGS ? 'pipe' : 'ignore',
         gracefulShutdown: {signal: 'SIGTERM', timeout: 10_000},
         // Vite derives import.meta.env.DEV (which gates the mock) from NODE_ENV.
         env: {NODE_ENV: 'development'},

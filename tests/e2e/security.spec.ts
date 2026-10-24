@@ -495,6 +495,165 @@ test.describe('redirect targets', () => {
   });
 });
 
+test.describe('404 pages with redirect parameters', () => {
+  // Hydrogen's storefrontRedirect follows ?redirect= / ?return_to= on a 404.
+  // server.ts first reduces both to a same-origin path (or drops them), so a
+  // hostile value can no longer turn a 404 into an open redirect.
+  const HOSTILE = [
+    '/.//evil.example',
+    '/..//evil.example',
+    '//evil.example',
+    'https://evil.example',
+    '/\\evil.example',
+    'javascript:alert(1)',
+  ];
+  const MISSING = ['/nope', '/products/does-not-exist'];
+
+  test('hostile values give a plain 404 without a Location header', async ({
+    request,
+  }) => {
+    for (const path of MISSING) {
+      for (const param of ['redirect', 'return_to']) {
+        for (const value of HOSTILE) {
+          const label = `${path}?${param}=${JSON.stringify(value)}`;
+          const response = await request.get(
+            `${path}?${param}=${encodeURIComponent(value)}`,
+            {maxRedirects: 0},
+          );
+          expect(response.status(), label).toBe(404);
+          expect(response.headers()['location'], label).toBeUndefined();
+        }
+      }
+    }
+  });
+
+  test('a same-site value still redirects with a 301', async ({request}) => {
+    for (const path of MISSING) {
+      for (const param of ['redirect', 'return_to']) {
+        const response = await request.get(
+          `${path}?${param}=${encodeURIComponent('/collections/all')}`,
+          {maxRedirects: 0},
+        );
+        expect(response.status(), `${path} ${param}`).toBe(301);
+        expect(response.headers()['location']).toBe('/collections/all');
+      }
+    }
+    const withQuery = await request.get(
+      `/nope?redirect=${encodeURIComponent('/collections/all?sort_key=PRICE')}`,
+      {maxRedirects: 0},
+    );
+    expect(withQuery.status()).toBe(301);
+    expect(withQuery.headers()['location']).toBe(
+      '/collections/all?sort_key=PRICE',
+    );
+  });
+
+  test('client-side (.data) requests get the same plain 404', async ({
+    request,
+  }) => {
+    for (const value of HOSTILE) {
+      const response = await request.get(
+        `/nope.data?redirect=${encodeURIComponent(value)}`,
+        {maxRedirects: 0},
+      );
+      expect(response.status(), value).toBe(404);
+      expect(response.headers()['location'], value).toBeUndefined();
+    }
+  });
+});
+
+test.describe('cart action input validation', () => {
+  // The body is attacker-controlled: whatever is wrong with it, the answer is
+  // a 400 with the standard cart-error shape and no internal detail.
+  const lines = [
+    {
+      merchandiseId: `gid://shopify/ProductVariant/${PRODUCTS.cloudAlign.variants[0].id}`,
+      quantity: 1,
+    },
+  ];
+  const input = (action: string, inputs: unknown) => ({
+    cartFormInput: JSON.stringify({action, inputs}),
+  });
+
+  interface BadRequest {
+    name: string;
+    headers?: Record<string, string>;
+    data?: string;
+    form?: Record<string, string>;
+  }
+
+  const BAD_REQUESTS: readonly BadRequest[] = [
+    {
+      name: 'a JSON body instead of a form',
+      headers: {'Content-Type': 'application/json'},
+      data: '{"action":',
+    },
+    {
+      name: 'a plain-text body',
+      headers: {'Content-Type': 'text/plain'},
+      data: 'LinesAdd',
+    },
+    {name: 'a form without cartFormInput', form: {x: '1'}},
+    {
+      name: 'cartFormInput that is not JSON',
+      form: {cartFormInput: '{"action":'},
+    },
+    {
+      name: 'lines that are not an array',
+      form: input('LinesAdd', {lines: 'nope'}),
+    },
+    {
+      name: 'update lines that are not an array',
+      form: input('LinesUpdate', {lines: {}}),
+    },
+    {
+      name: 'lineIds that are not an array',
+      form: input('LinesRemove', {lineIds: 5}),
+    },
+    {name: 'an unknown action', form: input('Bogus', {lines})},
+  ];
+
+  for (const bad of BAD_REQUESTS) {
+    test(`${bad.name} is answered with 400`, async ({request, baseURL}) => {
+      const origin = originOf(baseURL);
+      for (const path of ['/cart.data', '/cart']) {
+        const response = await request.post(path, {
+          headers: {Origin: origin, ...bad.headers},
+          data: bad.data,
+          form: bad.form,
+          maxRedirects: 0,
+        });
+        const label = `POST ${path}`;
+        expect(response.status(), label).toBe(400);
+        expect(setCookies(response), `${label} sets no cookie`).toEqual([]);
+
+        const body = await response.text();
+        expect(body, label).toContain(COPY.cartInvalidRequest);
+        // No stack traces, file paths or framework internals reach the client.
+        expect(body, label).not.toMatch(/\/home\/|\n\s+at\s|\bError:\s/);
+        if (path === '/cart.data') {
+          // Same shape as the 502 answer: cart, errors, userErrors, warnings.
+          for (const key of ['cart', 'errors', 'userErrors', 'warnings']) {
+            expect(body, `${label} has "${key}"`).toContain(`"${key}"`);
+          }
+        }
+      }
+    });
+  }
+
+  test('a well-formed request from the same origin is still accepted', async ({
+    request,
+    baseURL,
+  }) => {
+    const response = await request.post('/cart.data', {
+      headers: {Origin: originOf(baseURL)},
+      form: input('LinesAdd', {lines}),
+    });
+    expect(response.status()).toBe(200);
+    expect(await response.text()).not.toContain(COPY.cartInvalidRequest);
+  });
+});
+
 test.describe('cookies', () => {
   test('the cart cookie is HttpOnly and SameSite=Lax, and Secure only over https', async ({
     page,
@@ -708,6 +867,78 @@ test.describe('newsletter endpoint', () => {
     });
     expect(text.status()).toBe(400);
     expect(await text.text()).toContain(COPY.newsletterUnreadable);
+  });
+
+  test('bodies above 8 KB are rejected with 413 before they are read', async ({
+    request,
+    baseURL,
+  }) => {
+    const origin = originOf(baseURL);
+    const MAX_BYTES = 8192;
+    const bodyOfLength = (length: number) => {
+      const prefix = 'email=a%40example.com&pad=';
+      return `${prefix}${'x'.repeat(length - prefix.length)}`;
+    };
+    const post = (length: number) =>
+      request.post('/newsletter.data', {
+        headers: {
+          Origin: origin,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        data: bodyOfLength(length),
+      });
+
+    const atLimit = await post(MAX_BYTES);
+    expect(atLimit.status(), 'exactly 8192 bytes is accepted').toBe(200);
+
+    for (const length of [MAX_BYTES + 1, 100 * 1024]) {
+      const response = await post(length);
+      expect(response.status(), `${length} bytes`).toBe(413);
+      expect(await response.text()).toContain(COPY.newsletterTooLarge);
+    }
+  });
+
+  test('addresses that are payloads for whoever opens the list are rejected', async ({
+    request,
+    baseURL,
+  }) => {
+    const origin = originOf(baseURL);
+    const PAYLOADS = [
+      '=cmd|calc!A1@example.com', // spreadsheet formula
+      '+1@example.com',
+      '-1@example.com',
+      '<script>@example.com', // markup
+      'a"b@example.com',
+      'a(b)@example.com',
+      'a|b@example.com',
+      'a\u0007b@example.com', // control characters
+      'a\u0000b@example.com',
+      'a\u001fb@example.com',
+      'a\u007fb@example.com',
+    ];
+    for (const email of PAYLOADS) {
+      const response = await submit(request, origin, {form: {email}});
+      const label = JSON.stringify(email);
+      expect(response.status(), label).toBe(400);
+      expect(await response.text(), label).toContain(COPY.newsletterInvalid);
+    }
+  });
+
+  test('ordinary and international addresses are still accepted', async ({
+    request,
+    baseURL,
+  }) => {
+    const origin = originOf(baseURL);
+    for (const email of [
+      'josé@ejemplo.es',
+      "o'brien@example.com",
+      'first.last+tag@example.com',
+      'x_y-z@sub.example.co.uk',
+    ]) {
+      const response = await submit(request, origin, {form: {email}});
+      expect(response.status(), email).toBe(200);
+      expect(await response.text(), email).toContain(COPY.newsletterMock);
+    }
   });
 
   test('the honeypot field is acknowledged silently', async ({

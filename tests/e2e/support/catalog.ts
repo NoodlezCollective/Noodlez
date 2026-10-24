@@ -475,6 +475,10 @@ export const COPY = {
   aboutValueTested: 'Tested by 124,952+ sleepers',
   ugcLink:
     'Does your pillow do this? A chiropractor tests the CloudAlign. – shop the product',
+  pebbleGroupCool: 'CloudCool™ Cooling Collection',
+  pebbleGroupLush: 'Lush Collection',
+  /** Active-filter chip for a price range of 50 to 70 (en dash, spaces). */
+  priceChip50to70: '$50 – $70',
   savingsNote: 'Savings based on comparable value.',
   savingsExplanationStart:
     'Compare-at prices reflect the comparable retail value',
@@ -487,6 +491,10 @@ export const COPY = {
     'Development mock: no email service is connected, so this signup was not recorded.',
   newsletterInvalid: 'Enter a valid email address.',
   newsletterUnreadable: 'We could not read that request. Please try again.',
+  newsletterTooLarge: 'That request was too large.',
+  /** The cart action's answer (400) to a request it cannot make sense of. */
+  cartInvalidRequest:
+    'That cart request wasn’t understood. Please refresh the page and try again.',
   invalidDiscount: (code: string) =>
     `“${code.toUpperCase()}” isn’t a valid discount code.`,
   viewAllResults: (term: string) => `View all results for “${term}”`,
