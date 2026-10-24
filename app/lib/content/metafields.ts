@@ -1,4 +1,5 @@
 import {isFeatureIconKey, type FeatureIconKey} from '~/components/ui/Icons';
+import {isNonEmptyString, isRecord, isString} from '~/lib/guards';
 import type {ProductFeature, ProductReview} from './types';
 
 export type MetafieldValue =
@@ -6,18 +7,6 @@ export type MetafieldValue =
 
 /** Ratings are expressed in stars on a 0 to 5 scale. */
 const MAX_RATING = 5;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function isString(value: unknown): value is string {
-  return typeof value === 'string';
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0;
-}
 
 /** A finite number from a JSON number or a non-blank numeric string. */
 function toFiniteNumber(value: unknown): number | null {

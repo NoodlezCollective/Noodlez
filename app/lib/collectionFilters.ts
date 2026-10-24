@@ -3,6 +3,7 @@ import type {
   ProductFilter,
   ProductSortKeys,
 } from '@shopify/hydrogen/storefront-api-types';
+import {isNonEmptyString, isRecord} from '~/lib/guards';
 
 /**
  * URL conventions shared by the collection, shop-all and search routes.
@@ -57,14 +58,6 @@ export type AppliedFilter = {
 
 function isFilterKey(key: string): key is FilterKey {
   return (FILTER_KEYS as readonly string[]).includes(key);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0;
 }
 
 /**
@@ -156,9 +149,7 @@ export function parseFilterInput(
   try {
     const parsed: unknown =
       typeof input === 'string' ? JSON.parse(input) : input;
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : null;
+    return isRecord(parsed) ? parsed : null;
   } catch {
     return null;
   }
