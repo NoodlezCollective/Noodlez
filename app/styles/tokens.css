@@ -74,10 +74,6 @@
   --duration-fast: 150ms;
   --duration-base: 250ms;
   --duration-slow: 450ms;
-
-  /* Legacy aliases kept for existing skeleton styles */
-  --color-light: var(--color-surface);
-  --grid-item-width: 300px;
 }
 
 @media (min-width: 48em) {
