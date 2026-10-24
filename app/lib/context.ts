@@ -73,7 +73,10 @@ export async function createHydrogenRouterContext(
   /**
    * Development only: serve Mellow demo data instead of calling Shopify.
    * `import.meta.env.DEV` is replaced at build time, so production bundles
-   * never include the mock module. See app/lib/mock/README.md.
+   * never include the mock module. The guard is spelled out here instead of
+   * calling isMockStorefrontEnabled (app/lib/mock/flag.ts) on purpose: the
+   * bundler can only drop the dynamic import below when the condition is a
+   * literal `DEV` test. See app/lib/mock/README.md.
    */
   if (import.meta.env.DEV && env.MOCK_STOREFRONT === 'true') {
     const {installMockStorefront} = await import('~/lib/mock/install.server');

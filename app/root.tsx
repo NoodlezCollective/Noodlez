@@ -15,6 +15,7 @@ import favicon from '~/assets/favicon.svg';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {SITE_SETTINGS_QUERY, mapSiteSettings} from '~/lib/content/metaobjects';
 import {SHOPIFY_RESOURCES} from '~/lib/content/config';
+import {isMockStorefrontEnabled} from '~/lib/mock/flag';
 import {DEFAULT_DESCRIPTION, DEFAULT_TITLE} from '~/lib/seo';
 import tokenStyles from '~/styles/tokens.css?url';
 import resetStyles from '~/styles/reset.css?url';
@@ -93,7 +94,7 @@ export async function loader(args: Route.LoaderArgs) {
     ...deferredData,
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
-    isMockStorefront: import.meta.env.DEV && env.MOCK_STOREFRONT === 'true',
+    isMockStorefront: isMockStorefrontEnabled(env),
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
