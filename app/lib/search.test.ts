@@ -6,7 +6,6 @@ import {
   getEmptyPredictiveSearchResult,
   getEmptyRegularSearchResult,
   getPredictiveStatusMessage,
-  hasMoreSearchResults,
   parseSearchLimit,
   searchUnavailable,
   urlWithTrackingParams,
@@ -241,39 +240,6 @@ describe('searchUnavailable', () => {
   it('uses the message shown to shoppers', () => {
     expect(SEARCH_UNAVAILABLE_MESSAGE).toBe(
       'Search is unavailable right now. Please try again.',
-    );
-  });
-});
-
-describe('hasMoreSearchResults', () => {
-  const items = (hasNextPage: boolean) =>
-    ({
-      articles: {nodes: []},
-      pages: {nodes: []},
-      products: {
-        nodes: [],
-        pageInfo: {
-          hasNextPage,
-          hasPreviousPage: false,
-          startCursor: null,
-          endCursor: null,
-        },
-      },
-    }) as unknown as RegularSearchQuery;
-
-  it('is true when the product connection has another page', () => {
-    expect(hasMoreSearchResults(items(true))).toBe(true);
-  });
-
-  it('is false when it does not', () => {
-    expect(hasMoreSearchResults(items(false))).toBe(false);
-  });
-
-  it('is false for incomplete data', () => {
-    expect(hasMoreSearchResults(null)).toBe(false);
-    expect(hasMoreSearchResults(undefined)).toBe(false);
-    expect(hasMoreSearchResults({} as unknown as RegularSearchQuery)).toBe(
-      false,
     );
   });
 });

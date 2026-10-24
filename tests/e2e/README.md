@@ -122,17 +122,23 @@ Playwright call is awaited (`no-floating-promises` is an error).
 
 ## Specs
 
-`smoke` (all routes, three viewports), `seo`, `security`, `motion` (WCAG 2.2.2
-pause controls), `support` (self-tests for the helpers above).
+- `smoke` – every route at three viewports (status, one h1, no overflow,
+  landmarks, console guard).
+- `seo` – titles, canonicals, robots, og tags, JSON-LD, robots.txt, sitemaps
+  (server-rendered HTML with JavaScript off).
+- `security` – headers, CSP enforcement, redirects, CSRF, cart and newsletter
+  limits.
+- `motion` – WCAG 2.2.2 pause controls and the one-copy marquee.
+- `product`, `cart`, `collections` – variants, gallery, quantity, add to cart,
+  cart page and drawer, discounts, checkout hand-off, sort, filters, pagination.
+- `navigation`, `search`, `content`, `a11y` – header/footer/drawers/mobile
+  menu, predictive search and the search page, home/About/FAQ/newsletter/404/
+  account/policies content, axe-core (WCAG 2.x A/AA plus target-size).
+- `support` – self-tests for the helpers above.
 
-### Known app bugs, kept as `test.fixme`
+### Known app bugs
 
-Each is skipped with the diagnosis and a suggested fix in its title; remove the
-`fixme` line when the app is fixed.
-
-- `smoke.spec.ts`: `/search?q=body%20pillow` hydration mismatch (`%20` vs `+`).
-- `smoke.spec.ts`: filterable collections overflow the viewport on phones
-  (`.collection-toolbar__actions`), skipped at widths up to 500px.
-- `support.spec.ts`: drawers do not take focus under `prefers-reduced-motion`
-  (hence `test.use(WITH_MOTION)` in specs that assert drawer focus).
-- `motion.spec.ts`: the announcement bar stays frozen after "resume".
+None at the moment. When a spec finds a real product defect, keep the
+assertion correct and skip that single test with
+`test.fixme(true, 'BUG: <diagnosis and suggested fix>')`; remove the line when
+the app is fixed so the test guards against regressions.

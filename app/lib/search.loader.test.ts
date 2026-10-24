@@ -120,6 +120,7 @@ describe('/search loader', () => {
               articles: {nodes: []},
               pages: {nodes: []},
               products: {
+                totalCount: 0,
                 nodes: [],
                 pageInfo: {
                   hasNextPage: false,
@@ -246,7 +247,8 @@ describe('/search loader', () => {
       expect(Number.isInteger(variablesOfCall().limit)).toBe(true);
     });
 
-    it('counts every kind of result', async () => {
+    it('counts the listed results but not the query suggestions', async () => {
+      // Query suggestions only feed the <datalist>, so they are not announced.
       query.mockResolvedValue({
         predictiveSearch: predictiveData({
           products: [productNode(1), productNode(2)],
@@ -260,7 +262,7 @@ describe('/search loader', () => {
       expect(result).toMatchObject({
         type: 'predictive',
         term: 'pillow',
-        result: {total: 4},
+        result: {total: 3},
       });
     });
 

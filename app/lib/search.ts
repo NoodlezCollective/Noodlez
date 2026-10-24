@@ -74,6 +74,7 @@ export function getEmptyRegularSearchResult(): RegularSearchReturn['result'] {
       articles: {nodes: []},
       pages: {nodes: []},
       products: {
+        totalCount: 0,
         nodes: [],
         pageInfo: {
           hasNextPage: false,
@@ -101,17 +102,6 @@ export function parseSearchLimit(value: string | null | undefined): number {
     PREDICTIVE_LIMIT_MAX,
     Math.max(PREDICTIVE_LIMIT_MIN, Math.trunc(parsed)),
   );
-}
-
-/**
- * Whether the product connection has more pages. The search page only holds
- * one page of products (and at most 10 pages and 10 articles), so its total
- * is a lower bound whenever this is true.
- */
-export function hasMoreSearchResults(
-  items: RegularSearchQuery | null | undefined,
-): boolean {
-  return items?.products?.pageInfo?.hasNextPage === true;
 }
 
 /** "12 results", or "12+ results" when more exist than were fetched. */

@@ -13,7 +13,6 @@ import {
   formatSearchTotal,
   getEmptyPredictiveSearchResult,
   getEmptyRegularSearchResult,
-  hasMoreSearchResults,
   parseSearchLimit,
   searchUnavailable,
 } from '~/lib/search';
@@ -126,8 +125,7 @@ export default function SearchPage() {
 
       {hasResults ? (
         <p className="search-summary" aria-live="polite">
-          {formatSearchTotal(total, hasMoreSearchResults(result?.items))} for{' '}
-          <q>{term}</q>
+          {formatSearchTotal(total, false)} for <q>{term}</q>
         </p>
       ) : null}
 
@@ -245,6 +243,7 @@ export const SEARCH_QUERY = `#graphql
       types: [PRODUCT],
       unavailableProducts: HIDE,
     ) {
+      totalCount
       nodes {
         ...on Product {
           ...SearchProduct
@@ -297,10 +296,12 @@ async function regularSearch({
     );
   }
 
-  const total = Object.values(items).reduce(
-    (acc: number, {nodes}: {nodes: Array<unknown>}) => acc + nodes.length,
-    0,
-  );
+  // Products are paginated, so count them from the connection's totalCount
+  // (every page reports the same number); pages and articles are fetched whole.
+  const total =
+    (items.products?.totalCount ?? items.products?.nodes.length ?? 0) +
+    (items.pages?.nodes.length ?? 0) +
+    (items.articles?.nodes.length ?? 0);
 
   return {type: 'regular', term, result: {total, items}};
 }
@@ -475,8 +476,11 @@ async function predictiveSearch({
     throw new Error('No predictive search data returned from Shopify API');
   }
 
-  const total = Object.values(items).reduce(
-    (acc: number, item: Array<unknown>) => acc + item.length,
+  // Query suggestions only feed the <datalist>; they are not listed results,
+  // so they do not count towards what the live region announces.
+  const total = Object.entries(items).reduce(
+    (acc: number, [key, item]) =>
+      key === 'queries' ? acc : acc + (item as Array<unknown>).length,
     0,
   );
 

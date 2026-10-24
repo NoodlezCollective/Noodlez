@@ -178,10 +178,16 @@ export function ProductGallery({
       aria-label={`${productTitle} images`}
     >
       <div className="gallery__viewport">
+        {/* The strip scrolls sideways on narrow screens, so it must be reachable
+            by keyboard (axe scrollable-region-focusable). */}
         <div
           className="gallery__track"
           ref={trackRef}
           onScroll={handleScroll}
+          role="group"
+          aria-label={`${productTitle} image strip`}
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a sideways-scrolling region needs its own tab stop
+          tabIndex={0}
           style={{'--gallery-index': active} as CSSProperties}
         >
           {images.map((image, index) => (

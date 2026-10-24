@@ -12,20 +12,12 @@
  *   await page.keyboard.press('Escape');
  *   await expectModalClosed(page, cart, opener);
  *
- * Reduced motion and focus (known app bug)
- * The suite runs with `reducedMotion: 'reduce'`. In that mode a drawer does
- * NOT take focus when it opens: app/styles/reset.css forces
- * `transition-duration: 0.01ms !important`, which turns the overlay's
- * `visibility 0s` switch (app.css `.overlay.expanded`) into a tiny transition
- * that starts at `hidden`, and `useModalDialog` calls `focus()` in the first
- * animation frame, when the close button is still invisible. Specs that open
- * a drawer and assert where focus lands must therefore opt out:
- *
- *   test.use(WITH_MOTION);
- *
- * Since useModalDialog retries the initial focus across frames, drawers take
- * focus under reduced motion as well; WITH_MOTION remains for specs that
- * assert transition-dependent behaviour (support.spec.ts covers both modes).
+ * Reduced motion and focus
+ * The suite runs with `reducedMotion: 'reduce'`. Drawers take focus in that
+ * mode too (useModalDialog retries the initial focus across frames until the
+ * dialog is visible); support.spec.ts asserts it. WITH_MOTION remains for
+ * specs that assert transition-dependent behaviour (for example the marquee
+ * pause controls in motion.spec.ts).
  *
  * Locator notes
  * - A closed drawer is `aria-hidden="true"`, so `drawer()` only resolves

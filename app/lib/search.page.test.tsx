@@ -65,6 +65,14 @@ function regularData({
   pages = 0,
   articles = 0,
   hasNextPage = false,
+  totalProducts,
+}: {
+  products?: number;
+  pages?: number;
+  articles?: number;
+  hasNextPage?: boolean;
+  /** Defaults to `products`: the whole result fits on one page. */
+  totalProducts?: number;
 } = {}) {
   return {
     articles: {
@@ -85,6 +93,7 @@ function regularData({
       })),
     },
     products: {
+      totalCount: totalProducts ?? products,
       nodes: productNodes(products),
       pageInfo: {
         hasNextPage,
@@ -182,17 +191,23 @@ describe('/search page', () => {
       expect(html).not.toContain('1 results');
     });
 
-    it('shows a lower bound when more products exist than were fetched', async () => {
-      // Arrange: one page of 12 products plus a page; more products follow.
+    it('counts every matching product from totalCount, not just the fetched page', async () => {
+      // Arrange: one page of 12 products out of 13 plus a page.
       query.mockResolvedValue(
-        regularData({products: 12, pages: 1, hasNextPage: true}),
+        regularData({
+          products: 12,
+          pages: 1,
+          hasNextPage: true,
+          totalProducts: 13,
+        }),
       );
 
       // Act
       const {html} = await visit('?q=a');
 
       // Assert
-      expect(html).toContain('13+ results');
+      expect(html).toContain('14 results');
+      expect(html).not.toContain('+ results');
     });
 
     it('renders the products and the term in the search field', async () => {
