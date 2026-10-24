@@ -425,13 +425,13 @@ Client behaviour (ported from h:1838-2219):
   - Errors-only results are left to `guardStorefrontErrors`.
 - **Caching:** queries use `withCache` with `options.cache ?? CacheDefault()` and `shouldCacheResult: body => !body.errors`. Mutations always bypass.
 - **`forward()` (Hydrogen parity):**
-  - Forwards only the allowlisted request headers: accept, accept-encoding, accept-language, access-control-request-headers, access-control-request-method, content-type, content-length, cookie, origin, referer, user-agent, Shopify-Storefront-Consent-Management, X-Shopify-Storefront-Access-Token, Shopify-Unique-Token, Shopify-Visit-Token.
+  - Forwards only the allowlisted request headers: accept, accept-encoding, accept-language, access-control-request-headers, access-control-request-method, content-type, content-length, cookie, origin, referer, user-agent, Shopify-Storefront-Consent-Management, X-Shopify-Storefront-Access-Token, X-Shopify-UniqueToken, X-Shopify-VisitToken (hydrogen-react's `SHOPIFY_UNIQUE_TOKEN_HEADER` and `SHOPIFY_VISIT_TOKEN_HEADER`).
   - Adds our IP, storefront id and group-id headers and `x-forwarded-for`.
   - Never adds a server token.
   - Takes the API version from the path, streams the body, and deletes `server-timing` from the response.
 - **`trackingEnabled` (4c):**
   - Forward the request `cookie`.
-  - Set `Shopify-Unique-Token`/`Shopify-Visit-Token` from `_shopify_y`/`_shopify_s`, or random UUIDs, when no `_shopify_analytics|_shopify_marketing` cookie exists.
+  - Set `X-Shopify-UniqueToken`/`X-Shopify-VisitToken` (hydrogen-react's header constants) from `_shopify_y`/`_shopify_s`, or random UUIDs, when no `_shopify_analytics|_shopify_marketing` cookie exists.
   - Remember the first Storefront API response's `getSetCookie()` values; `setCollectedSubrequestHeaders` appends them.
 
 ### Context and server
