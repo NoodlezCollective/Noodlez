@@ -3,7 +3,7 @@ import type {Route} from './+types/blogs.$blogHandle._index';
 import {Image, Pagination, getPaginationVariables} from '@shopify/hydrogen';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {formatDate} from '~/lib/dates';
+import {LONG_DATE_FORMAT, formatDate} from '~/lib/dates';
 import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
 import {Button} from '~/components/ui/Button';
 import {ArrowRightIcon} from '~/components/ui/Icons';
@@ -139,13 +139,6 @@ export default function Blog() {
   );
 }
 
-/** "September 12, 2026", always in UTC so server and browser agree. */
-const PUBLISHED_FORMAT: Intl.DateTimeFormatOptions = {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-};
-
 function ArticleItem({
   article,
   loading,
@@ -153,7 +146,7 @@ function ArticleItem({
   article: ArticleItemFragment;
   loading?: HTMLImageElement['loading'];
 }) {
-  const publishedAt = formatDate(article.publishedAt, PUBLISHED_FORMAT);
+  const publishedAt = formatDate(article.publishedAt, LONG_DATE_FORMAT);
   // The merchant's excerpt when there is one, else the start of the article.
   // Both come from the API as single-line plain text, already truncated.
   const excerpt = article.excerpt || article.content;

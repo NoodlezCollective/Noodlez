@@ -2,7 +2,7 @@ import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs.$blogHandle.$articleHandle';
 import {Image} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {formatDate} from '~/lib/dates';
+import {LONG_DATE_FORMAT, formatDate} from '~/lib/dates';
 import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
 import {Button} from '~/components/ui/Button';
 
@@ -77,18 +77,11 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
   };
 }
 
-/** "September 12, 2026", always in UTC so server and browser agree. */
-const PUBLISHED_FORMAT: Intl.DateTimeFormatOptions = {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-};
-
 export default function Article() {
   const {article, blogHandle, blogTitle} = useLoaderData<typeof loader>();
   const {title, image, contentHtml, author} = article;
 
-  const publishedDate = formatDate(article.publishedAt, PUBLISHED_FORMAT);
+  const publishedDate = formatDate(article.publishedAt, LONG_DATE_FORMAT);
 
   return (
     <article className="content-page article container container--text">
