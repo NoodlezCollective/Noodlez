@@ -138,17 +138,16 @@ export const MELLOW_METAOBJECT_FRAGMENT = `#graphql
       reference {
         ...MellowReference
       }
-      references(first: 12) {
-        nodes {
-          ...MellowReference
-        }
-      }
     }
   }
   ${MELLOW_REFERENCE_FRAGMENT}
 ` as const;
 
-/** Homepage + global settings content, loaded as deferred data. */
+/**
+ * Homepage content, plus the section headings and the featured collection kept
+ * on the settings metaobject. The homepage loader awaits it: the featured
+ * collection decides which products the next query fetches.
+ */
 export const HOME_CONTENT_QUERY = `#graphql
   query HomeContent($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {

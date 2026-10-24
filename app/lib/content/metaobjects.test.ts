@@ -44,7 +44,6 @@ function metaobject(
         type: 'single_line_text_field',
         value: object ? (object.value ?? null) : input,
         reference: object?.reference ?? null,
-        references: null,
       };
     }),
   } as unknown as MellowMetaobjectFragment;
