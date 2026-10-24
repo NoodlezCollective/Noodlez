@@ -11,7 +11,7 @@ type ContentImageProps = {
   alt?: string;
 };
 
-export function isShopifyCdnUrl(url: string) {
+function isShopifyCdnUrl(url: string) {
   return /^https:\/\/cdn\.shopify\.com\//i.test(url);
 }
 

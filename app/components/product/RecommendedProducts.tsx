@@ -4,7 +4,7 @@ import type {ProductRecommendationsQuery} from 'storefrontapi.generated';
 import {ProductCard} from '~/components/ProductCard';
 import {SectionHeading} from '~/components/ui/SectionHeading';
 
-export const RECOMMENDED_PRODUCTS_COUNT = 4;
+const RECOMMENDED_PRODUCTS_COUNT = 4;
 
 const SKELETON_KEYS = ['one', 'two', 'three', 'four'];
 const CARD_SIZES = '(min-width: 64em) 25vw, (min-width: 40em) 50vw, 100vw';

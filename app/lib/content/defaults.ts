@@ -16,7 +16,7 @@ import type {
 
 const PLACEHOLDER = '/images/placeholders';
 
-export const DEFAULT_TRUST_BADGES: TrustBadge[] = [
+const DEFAULT_TRUST_BADGES: TrustBadge[] = [
   {icon: 'shield', label: '30-Day Trial'},
   {icon: 'truck', label: 'Hassle-Free Returns'},
 ];

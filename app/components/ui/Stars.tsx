@@ -15,7 +15,7 @@ export type StarsProps = {
 
 const SIZE_PX = {sm: 14, md: 18, lg: 22} as const;
 
-export function formatCount(value: number) {
+function formatCount(value: number) {
   return new Intl.NumberFormat('en-US').format(value);
 }
 

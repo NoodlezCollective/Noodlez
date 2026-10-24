@@ -22,7 +22,7 @@ function normalize(value: string) {
  * Groups option values under the labels of the `mellow.swatch_groups`
  * metafield. Values that belong to no group are listed under the option name.
  */
-export function groupOptionValues(
+function groupOptionValues(
   option: MappedProductOptions,
   swatchGroups?: SwatchGroups | null,
 ): ValueGroup[] {

@@ -26,7 +26,7 @@ function getFocusable(root: HTMLElement) {
  * these inert leaves the dialog (and anything portalled around it) usable
  * wherever it sits in the page.
  */
-export function getElementsOutside(dialog: HTMLElement): HTMLElement[] {
+function getElementsOutside(dialog: HTMLElement): HTMLElement[] {
   const outside: HTMLElement[] = [];
   let node: HTMLElement = dialog;
   while (node !== document.body && node.parentElement) {
