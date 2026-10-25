@@ -1714,6 +1714,7 @@ Gate: standard, full e2e.
 - The mock-shop console warning disappears and the e2e allowlist becomes empty (Phase 4c).
 - Tracking cookies are forwarded only when analytics is enabled (Phase 4c).
 - Stores with the account variables set still get the 503 page. POST `/account/logout` clears the session and redirects to `/`; before, it gave a dev 400 or a production 500 (Phase 5).
+- POST `/account/logout` from another origin answers 400 without touching the session: the logout route is a resource route that React Router's own origin check skips, so the stub checks the Origin header itself (Phase 5). GET `/account/authorize` redirects to `/account/login` instead of a dev 400 or production 500 (Phase 5).
 - Deep-path requests get the designed HTML 404 (Phase 7).
 
 ## Testing strategy
