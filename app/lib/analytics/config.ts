@@ -22,12 +22,16 @@ export type AnalyticsShop = {
   hydrogenSubchannelId: string;
 };
 
-/** How the browser sets up Shopify's Customer Privacy API. */
+/**
+ * How the browser sets up Shopify's Customer Privacy API: only what
+ * consent.tsx reads, since the root loader serialises it into every page.
+ * Hydrogen's `checkoutDomain` and `withPrivacyBanner` are left out: without
+ * the privacy banner nothing calls `setTrackingConsent`, the only reader of
+ * the checkout domain (its `storefrontRootDomain`).
+ */
 export type ConsentConfig = {
-  checkoutDomain: string;
   /** The public Storefront API token, which the browser already holds. */
   storefrontAccessToken: string;
-  withPrivacyBanner: false;
   country: CountryCode;
   language: LanguageCode;
 };

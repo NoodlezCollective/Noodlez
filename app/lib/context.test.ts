@@ -18,13 +18,19 @@ function createContext(url = 'https://shop.example/', env: Env = ENV) {
   return createAppRouterContext(new Request(url), env, EXECUTION_CONTEXT);
 }
 
-/** Makes the Storefront API answer every request with `body` (HTTP 200). */
-function stubStorefrontApi(body: unknown) {
+/**
+ * Makes the Storefront API answer every request with `body` (HTTP 200) and
+ * the `setCookies` values as Set-Cookie headers.
+ */
+function stubStorefrontApi(body: unknown, setCookies: readonly string[] = []) {
   const fetchMock = vi.fn(
-    async () =>
+    async (_input: RequestInfo | URL, _init?: RequestInit) =>
       new Response(JSON.stringify(body), {
         status: 200,
-        headers: {'content-type': 'application/json'},
+        headers: [
+          ['content-type', 'application/json'],
+          ...setCookies.map((value): [string, string] => ['set-cookie', value]),
+        ],
       }),
   );
   vi.stubGlobal('fetch', fetchMock);
@@ -190,6 +196,71 @@ describe('Storefront cache', () => {
       );
     },
   );
+});
+
+describe('tracking cookies and visitor tokens (D-9)', () => {
+  const OPERATION = 'query Shop { shop { name } }';
+  const TOKEN_HEADERS = [
+    'X-Shopify-UniqueToken',
+    'X-Shopify-VisitToken',
+    'Shopify-Storefront-Y',
+    'Shopify-Storefront-S',
+  ];
+
+  function createContextWithCookie(env: Env) {
+    return createAppRouterContext(
+      new Request('https://shop.example/', {
+        headers: {cookie: '_shopify_y=y1; session=s'},
+      }),
+      env,
+      EXECUTION_CONTEXT,
+    );
+  }
+
+  it('reach the Storefront API, without our session cookie, once analytics is configured and the mock is off', async () => {
+    // Arrange: ENV sets PUBLIC_CHECKOUT_DOMAIN and PUBLIC_STOREFRONT_ID.
+    const fetchMock = stubStorefrontApi({data: {shop: {name: 'Mellow'}}}, [
+      '_shopify_y=y2; Path=/',
+    ]);
+    const context = await createContextWithCookie(ENV);
+    const page = new Response('page');
+
+    // Act
+    await context.storefront.query(OPERATION);
+    context.storefront.setCollectedSubrequestHeaders(page);
+
+    // Assert
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const headers = new Headers(fetchMock.mock.calls[0][1]?.headers);
+    expect(headers.get('cookie')).toBe('_shopify_y=y1');
+    expect(headers.get('X-Shopify-UniqueToken')).toBe('y1');
+    expect(page.headers.getSetCookie()).toEqual(['_shopify_y=y2; Path=/']);
+  });
+
+  it('stay in the browser while PUBLIC_STOREFRONT_ID is unset', async () => {
+    // Arrange
+    const fetchMock = stubStorefrontApi({data: {shop: {name: 'Mellow'}}}, [
+      '_shopify_y=y2; Path=/',
+    ]);
+    const context = await createContextWithCookie({
+      ...ENV,
+      PUBLIC_STOREFRONT_ID: undefined,
+    });
+    const page = new Response('page', {headers: {'Set-Cookie': 'session=1'}});
+
+    // Act
+    await context.storefront.query(OPERATION);
+    context.storefront.setCollectedSubrequestHeaders(page);
+
+    // Assert
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const headers = new Headers(fetchMock.mock.calls[0][1]?.headers);
+    expect(headers.has('cookie')).toBe(false);
+    for (const name of TOKEN_HEADERS) {
+      expect(headers.has(name)).toBe(false);
+    }
+    expect(page.headers.getSetCookie()).toEqual(['session=1']);
+  });
 });
 
 describe('development mock', () => {

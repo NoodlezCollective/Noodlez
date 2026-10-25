@@ -54,6 +54,9 @@ type AnalyticsEnv = Pick<
   | 'PUBLIC_STOREFRONT_API_TOKEN'
 >;
 
+/** How private (Admin-scoped) access tokens start; public tokens never do. */
+const PRIVATE_TOKEN_PREFIX = 'shpat_';
+
 /** The shop's id, language and currency (cached with CacheLong). */
 export async function getShopAnalytics({
   storefront,
@@ -82,7 +85,9 @@ export async function getShopAnalytics({
  * unless the store is configured for analytics (isAnalyticsEnabled). On, the
  * shop query starts without being awaited and resolves to null when it
  * fails, so the page renders and only the analytics events are skipped. The
- * consent config carries the public token, which the browser already has.
+ * consent config carries the public token, which the browser already has;
+ * a private token in PUBLIC_STOREFRONT_API_TOKEN turns analytics off instead
+ * of reaching every visitor, with one server log per request.
  */
 export function getAnalyticsConfig({
   env,
@@ -93,6 +98,12 @@ export function getAnalyticsConfig({
 }): AnalyticsConfig {
   const settings = getAnalyticsSettings(env);
   if (!settings) return DISABLED_ANALYTICS_CONFIG;
+  if (isPrivateToken(env.PUBLIC_STOREFRONT_API_TOKEN)) {
+    console.error(
+      `[analytics] Analytics are off: PUBLIC_STOREFRONT_API_TOKEN holds a private access token (${PRIVATE_TOKEN_PREFIX}), which must never reach the browser. Set the sales channel's public Storefront API token instead.`,
+    );
+    return DISABLED_ANALYTICS_CONFIG;
+  }
 
   return {
     enabled: true,
@@ -101,13 +112,15 @@ export function getAnalyticsConfig({
       publicStorefrontId: settings.storefrontId,
     }).catch(shopUnavailable),
     consent: {
-      checkoutDomain: settings.checkoutDomain,
       storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
-      withPrivacyBanner: false,
       country: storefront.i18n.country,
       language: storefront.i18n.language,
     },
   };
+}
+
+function isPrivateToken(token: string | undefined): boolean {
+  return (token ?? '').trim().startsWith(PRIVATE_TOKEN_PREFIX);
 }
 
 function shopUnavailable(error: unknown): null {

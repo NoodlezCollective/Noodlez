@@ -155,8 +155,9 @@ function createStorefront(
     request,
     cache,
     waitUntil,
-    // Shopify's cookies and visitor tokens go to the Storefront API, and its
-    // Set-Cookie headers come back, only while analytics is on (D-9).
+    // The visitor's cookies (never our session or cart cookie) and visitor
+    // tokens go to the Storefront API, and its Set-Cookie headers come back,
+    // only while analytics is on (D-9).
     trackingEnabled: isAnalyticsEnabled(env),
   });
 }

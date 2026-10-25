@@ -42,7 +42,7 @@ export type {I18n, StorefrontApiError, StorefrontErrors} from './types';
  * hydrogen-react supplies the URLs and token headers; this module adds the
  * fetch, the `$country` / `$language` injection, the cache layer, error
  * shaping, the same-origin Storefront API proxy and, with analytics on only,
- * the visitor's Shopify cookies and tokens (D-9 in
+ * the visitor's cookies (never ours) and tokens (D-9 in
  * docs/hydrogen-removal-plan.md).
  */
 
@@ -108,7 +108,9 @@ export interface Storefront {
   forward(request: Request): Promise<Response>;
   /**
    * Appends the Set-Cookie values of the first Storefront API answer to
-   * `response`. Only with tracking on; otherwise the response is left alone.
+   * `response`, never one for our own cookies, and only when no shared cache
+   * may store the response. Only with tracking on; otherwise the response is
+   * left alone.
    */
   setCollectedSubrequestHeaders(response: Response): void;
 }
@@ -127,8 +129,8 @@ export interface CreateStorefrontClientOptions {
   waitUntil: (p: Promise<unknown>) => void;
   /**
    * Analytics is on (`isAnalyticsEnabled`, D-9): queries and mutations carry
-   * the visitor's Shopify cookies (never ours) and visitor tokens, and the
-   * first answer's Set-Cookie values are kept for
+   * the visitor's cookies (never ours, as with the proxy) and visitor tokens,
+   * and the first answer's Set-Cookie values are kept for
    * `setCollectedSubrequestHeaders`. Off by default.
    */
   trackingEnabled?: boolean;
@@ -184,20 +186,18 @@ const METHOD_NOT_ALLOWED_STATUS = 405;
 /** The name app/lib/session.ts gives the session cookie. */
 const SESSION_COOKIE_NAME = 'session';
 /**
- * Our own cookies, which never go to the Storefront API: the signed session
- * and the cart id. The proxy passes on every other cookie the browser sends
- * (Shopify's `_shopify_y`, `_shopify_s`, `_shopify_analytics`,
- * `_shopify_marketing`, …). Any new first-party cookie belongs in this list.
+ * Our own cookies, which never go to the Storefront API and which no
+ * Storefront API answer may set: the signed session and the cart id. The
+ * proxy, and with tracking on queries and mutations, pass on every other
+ * cookie the browser sends (Hydrogen parity): Shopify's `_shopify_y`,
+ * `_shopify_s`, `_shopify_analytics`, `_shopify_marketing`, but also
+ * `cart_currency` and the legacy `_tracking_consent`, which do not share a
+ * prefix. Any new first-party cookie belongs in this list.
  */
 const OWN_COOKIE_NAMES: ReadonlySet<string> = new Set([
   SESSION_COOKIE_NAME,
   CART_COOKIE_NAME,
 ]);
-/**
- * Every Shopify cookie name starts with this. Queries and mutations carry
- * these cookies only, and only with tracking on.
- */
-const SHOPIFY_COOKIE_PREFIX = '_shopify_';
 /**
  * The visitor cookies that replaced `_shopify_y` / `_shopify_s`. Shopify
  * reads the visitor from them, so while either is set no visitor token
@@ -208,6 +208,17 @@ const VISITOR_COOKIE_NAMES: ReadonlySet<string> = new Set([
   '_shopify_marketing',
 ]);
 const SET_COOKIE_HEADER = 'Set-Cookie';
+const CACHE_CONTROL_HEADER = 'Cache-Control';
+/**
+ * Cache-Control directives that keep a response out of shared caches, or
+ * make them revalidate it, so its Set-Cookie values are never served to
+ * another visitor.
+ */
+const UNSHARED_CACHE_DIRECTIVES: ReadonlySet<string> = new Set([
+  'private',
+  'no-store',
+  'no-cache',
+]);
 
 /** Browser headers the proxy passes on (Hydrogen's allowlist). */
 const FORWARDED_REQUEST_HEADERS = [
@@ -366,14 +377,15 @@ function createDefaultHeaders(
 
 /**
  * Hydrogen's visitor headers (h:1874-1891), with tracking on only: the
- * request's Shopify cookies and, until the visitor has one of the newer
- * visitor cookies, visitor tokens. They are client defaults, computed once
- * per request, so queries stay cacheable (per-call headers bypass the cache).
+ * request's cookies without ours (the proxy's policy) and, until the visitor
+ * has one of the newer visitor cookies, visitor tokens. They are client
+ * defaults, computed once per request, so queries stay cacheable (per-call
+ * headers bypass the cache).
  */
 function createVisitorHeaders(request: Request): Record<string, string> {
   const cookies = readCookies(
     request.headers.get(COOKIE_HEADER),
-    isShopifyCookie,
+    isNotOwnCookie,
   );
   const cookieHeader = toCookieHeader(cookies);
   const forwarded: Record<string, string> = cookieHeader
@@ -407,22 +419,58 @@ function createVisitorTokenHeaders(
 /**
  * Keeps the Set-Cookie values of the first answer the Storefront API gives
  * this request, whatever its status (Hydrogen parity: the answers to one
- * request carry the same visitor cookies, so one copy is enough). Only real
- * answers are seen, including a stale entry's background refresh: a cache
- * hit fetches nothing, and the cache never stores response headers.
+ * request carry the same visitor cookies, so one copy is enough), less any
+ * for our own cookies, which would replace the visitor's session or cart.
+ * Only real answers are seen, including a stale entry's background refresh:
+ * a cache hit fetches nothing, and the cache never stores response headers.
+ * They are appended only to responses no shared cache keeps for others.
  */
 function createSetCookieCollector(): SetCookieCollector {
   let collected: readonly string[] | undefined;
   return {
     collect: (answer) => {
-      collected ??= answer.getSetCookie();
+      collected ??= answer.getSetCookie().filter(isNotOwnSetCookie);
     },
     appendTo: (response) => {
+      if (!isUnsharedResponse(response)) return;
       for (const value of collected ?? []) {
         response.headers.append(SET_COOKIE_HEADER, value);
       }
     },
   };
+}
+
+/**
+ * Whether a Set-Cookie value is for a cookie other than ours. Its name is the
+ * text before the first `=` of its first part, trimmed, as browsers read it.
+ */
+function isNotOwnSetCookie(setCookie: string): boolean {
+  const [nameAndValue = ''] = setCookie.split(';', 1);
+  return isNotOwnCookie(toCookiePair(nameAndValue.trim()).name);
+}
+
+/**
+ * Whether no shared cache (a CDN in front of the Worker) stores `response`:
+ * it has no Cache-Control directives (documents), or one of private,
+ * no-store and no-cache. Sitemaps and robots.txt (`max-age=86400`) are
+ * shared, so they never carry a visitor's cookies.
+ */
+function isUnsharedResponse(response: Response): boolean {
+  const directives = cacheControlDirectives(
+    response.headers.get(CACHE_CONTROL_HEADER),
+  );
+  return (
+    directives.length === 0 ||
+    directives.some((name) => UNSHARED_CACHE_DIRECTIVES.has(name))
+  );
+}
+
+/** The directive names of a Cache-Control value, lower-cased. */
+function cacheControlDirectives(cacheControl: string | null): string[] {
+  return (cacheControl ?? '')
+    .split(',')
+    .map((directive) => directive.split('=', 1)[0].trim().toLowerCase())
+    .filter((name) => name !== '');
 }
 
 async function runOperation(
@@ -625,7 +673,9 @@ function isStorefrontApiUrl(request: Request): boolean {
  * own cookies) plus our IP, storefront id and request group id. The browser
  * supplies its own (public) token; no server token is ever added. Only POST is
  * relayed, its body streamed through; a redirect goes back to the browser
- * instead of being followed here with the buyer's cookies and token.
+ * instead of being followed here with the buyer's cookies and token. The
+ * answer goes back without Server-Timing and without any Set-Cookie for our
+ * own cookies.
  */
 async function forwardToStorefrontApi(
   request: Request,
@@ -659,7 +709,18 @@ async function forwardToStorefrontApi(
   );
   const response = new Response(upstream.body, upstream);
   response.headers.delete(SERVER_TIMING_HEADER);
+  dropOwnSetCookies(response.headers);
   return response;
+}
+
+/** Removes the Set-Cookie values for our own cookies, keeping the rest in order. */
+function dropOwnSetCookies(headers: Headers): void {
+  const setCookies = headers.getSetCookie();
+  if (setCookies.every(isNotOwnSetCookie)) return;
+  headers.delete(SET_COOKIE_HEADER);
+  for (const value of setCookies.filter(isNotOwnSetCookie)) {
+    headers.append(SET_COOKIE_HEADER, value);
+  }
 }
 
 function methodNotAllowed(): Response {
@@ -716,14 +777,9 @@ function cookieValue(cookies: readonly CookiePair[], name: string): string {
   return cookies.find((cookie) => cookie.name === name)?.value ?? '';
 }
 
-/** The proxy passes on every cookie except ours. */
+/** The Storefront API gets every cookie except ours. */
 function isNotOwnCookie(name: string): boolean {
   return !OWN_COOKIE_NAMES.has(name);
-}
-
-/** Queries and mutations carry Shopify's cookies only. */
-function isShopifyCookie(name: string): boolean {
-  return name.startsWith(SHOPIFY_COOKIE_PREFIX);
 }
 
 function copyHeaders(

@@ -18,10 +18,12 @@ import type {AnalyticsShop} from './config';
  * reach the tracker as functions, so everything here runs in unit tests.
  *
  * Deliberate differences from Hydrogen: `assetVersionId` is left to
- * hydrogen-react (which sends its own version); incomplete products drop the
- * event instead of being logged and sent anyway (Hydrogen's check returned
- * from a forEach callback); the cart baseline lives in memory, never in
- * localStorage, so the cart id and its key are not persisted.
+ * hydrogen-react (which sends its own version); a product without its id,
+ * title, price or variant drops the PRODUCT_VIEW, with a development warning
+ * naming the field, instead of being logged and sent anyway (Hydrogen's
+ * check returned from a forEach callback; an empty vendor is still sent, as
+ * an empty brand); the cart baseline lives in memory, never in localStorage,
+ * so the cart id and its key are not persisted.
  */
 
 /** One product of an `Analytics.ProductView` (Hydrogen's prop shape). */
@@ -94,12 +96,15 @@ export type CustomerPrivacyLike = {
   currentVisitorConsent?: () => {analytics?: string} | undefined;
 };
 
-/** Hydrogen's checks (`validateProducts`): every field must be non-empty. */
+/**
+ * The fields of Hydrogen's checks (`validateProducts`) a product cannot be
+ * sent without. The vendor is not one: Hydrogen sent a product without one
+ * (as `brand: ''`), its check never stopping the event.
+ */
 const REQUIRED_PRODUCT_FIELDS = [
   'id',
   'title',
   'price',
-  'vendor',
   'variantId',
   'variantTitle',
 ] as const;
@@ -276,7 +281,11 @@ export type AnalyticsTrackerOptions = {
   send: (event: ShopifyAnalytics) => void;
 };
 
-/** Plain functions: they can be handed around without their object. */
+/**
+ * Plain functions: they can be handed around without their object. None of
+ * them throws: a failure (a consent script whose token readers throw, a send
+ * that throws) drops the event and is logged once per tracker.
+ */
 export type AnalyticsTracker = {
   setShop: (shop: AnalyticsShop) => void;
   /** The Customer Privacy API is ready, or the visitor changed the consent. */
@@ -293,23 +302,62 @@ type EventBuilder = (base: ShopifyPageViewPayload) => ShopifyAnalytics | null;
 type ViewBuilder = (base: ShopifyPageViewPayload) => ShopifyPageView | null;
 type PendingEvent = {build: EventBuilder; browser: ClientBrowserParameters};
 
+const EVENT_FAILED_MESSAGE = 'An analytics event failed and was dropped';
+
 /**
- * The provider's event pipeline. Events wait until the shop data and the
- * visitor's consent are known, then go out in the order they happened, built
- * with the page they happened on and the tracking tokens known when they are
- * sent. Without consent no payload is built and waiting events are dropped.
- * A page view carries the page type and resource of the product, collection
- * or search view before it, once (Hydrogen's `viewPayload`).
+ * The provider's tracker: the event pipeline behind methods that never
+ * throw, as Hydrogen wrapped each subscriber in try/catch. A failure (a
+ * consent script whose token readers throw, a send that throws) drops the
+ * event and is logged once per tracker, so it never escapes a React effect
+ * and the page keeps rendering.
  */
-export function createAnalyticsTracker({
-  readConsent,
-  readBrowser,
-  send,
-}: AnalyticsTrackerOptions): AnalyticsTracker {
+export function createAnalyticsTracker(
+  options: AnalyticsTrackerOptions,
+): AnalyticsTracker {
+  const logFailure = createFailureLogger(EVENT_FAILED_MESSAGE);
+  const pipeline = createEventPipeline(options, logFailure);
+  const guard =
+    <Args extends unknown[]>(method: (...args: Args) => void) =>
+    (...args: Args): void => {
+      try {
+        method(...args);
+      } catch (error) {
+        logFailure(error);
+      }
+    };
+  return {
+    setShop: guard(pipeline.setShop),
+    consentChanged: guard(pipeline.consentChanged),
+    pageViewed: guard(pipeline.pageViewed),
+    productViewed: guard(pipeline.productViewed),
+    collectionViewed: guard(pipeline.collectionViewed),
+    searchViewed: guard(pipeline.searchViewed),
+    cartChanged: guard(pipeline.cartChanged),
+  };
+}
+
+/** The tracker's methods before they are guarded: these may throw. */
+type EventPipeline = AnalyticsTracker;
+
+/**
+ * Events wait until the shop data and the visitor's consent are known, then
+ * go out in the order they happened, built with the page they happened on
+ * and the tracking tokens known when they are sent. Once the visitor has
+ * refused, nothing is queued and waiting events are dropped, so no payload
+ * is built and neither the browser nor the consent script's token readers
+ * are read. A page view carries the page type and resource of the product,
+ * collection or search view before it, once (Hydrogen's `viewPayload`), even
+ * when that view itself could not be sent.
+ */
+function createEventPipeline(
+  {readConsent, readBrowser, send}: AnalyticsTrackerOptions,
+  logFailure: (error: unknown) => void,
+): EventPipeline {
   let shop: AnalyticsShop | null = null;
   let pending: readonly PendingEvent[] = [];
   let view: PageViewContext | undefined;
   let cartBaseline: {cart: CartLike | null} | undefined;
+  const warnIfIncomplete = createIncompleteProductWarning();
 
   const flush = () => {
     const readyShop = shop;
@@ -322,23 +370,34 @@ export function createAnalyticsTracker({
     const {uniqueToken, visitToken} = readBrowser();
     for (const {build, browser} of events) {
       const page = {...browser, uniqueToken, visitToken};
-      const event = build(buildBasePayload(readyShop, consent, page));
-      if (event) send(event);
+      // One event's failure does not cost the events after it.
+      try {
+        const event = build(buildBasePayload(readyShop, consent, page));
+        if (event) send(event);
+      } catch (error) {
+        logFailure(error);
+      }
     }
   };
 
   const track = (build: EventBuilder) => {
+    if (readConsent()?.analyticsAllowed === false) {
+      pending = [];
+      return;
+    }
     pending = [...pending, {build, browser: readBrowser()}].slice(
       -MAX_PENDING_EVENTS,
     );
     flush();
   };
 
-  const trackView = (build: ViewBuilder) =>
+  const trackView = (
+    context: PageViewContext | undefined,
+    build: ViewBuilder,
+  ) =>
     track((base) => {
-      const event = build(base);
-      if (event) view = viewContextOf(event.payload);
-      return event;
+      view = context;
+      return build(base);
     });
 
   return {
@@ -353,10 +412,21 @@ export function createAnalyticsTracker({
         view = undefined;
         return event;
       }),
-    productViewed: (data) => trackView((base) => buildProductView(base, data)),
+    productViewed: (data) => {
+      warnIfIncomplete(data);
+      trackView(productPageContext(data), (base) =>
+        buildProductView(base, data),
+      );
+    },
     collectionViewed: (data) =>
-      trackView((base) => buildCollectionView(base, data)),
-    searchViewed: (data) => trackView((base) => buildSearchView(base, data)),
+      trackView(
+        pageContext(AnalyticsPageType.collection, data.collection.id),
+        (base) => buildCollectionView(base, data),
+      ),
+    searchViewed: (data) =>
+      trackView(pageContext(AnalyticsPageType.search), (base) =>
+        buildSearchView(base, data),
+      ),
     cartChanged: (cart) => {
       if (!cartBaseline) {
         cartBaseline = {cart};
@@ -373,8 +443,57 @@ export function createAnalyticsTracker({
   };
 }
 
+/**
+ * Logs the first failure it is handed (console.error, in development and in
+ * production) and ignores the rest: one broken dependency, such as a consent
+ * script whose token readers throw, would otherwise log on every event.
+ */
+export function createFailureLogger(message: string): (error: unknown) => void {
+  let logged = false;
+  return (error) => {
+    if (logged) return;
+    logged = true;
+    console.error(
+      `[analytics] ${message} (later failures are not logged): ${describeError(error)}`,
+    );
+  };
+}
+
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Development only: names the fields a product view lacks, once per field
+ * and tracker, so an incomplete `<Analytics.ProductView>` is not dropped
+ * silently. Production builds drop the check with `import.meta.env.DEV`.
+ */
+function createIncompleteProductWarning(): (data: ProductViewData) => void {
+  let warned: ReadonlySet<string> = new Set();
+  return ({products}) => {
+    if (!import.meta.env.DEV) return;
+    const missing = missingViewFields(products).filter(
+      (field) => !warned.has(field),
+    );
+    if (missing.length === 0) return;
+    warned = new Set([...warned, ...missing]);
+    console.warn(
+      `[analytics] No PRODUCT_VIEW is sent: the <Analytics.ProductView> data lacks ${missing.join(', ')}.`,
+    );
+  };
+}
+
+function missingViewFields(products: ProductViewData['products']): string[] {
+  if (!Array.isArray(products) || products.length === 0) return ['products'];
+  return [...new Set(products.flatMap(missingProductFields))];
+}
+
+function missingProductFields(product: AnalyticsProduct): string[] {
+  return REQUIRED_PRODUCT_FIELDS.filter((field) => !product[field]);
+}
+
 function isCompleteProduct(product: AnalyticsProduct): boolean {
-  return REQUIRED_PRODUCT_FIELDS.every((field) => Boolean(product[field]));
+  return missingProductFields(product).length === 0;
 }
 
 /** Hydrogen's `formatProduct`, without keys for unknown values. */
@@ -415,10 +534,15 @@ function linesOf(cart: CartLike | null): ReadonlyArray<CartLineLike> {
   return cart?.lines?.nodes ?? [];
 }
 
-/** Views always set a page type; search views have no resource. */
-function viewContextOf({
-  pageType,
-  resourceId,
-}: ShopifyPageViewPayload): PageViewContext {
+/** A page view's page type, and its resource when there is one. */
+function pageContext(pageType: string, resourceId?: string): PageViewContext {
   return resourceId ? {pageType, resourceId} : {pageType};
+}
+
+/** A product page once the view has products (Hydrogen's condition). */
+function productPageContext({
+  products,
+}: ProductViewData): PageViewContext | undefined {
+  if (!Array.isArray(products) || products.length === 0) return undefined;
+  return pageContext(AnalyticsPageType.product, products[0].id);
 }

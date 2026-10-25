@@ -1274,6 +1274,29 @@ describe('forward', () => {
 
     expect(sent(fetchMock).headers.has('cookie')).toBe(false);
   });
+
+  it("passes on no upstream cookie named like ours, which would replace the visitor's session or cart", async () => {
+    // Arrange: the consent API's answer, relayed to the browser as it is.
+    stubFetch('{}', {
+      headers: [
+        ['content-type', 'application/json'],
+        ['set-cookie', 'session=from-upstream; Path=/; HttpOnly'],
+        ['set-cookie', '_shopify_y=y2; Path=/'],
+        ['set-cookie', ' cart =c9-upstream; Path=/'],
+        ['set-cookie', '_tracking_consent=tc1; Path=/'],
+      ],
+    });
+    const {storefront} = createClient();
+
+    // Act
+    const response = await storefront.forward(proxyRequest());
+
+    // Assert
+    expect(response.headers.getSetCookie()).toEqual([
+      '_shopify_y=y2; Path=/',
+      '_tracking_consent=tc1; Path=/',
+    ]);
+  });
 });
 
 describe('tracking (D-9: only with analytics on)', () => {
@@ -1364,14 +1387,16 @@ describe('tracking (D-9: only with analytics on)', () => {
     },
   );
 
-  it("sends only Shopify's cookies, never the session or cart cookie", async () => {
-    // Arrange: our cookies exactly as the app writes them, among others.
+  it('sends every cookie except the session and cart cookies, as the proxy does', async () => {
+    // Arrange: our cookies exactly as the app writes them, among Shopify
+    // cookies without the `_shopify_` prefix (`cart_currency`, and the
+    // legacy consent cookie hydrogen-react's getTrackingValues reads).
     const session = await AppSession.init(new Request(ORIGIN), ['secret']);
     session.set('customerAccount', 'signed-in');
     const [sessionPair] = (await session.commit()).split(';');
     const fetchMock = stubFetch();
     const {storefront} = createVisitorClient(
-      `${sessionPair}; _shopify_y=y1; ${CART_COOKIE_NAME}=c1-abc; theme=dark; _shopify_s=s1; cart_currency=EUR; _shopify_sa_p=p1`,
+      `${sessionPair}; _shopify_y=y1; ${CART_COOKIE_NAME}=c1-abc; theme=dark; _shopify_s=s1; cart_currency=EUR; _tracking_consent=tc1; _shopify_sa_p=p1`,
     );
 
     // Act
@@ -1382,15 +1407,41 @@ describe('tracking (D-9: only with analytics on)', () => {
     expect(sessionPair).toMatch(/^session=/);
     for (const call of [0, 1]) {
       expect(sent(fetchMock, call).headers.get('cookie')).toBe(
-        '_shopify_y=y1; _shopify_s=s1; _shopify_sa_p=p1',
+        '_shopify_y=y1; theme=dark; _shopify_s=s1; cart_currency=EUR; _tracking_consent=tc1; _shopify_sa_p=p1',
       );
     }
   });
 
-  it("sends no cookie header when the request carries none of Shopify's cookies", async () => {
+  it('forwards exactly the cookies the proxy forwards for the same request', async () => {
+    // Arrange: one Cookie header, lookalikes of our cookie names included.
+    const cookie =
+      'session=s; _shopify_y=y1; cart=c1-abc; cart_currency=EUR; session_id=1; Cart=c2; theme=dark';
+    const fetchMock = stubFetch();
+    const request = new Request(`${ORIGIN}/api/2026-04/graphql.json`, {
+      method: 'POST',
+      body: PROXY_BODY,
+      headers: {cookie},
+    });
+    const {storefront} = createClient({trackingEnabled: true, request});
+
+    // Act
+    await storefront.query(SHOP_QUERY);
+    await storefront.forward(request);
+
+    // Assert
+    const [queried, proxied] = [0, 1].map(
+      (call) => sent(fetchMock, call).headers,
+    );
+    expect(queried.get('cookie')).toBe(
+      '_shopify_y=y1; cart_currency=EUR; session_id=1; Cart=c2; theme=dark',
+    );
+    expect(proxied.get('cookie')).toBe(queried.get('cookie'));
+  });
+
+  it('sends no cookie header when the request carries only our own cookies', async () => {
     const fetchMock = stubFetch();
     const {storefront} = createVisitorClient(
-      'session=signed-session; cart=c1-abc; theme=dark',
+      'session=signed-session; cart=c1-abc',
     );
 
     await storefront.query(SHOP_QUERY);
@@ -1503,7 +1554,7 @@ describe('tracking (D-9: only with analytics on)', () => {
 
     const {headers} = sent(fetchMock);
     expect(headers.get('cookie')).toBe(
-      '_shopify_marketing_v2=1; _shopify_yy=wrong; _shopify_y=y1',
+      'x_shopify_analytics=1; _shopify_marketing_v2=1; _shopify_yy=wrong; _shopify_y=y1',
     );
     expect(headers.get('X-Shopify-UniqueToken')).toBe('y1');
     expect(headers.get('X-Shopify-VisitToken')).toMatch(UUID_RE);
@@ -1602,6 +1653,81 @@ describe('tracking (D-9: only with analytics on)', () => {
     storefront.setCollectedSubrequestHeaders(response);
 
     expect(response.headers.getSetCookie()).toEqual(['session=1']);
+  });
+
+  it("never passes on an upstream cookie named like ours, which would replace the visitor's session or cart", async () => {
+    // Arrange: the names are matched once trimmed, as browsers read them; a
+    // pair without "=" counts by its whole text.
+    stubFetchSettingCookies([
+      'session=from-upstream; Path=/; HttpOnly',
+      '_shopify_y=y2; Path=/; Max-Age=31536000',
+      ' cart =c9-upstream; Path=/',
+      'cart; Path=/',
+      'cart_currency=EUR; Path=/',
+      // Cookie names are case-sensitive: a different cookie to the browser.
+      'Session=other; Path=/',
+    ]);
+    const {storefront} = createVisitorClient('_shopify_y=y1; _shopify_s=s1');
+    const page = new Response('page', {
+      headers: {'Set-Cookie': 'session=ours; Path=/; HttpOnly'},
+    });
+
+    // Act
+    await storefront.query(SHOP_QUERY);
+    storefront.setCollectedSubrequestHeaders(page);
+
+    // Assert
+    expect(page.headers.getSetCookie()).toEqual([
+      'session=ours; Path=/; HttpOnly',
+      '_shopify_y=y2; Path=/; Max-Age=31536000',
+      'cart_currency=EUR; Path=/',
+      'Session=other; Path=/',
+    ]);
+  });
+
+  describe('and shared caches', () => {
+    /** The Set-Cookie values a page with `cacheControl` ends up with. */
+    async function setCookiesOnPage(cacheControl: string | null) {
+      stubFetchSettingCookies(['_shopify_y=y2; Path=/']);
+      const {storefront} = createVisitorClient('_shopify_y=y1');
+      await storefront.query(SHOP_QUERY);
+      const page = new Response(
+        'page',
+        cacheControl === null ? {} : {headers: {'Cache-Control': cacheControl}},
+      );
+      storefront.setCollectedSubrequestHeaders(page);
+      return page.headers.getSetCookie();
+    }
+
+    it.each([
+      ['no Cache-Control (documents)', null],
+      ['an empty Cache-Control', ''],
+      ['private', 'private, max-age=60'],
+      ['no-store', 'no-store'],
+      ['no-cache', 'no-cache'],
+      ["the account pages' directives", 'no-cache, no-store, must-revalidate'],
+      ['directive names in any case', 'max-age=60, Private'],
+      ['a directive with a field list', 'no-cache="Set-Cookie"'],
+    ])(
+      'appends the collected cookies to a response with %s',
+      async (_label, cacheControl) => {
+        expect(await setCookiesOnPage(cacheControl)).toEqual([
+          '_shopify_y=y2; Path=/',
+        ]);
+      },
+    );
+
+    it.each([
+      ['a max-age (sitemaps and robots.txt)', 'max-age=86400'],
+      ['public', 'public, max-age=3600'],
+      ['an s-maxage', 's-maxage=600'],
+      ['a lookalike directive', 'max-age=60, no-storage'],
+    ])(
+      "appends nothing to a response with %s, so a CDN cannot replay one visitor's cookies to others",
+      async (_label, cacheControl) => {
+        expect(await setCookiesOnPage(cacheControl)).toEqual([]);
+      },
+    );
   });
 
   it("replays nothing for a cache hit: another visitor's answer never brings its cookies along", async () => {

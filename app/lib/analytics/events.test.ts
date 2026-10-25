@@ -2,7 +2,7 @@ import type {
   ClientBrowserParameters,
   ShopifyAnalytics,
 } from '@shopify/hydrogen-react';
-import {afterEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import type {AnalyticsShop} from './config';
 import {
   MAX_PENDING_EVENTS,
@@ -16,8 +16,10 @@ import {
   createAnalyticsTracker,
   linesAddedToCart,
   type AnalyticsProduct,
+  type AnalyticsTracker,
   type CartLike,
   type CartLineLike,
+  type CollectionViewData,
   type ConsentState,
   type CustomerPrivacyLike,
 } from './events';
@@ -299,21 +301,27 @@ describe('buildProductView', () => {
     expect(buildProductView(base(), {products: []})).toBeNull();
   });
 
-  it.each([
-    'id',
-    'title',
-    'price',
-    'vendor',
-    'variantId',
-    'variantTitle',
-  ] as const)('returns null when a product has no %s', (field) => {
-    expect(
-      buildProductView(base(), {products: [{...PRODUCT, [field]: ''}]}),
-    ).toBeNull();
+  it('sends a product without a vendor with an empty brand, as Hydrogen did', () => {
+    const event = buildProductView(base(), {
+      products: [{...PRODUCT, vendor: ''}],
+    });
+
+    expect(event?.payload.products).toStrictEqual([
+      {...FORMATTED_PRODUCT, brand: ''},
+    ]);
   });
 
+  it.each(['id', 'title', 'price', 'variantId', 'variantTitle'] as const)(
+    'returns null when a product has no %s',
+    (field) => {
+      expect(
+        buildProductView(base(), {products: [{...PRODUCT, [field]: ''}]}),
+      ).toBeNull();
+    },
+  );
+
   it('returns null when any of the products is incomplete', () => {
-    const incomplete = {...PRODUCT, vendor: ''};
+    const incomplete = {...PRODUCT, variantId: ''};
 
     expect(
       buildProductView(base(), {products: [PRODUCT, incomplete]}),
@@ -404,15 +412,24 @@ describe('buildAddToCart', () => {
     });
   });
 
+  it('sends a line without a vendor with an empty brand', () => {
+    const line = cartLine('a', 1, {
+      product: {id: 'gid://shopify/Product/a', title: 'Pillow a', vendor: ''},
+    });
+
+    const event = buildAddToCart(base(), CART_ID, line);
+
+    expect(event?.payload.products?.[0]).toMatchObject({
+      productGid: 'gid://shopify/Product/a',
+      brand: '',
+    });
+  });
+
   it.each([
     ['product id', {product: {id: '', title: 'Pillow a', vendor: 'Mellow'}}],
     [
       'product title',
       {product: {id: 'gid://shopify/Product/a', title: '', vendor: 'Mellow'}},
-    ],
-    [
-      'vendor',
-      {product: {id: 'gid://shopify/Product/a', title: 'Pillow a', vendor: ''}},
     ],
     ['price', {price: {amount: ''}}],
     ['variant id', {id: ''}],
@@ -580,8 +597,15 @@ describe('consentStateOf', () => {
 });
 
 describe('createAnalyticsTracker', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   /** A tracker on fake browser, consent and network. */
@@ -590,17 +614,17 @@ describe('createAnalyticsTracker', () => {
     let browser = BROWSER;
     const sent: ShopifyAnalytics[] = [];
     const readBrowser = vi.fn(() => browser);
-    const tracker = createAnalyticsTracker({
-      readConsent: () => consent,
-      readBrowser,
-      send: (event) => {
-        sent.push(event);
-      },
+    const readConsent = vi.fn(() => consent);
+    const send = vi.fn((event: ShopifyAnalytics) => {
+      sent.push(event);
     });
+    const tracker = createAnalyticsTracker({readConsent, readBrowser, send});
     return {
       tracker,
       sent,
       readBrowser,
+      readConsent,
+      send,
       names: () => sent.map((event) => event.eventName),
       setConsent(next: ConsentState | null) {
         consent = next;
@@ -722,8 +746,8 @@ describe('createAnalyticsTracker', () => {
   });
 
   describe('without consent', () => {
-    it('builds no payload at all', () => {
-      const {tracker, sent} = setup(DENIED);
+    it('builds no payload at all, and never reads the browser or its tokens', () => {
+      const {tracker, sent, readBrowser} = setup(DENIED);
       tracker.setShop(SHOP);
 
       tracker.productViewed({products: [PRODUCT]});
@@ -732,6 +756,25 @@ describe('createAnalyticsTracker', () => {
       tracker.cartChanged(cartAt('2026-10-25T10:01:00Z', [cartLine('a', 1)]));
 
       expect(sent).toEqual([]);
+      expect(readBrowser).not.toHaveBeenCalled();
+    });
+
+    it('drops what waited as soon as an event finds the consent refused, without reading the browser for that event', () => {
+      // Arrange: one page view waits for the consent.
+      const {tracker, names, readBrowser, setConsent} = setup(null);
+      tracker.setShop(SHOP);
+      tracker.pageViewed();
+      expect(readBrowser).toHaveBeenCalledTimes(1);
+
+      // Act: the refusal is readable before consentChanged reports it.
+      setConsent(DENIED);
+      tracker.searchViewed({searchTerm: 'pillow'});
+      setConsent(CONSENTED);
+      tracker.consentChanged();
+
+      // Assert
+      expect(names()).toEqual([]);
+      expect(readBrowser).toHaveBeenCalledTimes(1);
     });
 
     it('drops what waited when the consent turns out refused, and sends later events once allowed', () => {
@@ -795,11 +838,40 @@ describe('createAnalyticsTracker', () => {
       expect(pagePayload(sent, 1)).not.toHaveProperty('resourceId');
     });
 
-    it('sends nothing for an incomplete product, and a plain page view after it', () => {
+    it('sends no PRODUCT_VIEW for a product it cannot send, but keeps the product page on the page view after it', () => {
+      // Hydrogen's page view had the product page type whenever the view
+      // had products.
       const {tracker, names, sent} = setup();
       tracker.setShop(SHOP);
 
-      tracker.productViewed({products: [{...PRODUCT, title: ''}]});
+      tracker.productViewed({
+        products: [{...PRODUCT, variantId: '', variantTitle: ''}],
+      });
+      tracker.pageViewed();
+
+      expect(names()).toEqual(['PAGE_VIEW_2']);
+      expect(pagePayload(sent, 0)).toMatchObject({
+        pageType: 'product',
+        resourceId: PRODUCT.id,
+      });
+    });
+
+    it('sends the product view of a product without a vendor', () => {
+      const {tracker, names, sent} = setup();
+      tracker.setShop(SHOP);
+
+      tracker.productViewed({products: [{...PRODUCT, vendor: ''}]});
+      tracker.pageViewed();
+
+      expect(names()).toEqual(['PRODUCT_VIEW', 'PAGE_VIEW_2']);
+      expect(pagePayload(sent, 1).resourceId).toBe(PRODUCT.id);
+    });
+
+    it('gives the page view no page type after a product view without products', () => {
+      const {tracker, names, sent} = setup();
+      tracker.setShop(SHOP);
+
+      tracker.productViewed({products: []});
       tracker.pageViewed();
 
       expect(names()).toEqual(['PAGE_VIEW_2']);
@@ -815,6 +887,210 @@ describe('createAnalyticsTracker', () => {
       consentChanged();
 
       expect(names()).toEqual([]);
+    });
+  });
+
+  describe('in development', () => {
+    /** Everything written to console.warn. */
+    const warnings = () =>
+      vi
+        .mocked(console.warn)
+        .mock.calls.map((args) => args.map(String).join(' '));
+
+    it('warns once per missing field, naming it, when a product view cannot be sent', () => {
+      // Arrange
+      vi.stubEnv('DEV', true);
+      const {tracker} = setup();
+      tracker.setShop(SHOP);
+
+      // Act
+      tracker.productViewed({
+        products: [{...PRODUCT, variantId: '', variantTitle: ''}],
+      });
+      tracker.productViewed({products: [{...PRODUCT, variantId: ''}]});
+      tracker.productViewed({products: [{...PRODUCT, title: ''}]});
+
+      // Assert
+      expect(warnings()).toHaveLength(2);
+      expect(warnings()[0]).toContain('[analytics]');
+      expect(warnings()[0]).toContain('Analytics.ProductView');
+      expect(warnings()[0]).toContain('variantId');
+      expect(warnings()[0]).toContain('variantTitle');
+      expect(warnings()[1]).toContain('title');
+      expect(warnings()[1]).not.toContain('variantId');
+    });
+
+    it('warns about a product view without products', () => {
+      vi.stubEnv('DEV', true);
+      const {tracker} = setup();
+
+      tracker.productViewed({products: []});
+
+      expect(warnings()).toHaveLength(1);
+      expect(warnings()[0]).toContain('products');
+    });
+
+    it('warns before the shop data or the consent are known', () => {
+      vi.stubEnv('DEV', true);
+      const {tracker} = setup(null);
+
+      tracker.productViewed({products: [{...PRODUCT, price: ''}]});
+
+      expect(warnings()).toHaveLength(1);
+      expect(warnings()[0]).toContain('price');
+    });
+
+    it('does not warn about a product without a vendor, which is sent', () => {
+      vi.stubEnv('DEV', true);
+      const {tracker} = setup();
+      tracker.setShop(SHOP);
+
+      tracker.productViewed({products: [{...PRODUCT, vendor: ''}]});
+
+      expect(console.warn).not.toHaveBeenCalled();
+    });
+
+    it('stays silent in production builds', () => {
+      vi.stubEnv('DEV', false);
+      const {tracker} = setup();
+      tracker.setShop(SHOP);
+
+      tracker.productViewed({products: [{...PRODUCT, variantId: ''}]});
+
+      expect(console.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('failures', () => {
+    /** Everything written to console.error. */
+    const errors = () =>
+      vi
+        .mocked(console.error)
+        .mock.calls.map((args) => args.map(String).join(' '));
+
+    const failing = (message: string) => () => {
+      throw new Error(message);
+    };
+
+    it("catches a throwing browser reader (the consent script's token readers), logs it once and recovers once it works", () => {
+      // Arrange
+      const {tracker, names, readBrowser} = setup();
+      tracker.setShop(SHOP);
+      readBrowser.mockImplementation(failing('uniqueToken failed'));
+
+      // Act
+      expect(() => tracker.pageViewed()).not.toThrow();
+      expect(() => tracker.searchViewed({searchTerm: 'pillow'})).not.toThrow();
+      readBrowser.mockImplementation(() => BROWSER);
+      tracker.pageViewed();
+
+      // Assert
+      expect(errors()).toHaveLength(1);
+      expect(errors()[0]).toContain('[analytics]');
+      expect(errors()[0]).toContain('uniqueToken failed');
+      expect(names()).toEqual(['PAGE_VIEW_2']);
+    });
+
+    it('catches a send that throws and still sends the events after it', () => {
+      // Arrange: two events wait for the consent.
+      const {tracker, names, send, setConsent} = setup(null);
+      tracker.setShop(SHOP);
+      tracker.searchViewed({searchTerm: 'pillow'});
+      tracker.pageViewed();
+      send.mockImplementationOnce(failing('sendShopifyAnalytics threw'));
+
+      // Act
+      setConsent(CONSENTED);
+      expect(() => tracker.consentChanged()).not.toThrow();
+
+      // Assert
+      expect(names()).toEqual(['PAGE_VIEW_2']);
+      expect(errors()).toHaveLength(1);
+      expect(errors()[0]).toContain('sendShopifyAnalytics threw');
+    });
+
+    it('logs a thrown value that is not an Error as it is', () => {
+      const {tracker, send} = setup();
+      tracker.setShop(SHOP);
+      send.mockImplementation(() => {
+        throw 'monorail offline';
+      });
+
+      tracker.pageViewed();
+
+      expect(errors()).toHaveLength(1);
+      expect(errors()[0]).toContain('monorail offline');
+    });
+
+    it('logs only the first failure of a tracker', () => {
+      const {tracker, send} = setup();
+      tracker.setShop(SHOP);
+      send.mockImplementation(failing('offline'));
+
+      tracker.pageViewed();
+      tracker.pageViewed();
+      tracker.searchViewed({searchTerm: 'pillow'});
+
+      expect(send).toHaveBeenCalledTimes(3);
+      expect(console.error).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['setShop', (tracker: AnalyticsTracker) => tracker.setShop(SHOP)],
+      [
+        'consentChanged',
+        (tracker: AnalyticsTracker) => tracker.consentChanged(),
+      ],
+      ['pageViewed', (tracker: AnalyticsTracker) => tracker.pageViewed()],
+      [
+        'productViewed',
+        (tracker: AnalyticsTracker) =>
+          tracker.productViewed({products: [PRODUCT]}),
+      ],
+      [
+        'collectionViewed',
+        (tracker: AnalyticsTracker) =>
+          tracker.collectionViewed({
+            collection: {id: 'gid://shopify/Collection/7', handle: 'pillows'},
+          }),
+      ],
+      [
+        'searchViewed',
+        (tracker: AnalyticsTracker) => tracker.searchViewed({searchTerm: 'x'}),
+      ],
+      [
+        'cartChanged',
+        (tracker: AnalyticsTracker) =>
+          tracker.cartChanged(
+            cartAt('2026-10-25T10:01:00Z', [cartLine('a', 1)]),
+          ),
+      ],
+    ])('never throws out of %s', (_name, call) => {
+      // Arrange: the shop data, an event waiting for the consent and a cart
+      // baseline, so each method reaches a dependency, and every one throws.
+      const {tracker, readBrowser, readConsent} = setup(null);
+      tracker.setShop(SHOP);
+      tracker.pageViewed();
+      tracker.cartChanged(cartAt('2026-10-25T10:00:00Z', []));
+      readBrowser.mockImplementation(failing('reader failed'));
+      readConsent.mockImplementation(failing('consent failed'));
+
+      // Act and assert
+      expect(() => call(tracker)).not.toThrow();
+      expect(console.error).toHaveBeenCalledTimes(1);
+    });
+
+    it('survives view data that is not what the types promise', () => {
+      const {tracker, names} = setup();
+      tracker.setShop(SHOP);
+
+      expect(() =>
+        tracker.collectionViewed(undefined as unknown as CollectionViewData),
+      ).not.toThrow();
+      tracker.pageViewed();
+
+      expect(names()).toEqual(['PAGE_VIEW_2']);
+      expect(console.error).toHaveBeenCalledTimes(1);
     });
   });
 

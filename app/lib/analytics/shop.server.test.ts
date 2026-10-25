@@ -200,9 +200,7 @@ describe('getAnalyticsConfig', () => {
     // Assert
     expect(config.enabled).toBe(true);
     expect(config.consent).toEqual({
-      checkoutDomain: 'checkout.mellow.example',
       storefrontAccessToken: PUBLIC_TOKEN,
-      withPrivacyBanner: false,
       country: 'US',
       language: 'EN',
     });
@@ -212,6 +210,21 @@ describe('getAnalyticsConfig', () => {
       currency: 'EUR',
       hydrogenSubchannelId: STOREFRONT_ID,
     });
+  });
+
+  it('serialises only the consent settings the browser reads', () => {
+    // Arrange: the root loader sends this object to every page.
+    const {storefront} = createFakeStorefront();
+
+    // Act
+    const config = getAnalyticsConfig({env: CONFIGURED_ENV, storefront});
+
+    // Assert: no checkout domain or privacy-banner flag, which nothing reads.
+    expect(Object.keys(config.consent ?? {}).sort()).toEqual([
+      'country',
+      'language',
+      'storefrontAccessToken',
+    ]);
   });
 
   it('starts the shop query without waiting for it', () => {
@@ -233,6 +246,97 @@ describe('getAnalyticsConfig', () => {
 
     expect(config.consent?.storefrontAccessToken).toBe(PUBLIC_TOKEN);
     expect(JSON.stringify(config.consent)).not.toContain('shpat_');
+  });
+
+  describe('when PUBLIC_STOREFRONT_API_TOKEN holds a private token', () => {
+    const PRIVATE_TOKEN = 'shpat_private-token-placeholder-not-real';
+
+    it.each([
+      ['a private token', PRIVATE_TOKEN],
+      ['a private token with stray whitespace', `  ${PRIVATE_TOKEN}\n`],
+    ])(
+      'refuses analytics for %s, without a shop query, and logs that once',
+      (_label, token) => {
+        // Arrange
+        const {storefront, query} = createFakeStorefront();
+        const env = {...CONFIGURED_ENV, PUBLIC_STOREFRONT_API_TOKEN: token};
+
+        // Act
+        const config = getAnalyticsConfig({env, storefront});
+
+        // Assert
+        expect(config).toBe(DISABLED_ANALYTICS_CONFIG);
+        expect(query).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledTimes(1);
+        expect(loggedErrors()).toContain('[analytics]');
+        expect(loggedErrors()).toContain('PUBLIC_STOREFRONT_API_TOKEN');
+      },
+    );
+
+    it('never logs the token itself', () => {
+      const {storefront} = createFakeStorefront();
+      const env = {
+        ...CONFIGURED_ENV,
+        PUBLIC_STOREFRONT_API_TOKEN: PRIVATE_TOKEN,
+      };
+
+      getAnalyticsConfig({env, storefront});
+
+      expect(loggedErrors()).not.toContain(PRIVATE_TOKEN);
+    });
+
+    it('logs once for every request it refuses', () => {
+      const {storefront} = createFakeStorefront();
+      const env = {
+        ...CONFIGURED_ENV,
+        PUBLIC_STOREFRONT_API_TOKEN: PRIVATE_TOKEN,
+      };
+
+      getAnalyticsConfig({env, storefront});
+      getAnalyticsConfig({env, storefront});
+
+      expect(console.error).toHaveBeenCalledTimes(2);
+    });
+
+    it('stays silent while analytics are not configured anyway', () => {
+      // Without analytics, no token reaches the browser at all.
+      const {storefront} = createFakeStorefront();
+
+      const config = getAnalyticsConfig({
+        env: {PUBLIC_STOREFRONT_API_TOKEN: PRIVATE_TOKEN},
+        storefront,
+      });
+
+      expect(config).toBe(DISABLED_ANALYTICS_CONFIG);
+      expect(console.error).not.toHaveBeenCalled();
+    });
+
+    it('does not mistake a missing token for a private one, nor throw', () => {
+      // Arrange: a Worker whose PUBLIC_STOREFRONT_API_TOKEN is unset.
+      const {storefront} = createFakeStorefront();
+      const env = {
+        PUBLIC_CHECKOUT_DOMAIN: CONFIGURED_ENV.PUBLIC_CHECKOUT_DOMAIN,
+        PUBLIC_STOREFRONT_ID: STOREFRONT_ID,
+      } as unknown as ConfigArgs['env'];
+
+      // Act
+      const config = getAnalyticsConfig({env, storefront});
+
+      // Assert
+      expect(config.enabled).toBe(true);
+      expect(console.error).not.toHaveBeenCalled();
+    });
+
+    it('keeps analytics on for a public token that merely contains the prefix', () => {
+      const {storefront} = createFakeStorefront();
+      const env = {
+        ...CONFIGURED_ENV,
+        PUBLIC_STOREFRONT_API_TOKEN: 'public-shpat_-lookalike-000000000',
+      };
+
+      expect(getAnalyticsConfig({env, storefront}).enabled).toBe(true);
+      expect(console.error).not.toHaveBeenCalled();
+    });
   });
 
   describe('when the shop data cannot be loaded', () => {
@@ -274,7 +378,7 @@ describe('getAnalyticsConfig', () => {
 
       await config.shop;
       expect(config.enabled).toBe(true);
-      expect(config.consent?.checkoutDomain).toBe('checkout.mellow.example');
+      expect(config.consent?.storefrontAccessToken).toBe(PUBLIC_TOKEN);
     });
   });
 });
