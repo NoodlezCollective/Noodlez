@@ -805,12 +805,10 @@ export type AnalyticsShop = {
   hydrogenSubchannelId: string;
 };
 export type ConsentConfig = {
-  checkoutDomain: string;
   storefrontAccessToken: string;
-  withPrivacyBanner: false;
   country: CountryCode;
   language: LanguageCode;
-};
+}; // checkoutDomain/withPrivacyBanner dropped: nothing in the browser reads them without a privacy banner
 export type AnalyticsConfig =
   | {enabled: false; shop: null; consent: null}
   | {
@@ -892,7 +890,7 @@ export function CustomerPrivacyLoader(p: {
   nonce?: string;
   onReady: () => void;
 }): null;
-//   useLoadScript(CONSENT_API_URL, {attributes: {id: 'customer-privacy-api', nonce}}); sets customerPrivacy.config
+//   inserts the script itself (app/lib/analytics/consent-script.ts) with src, async, id and the nonce set BEFORE appendChild, once per page; sets customerPrivacy.config
 //   {isHeadless, asyncConsent, asyncVisitorState, consentDomain: location.host, storefrontAccessToken}; listens for
 //   consentTrackingApiLoaded and visitorConsentCollected; useRevalidator().revalidate() when getTrackingValues() tokens change
 // app/lib/analytics/provider.tsx and index.ts
@@ -1712,6 +1710,7 @@ Gate: standard, full e2e.
 - Optimistic cart (Phase 3): `useOptimisticCart` returns the cart object itself (null stays null) when no pending action changes the lines, instead of a clone with recomputed totals; non-positive or fractional quantities are normalised.
 - Cart service (Phase 3): a failed `create` keeps the cookie's cart id for the rest of the request; an absolute same-origin redirect target is reduced to its path; the sitemap type lookup uses own keys only (Phase 4a).
 - The consent script loads only when analytics is configured.
+- Analytics follow-up (Phase 4c): analytics code never throws into React (failures are caught and logged once per tracker or loader with the `[analytics]` prefix); a refusing visitor's browser and token readers are never called; an incomplete product (missing id, title, price, variantId or variantTitle) drops its PRODUCT_VIEW with one development warning per missing field while the page view keeps its product context, and an empty vendor is sent as `brand: ''` as Hydrogen did; the consent script is inserted with the nonce set before it is appended; server-side calls forward every cookie except our `session` and `cart` (the proxy's policy); collected Set-Cookie values named `session` or `cart` are never appended (the proxy strips them from upstream answers too), and collected cookies are appended only to responses without shared-cache `Cache-Control`.
 - Analytics details (Phase 4c): events report hydrogen-react's version as `assetVersionId` instead of Hydrogen's; the add-to-cart detection keeps an in-memory cart baseline instead of Hydrogen's `cartLastUpdatedAt` in localStorage (the cart id is never persisted client-side); events queue in memory (at most 50) until consent is known; server-side query and mutation fetches use `redirect: 'manual'`; analytics is refused with a server log when `PUBLIC_STOREFRONT_API_TOKEN` is a private (`shpat_`) token.
 - The mock-shop console warning disappears and the e2e allowlist becomes empty (Phase 4c).
 - Tracking cookies are forwarded only when analytics is enabled (Phase 4c).
