@@ -15,8 +15,8 @@ be developed and reviewed before a Shopify store is linked.
   `/policies/subscription-policy` returns 404, and the seeded videos have no
   captions file.
 - The cart is an in-memory store (`cart.server.ts`). Cart ids are kept in the
-  normal Hydrogen `cart` cookie; Hydrogen's `CartForm` actions, optimistic UI
-  and cart drawer run unchanged. Discount codes `MELLOW10` and `WELCOME15` are
+  normal `cart` cookie; the app's own `CartForm` actions, optimistic UI and
+  cart drawer run unchanged. Discount codes `MELLOW10` and `WELCOME15` are
   applicable. `checkoutUrl` points at `/dev/mock-checkout`, which explains that
   checkout requires a real store. Cart permalinks accept mock variant ids here
   (`/cart/cloudalign-pillow-1:1?discount=MELLOW10`, see

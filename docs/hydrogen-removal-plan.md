@@ -1705,7 +1705,9 @@ Gate: standard, full e2e.
 - `cart_viewed` is no longer published (Phase 3).
 - Cart service details (Phase 3): `updateBuyerIdentity` no longer writes `companyLocationId` into the session through `setBuyer` (B2B only, no caller); `cart.get()` returns null for a `{cart: null, errors}` answer (unreachable in production, the errors guard answers 502 first); mutation results always carry `cart` (null without a payload) where Hydrogen omitted the key; `getFormInput` ignores an `inputs` value that is not an object; hand-crafted line shapes that Hydrogen forwarded to the API are rejected by the cart action with 400.
 - CSP (Phase 4a): `generateNonce` fails closed without Web Crypto instead of falling back to `Math.random`; a nonce that is not a valid CSP base64 value is rejected; the dev-only `ws://*.tryhydrogen.dev:*` source is gone.
-- Log prefixes (Phase 4a): `[sitemap]` and `[storefront-redirect]` replace Hydrogen's `[h2:...]` lines; refused cross-origin redirect targets are no longer logged.
+- Log prefixes (Phase 4a): `[sitemap]` and `[storefront-redirect]` replace Hydrogen's `[h2:...]` lines; refused cross-origin redirect targets are no longer logged; `[useOptimisticCart]` replaces `[h2:warn:...]` (Phase 3).
+- Optimistic cart (Phase 3): `useOptimisticCart` returns the cart object itself (null stays null) when no pending action changes the lines, instead of a clone with recomputed totals; non-positive or fractional quantities are normalised.
+- Cart service (Phase 3): a failed `create` keeps the cookie's cart id for the rest of the request; an absolute same-origin redirect target is reduced to its path; the sitemap type lookup uses own keys only (Phase 4a).
 - The consent script loads only when analytics is configured.
 - The mock-shop console warning disappears and the e2e allowlist becomes empty (Phase 4c).
 - Tracking cookies are forwarded only when analytics is enabled (Phase 4c).
