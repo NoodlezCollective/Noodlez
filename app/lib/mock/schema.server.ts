@@ -8,7 +8,8 @@ import storefrontSchema from '@shopify/hydrogen-react/storefront.schema.json';
 let cached: GraphQLSchema | undefined;
 
 /**
- * The real Storefront API schema that ships with Hydrogen, built once.
+ * The real Storefront API schema that ships with @shopify/hydrogen-react,
+ * built once.
  * Executing app queries against it means the mock validates documents the
  * same way the live API would (unknown fields fail loudly in development).
  */

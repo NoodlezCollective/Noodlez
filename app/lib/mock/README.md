@@ -1,12 +1,12 @@
 # Development Storefront API mock
 
-`MOCK_STOREFRONT=true` (in `.env`, development only) replaces the Shopify
+`MOCK_STOREFRONT=true` (in `.dev.vars`, development only) replaces the Shopify
 Storefront API with an in-process GraphQL executor so the Mellow storefront can
 be developed and reviewed before a Shopify store is linked.
 
 - Queries and mutations are executed by `graphql-js` against the **real
-  Storefront API schema** that ships with Hydrogen, so documents are validated
-  exactly like the live API validates them.
+  Storefront API schema** that ships with `@shopify/hydrogen-react`, so
+  documents are validated exactly like the live API validates them.
 - Data comes from `data/catalog.ts` (products, collections, menus, pages,
   policies) and `data/content.ts` (metaobjects generated from the storefront's
   fallback content). The catalog has 13 products. Silk Sleep Mask, Linen Sheet
@@ -24,8 +24,9 @@ be developed and reviewed before a Shopify store is linked.
 - Like the live API, a failed operation answers `{errors}` (with whatever data
   resolved) instead of throwing. `app/lib/context.ts` then rejects a result that
   has errors and no data with a 502, in development and production alike.
-- Customer accounts are **not** mocked; `/account` requires Shopify's Customer
-  Account API configuration.
+- Customer accounts are **not** mocked, and they are deferred in every mode:
+  `/account` always ends on the 503 sign-in page
+  (`app/lib/customer-account/stub.server.ts`).
 
 Mock mode needs a `PUBLIC_STOREFRONT_API_TOKEN` placeholder (any value, for
 example `mockmockmockmockmockmockmockmock`; nothing checks its length any more).

@@ -37,13 +37,12 @@ import type {I18n, StorefrontApiError, StorefrontErrors} from './types';
 export type {I18n, StorefrontApiError, StorefrontErrors} from './types';
 
 /**
- * Our Storefront API client, replacing Hydrogen's `createStorefrontClient`
- * (ported from node_modules/@shopify/hydrogen/dist/development/index.js).
- * hydrogen-react supplies the URLs and token headers; this module adds the
- * fetch, the `$country` / `$language` injection, the cache layer, error
- * shaping, the same-origin Storefront API proxy and, with analytics on only,
- * the visitor's cookies (never ours) and tokens (D-9 in
- * docs/hydrogen-removal-plan.md).
+ * Our Storefront API client, ported from Hydrogen 2026.4.7's
+ * `createStorefrontClient`, which it replaces. hydrogen-react supplies the
+ * URLs and token headers; this module adds the fetch, the `$country` /
+ * `$language` injection, the cache layer, error shaping, the same-origin
+ * Storefront API proxy and, with analytics on only, the visitor's cookies
+ * (never ours) and tokens (D-9 in docs/hydrogen-removal-plan.md).
  */
 
 declare global {
@@ -376,11 +375,11 @@ function createDefaultHeaders(
 }
 
 /**
- * Hydrogen's visitor headers (h:1874-1891), with tracking on only: the
- * request's cookies without ours (the proxy's policy) and, until the visitor
- * has one of the newer visitor cookies, visitor tokens. They are client
- * defaults, computed once per request, so queries stay cacheable (per-call
- * headers bypass the cache).
+ * Hydrogen 2026.4.7's visitor headers, with tracking on only: the request's
+ * cookies without ours (the proxy's policy) and, until the visitor has one of
+ * the newer visitor cookies, visitor tokens. They are client defaults,
+ * computed once per request, so queries stay cacheable (per-call headers
+ * bypass the cache).
  */
 function createVisitorHeaders(request: Request): Record<string, string> {
   const cookies = readCookies(

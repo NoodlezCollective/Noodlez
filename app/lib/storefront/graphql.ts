@@ -1,7 +1,6 @@
 /**
  * Pure helpers for GraphQL documents and responses, ported from Hydrogen
- * 2026.4.7 (`minifyQuery`, the query/mutation checks and `parseJSON` in
- * node_modules/@shopify/hydrogen/dist/development/index.js).
+ * 2026.4.7's `minifyQuery`, query/mutation checks and `parseJSON`.
  */
 
 /** Hydrogen parity: everything from `#` to the end of a line is a comment. */

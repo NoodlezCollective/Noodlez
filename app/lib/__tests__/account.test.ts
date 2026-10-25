@@ -150,7 +150,7 @@ describe('account/profile action', () => {
   });
 
   it('lets the redirect Response of an expired session through', async () => {
-    // Hydrogen's customerAccount.mutate throws a redirect to the login page.
+    // The customer-account stub's mutate throws a redirect to the login page.
     const redirect = new Response(null, {
       status: 302,
       headers: {Location: '/account/login'},

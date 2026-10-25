@@ -1,9 +1,9 @@
 /**
- * The document Content-Security-Policy, ported from Hydrogen 2026.4.7
- * (`generateNonce`, `createContentSecurityPolicy` and `createCSPHeader` in
- * node_modules/@shopify/hydrogen/dist/development/index.js). The header is
- * byte-identical to Hydrogen's (see csp.server.test.ts), and serialisation
- * matches `content-security-policy-builder` 2.3.0, which Hydrogen uses.
+ * The document Content-Security-Policy, ported from Hydrogen 2026.4.7's
+ * `generateNonce`, `createContentSecurityPolicy` and `createCSPHeader`. The
+ * header is byte-identical to Hydrogen's (see csp.server.test.ts), and
+ * serialisation matches `content-security-policy-builder` 2.3.0, which
+ * Hydrogen uses.
  *
  * Deliberate differences: the dev sources leave out `ws://*.tryhydrogen.dev:*`,
  * an undefined directive counts as absent (Hydrogen throws), a nonce that is

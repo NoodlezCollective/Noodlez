@@ -56,7 +56,7 @@ type Operation = (document: string, options?: unknown) => Promise<unknown>;
  * Makes `storefront.query` / `storefront.mutate` reject with a 502 `Response`
  * when the API reports GraphQL errors without any data.
  *
- * Hydrogen only throws for non-2xx HTTP statuses. The Storefront API reports
+ * The Storefront client only throws for non-2xx HTTP statuses. The API reports
  * invalid or failed operations as HTTP 200 with `{errors}` and no `data`, which
  * resolves to an object whose data fields are all `undefined`. Loaders read
  * that as "not found" (a bogus 404 for collections and products) or crash on it

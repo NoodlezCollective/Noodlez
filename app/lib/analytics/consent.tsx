@@ -12,11 +12,9 @@ import {
 
 /**
  * Shopify's Customer Privacy API in the browser, set up the way Hydrogen
- * 2026.4.7's useCustomerPrivacy did (h:108-298 in
- * node_modules/@shopify/hydrogen/dist/development/index.js), without the
- * privacy banner. Only rendered when analytics are enabled; the reading of
- * the consent is in events.ts (consentStateOf), the script in
- * consent-script.ts.
+ * 2026.4.7's useCustomerPrivacy did, without the privacy banner. Only rendered
+ * when analytics are enabled; the reading of the consent is in events.ts
+ * (consentStateOf), the script in consent-script.ts.
  */
 
 export {CONSENT_API_URL} from './consent-script';

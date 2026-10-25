@@ -496,7 +496,8 @@ test.describe('redirect targets', () => {
 });
 
 test.describe('404 pages with redirect parameters', () => {
-  // Hydrogen's storefrontRedirect follows ?redirect= / ?return_to= on a 404.
+  // storefrontRedirect (app/lib/storefront-redirect.server.ts) follows
+  // ?redirect= / ?return_to= on a 404.
   // server.ts first reduces both to a same-origin path (or drops them), so a
   // hostile value can no longer turn a 404 into an open redirect.
   const HOSTILE = [

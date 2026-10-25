@@ -16,7 +16,7 @@ function isShopifyCdnUrl(url: string) {
 }
 
 /**
- * Renders editorial imagery. Shopify-hosted files use Hydrogen's <Image>
+ * Renders editorial imagery. Shopify-hosted files use hydrogen-react's <Image>
  * (responsive srcset via the Shopify CDN); any other URL (e.g. the local
  * placeholder artwork) renders as a plain <img> with intrinsic dimensions.
  */
@@ -31,7 +31,7 @@ export function ContentImage({
 }: ContentImageProps) {
   const altText = alt ?? image.altText ?? '';
   // React 18 expects the lowercase DOM attribute name for fetch priority.
-  // Both branches forward it: Hydrogen's <Image> passes unknown props on to
+  // Both branches forward it: hydrogen-react's <Image> passes unknown props on to
   // the <img>, so a Shopify-hosted hero keeps `fetchpriority="high"`.
   const priorityAttribute = fetchPriority ? {fetchpriority: fetchPriority} : {};
   if (isShopifyCdnUrl(image.url)) {

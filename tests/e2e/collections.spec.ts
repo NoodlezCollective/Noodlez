@@ -106,7 +106,7 @@ function nextFrames(page: Page, count: number): Promise<void> {
 
 /**
  * Waits until no client-side navigation is in flight. A filter or sort change
- * navigates once, and Hydrogen's <Pagination> then runs `navigate(url,
+ * navigates once, and <Pagination> (app/lib/pagination.tsx) then runs `navigate(url,
  * {replace: true})` from an effect right after that navigation commits. A
  * second click that lands in between would be overwritten by that replace
  * (the router goes back to the first URL), which no person can do but a test

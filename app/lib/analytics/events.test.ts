@@ -66,9 +66,8 @@ function browserAt(
 const BROWSER = browserAt('/products/cloud-pillow');
 
 /**
- * The keys of Hydrogen 2026.4.7's base payload (`prepareBasePageViewPayload`,
- * node_modules/@shopify/hydrogen/dist/development/index.js), except
- * `assetVersionId`, which hydrogen-react fills in with its own version.
+ * The keys of Hydrogen 2026.4.7's base payload (`prepareBasePageViewPayload`),
+ * except `assetVersionId`, which hydrogen-react fills in with its own version.
  */
 const BASE_PAYLOAD_KEYS = [
   'acceptedLanguage',

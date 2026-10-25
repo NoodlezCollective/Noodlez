@@ -1,7 +1,7 @@
 /**
- * Date formatting that produces the same text on the server (Oxygen renders in
- * UTC) and in the visitor's browser, so hydration never mismatches and
- * date-only values such as `2026-09-12` never display a day early.
+ * Date formatting that produces the same text on the server (the Worker
+ * renders in UTC) and in the visitor's browser, so hydration never mismatches
+ * and date-only values such as `2026-09-12` never display a day early.
  */
 
 /** "Oct 12, 2026" (the default). */

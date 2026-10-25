@@ -14,8 +14,7 @@ import {
 } from './graphql';
 
 /**
- * Hydrogen 2026.4.7's `minifyQuery` (node_modules/@shopify/hydrogen/dist/
- * development/index.js), kept here as the parity oracle.
+ * Hydrogen 2026.4.7's `minifyQuery`, kept here as the parity oracle.
  *
  * Test documents below are plain strings on purpose: codegen plucks every
  * template literal that starts with the graphql marker, test files included.

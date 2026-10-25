@@ -36,7 +36,8 @@ export async function loader(args: Route.LoaderArgs) {
 
 /**
  * Homepage content (metaobjects) is loaded first because it decides which
- * collection feeds the featured grid. Both queries are cached by Hydrogen.
+ * collection feeds the featured grid. Both queries go through the Storefront
+ * client's cache.
  * Content falls back to the documented defaults when the metaobjects do not
  * exist yet; the product grid falls back to best sellers when the configured
  * collection is empty or missing.

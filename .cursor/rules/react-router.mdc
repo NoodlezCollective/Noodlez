@@ -4,11 +4,11 @@ globs:
 alwaysApply: true
 ---
 
-# React Router Import Rule for Hydrogen
+# React Router Import Rule
 
 ## Overview
 
-This Hydrogen project is based on React Router, not Remix. When working with documentation or code examples, you should always use imports from the appropriate React Router packages instead of Remix packages.
+This storefront is based on React Router 7 (framework mode), not Remix. When working with documentation or code examples, you should always use imports from the appropriate React Router packages instead of Remix packages.
 
 ## Import Replacements
 

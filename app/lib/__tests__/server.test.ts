@@ -182,7 +182,7 @@ describe('server fetch handler: security headers on every response', () => {
   });
 
   it('serves a mutable copy when the response headers are immutable', async () => {
-    // `Response.redirect()` (like a response returned by `fetch()` on Oxygen)
+    // `Response.redirect()` (like a response returned by `fetch()` on Workers)
     // has immutable headers.
     const immutable = Response.redirect('https://shop.example/elsewhere', 302);
     expect(() => immutable.headers.set('X-Test', '1')).toThrow(TypeError);

@@ -13,9 +13,8 @@ import type {AnalyticsShop} from './config';
 
 /**
  * Shopify analytics events, ported from Hydrogen 2026.4.7's ShopifyAnalytics
- * and CartAnalytics (node_modules/@shopify/hydrogen/dist/development/index.js,
- * h:375-590 and h:596-693). Pure: the browser, the consent and the network
- * reach the tracker as functions, so everything here runs in unit tests.
+ * and CartAnalytics. Pure: the browser, the consent and the network reach the
+ * tracker as functions, so everything here runs in unit tests.
  *
  * Deliberate differences from Hydrogen: `assetVersionId` is left to
  * hydrogen-react (which sends its own version); a product without its id,

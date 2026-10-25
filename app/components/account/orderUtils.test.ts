@@ -53,7 +53,7 @@ describe('formatOrderDate', () => {
   it.each(ZONES)(
     'renders the same text in %s as on the server (UTC)',
     async (zone) => {
-      // Arrange: Oxygen renders in UTC, visitors' browsers in their own zone.
+      // Arrange: the Worker renders in UTC, browsers in the visitor's own zone.
       const server = await loadFormatOrderDate('UTC');
       const serverText = ORDER_DATES.map(([input]) => server(input));
       const browser = await loadFormatOrderDate(zone);

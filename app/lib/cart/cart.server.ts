@@ -29,10 +29,10 @@ import type {
 } from './types';
 
 /**
- * The server-side cart, replacing Hydrogen's `createCartHandler` (ported from
- * node_modules/@shopify/hydrogen/dist/development/index.js, h:2236-3297) on
- * our Storefront client. One service per request: it works on the cart in the
- * request's cookie, or on the cart it created during the request.
+ * The server-side cart on our Storefront client, ported from Hydrogen
+ * 2026.4.7's `createCartHandler`, which it replaces. One service per request:
+ * it works on the cart in the request's cookie, or on the cart it created
+ * during the request.
  */
 export interface CartService {
   /** The full cart, or null without a cart cookie or when it is gone. */

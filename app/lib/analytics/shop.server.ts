@@ -12,8 +12,7 @@ import {
 
 /**
  * The shop data analytics events carry, and the root loader's analytics
- * config. Replaces Hydrogen's `getShopAnalytics` (h:941-974 in
- * node_modules/@shopify/hydrogen/dist/development/index.js).
+ * config. Replaces Hydrogen 2026.4.7's `getShopAnalytics`.
  */
 
 /** Hydrogen's SHOP_QUERY, verbatim. */

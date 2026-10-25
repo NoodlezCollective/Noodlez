@@ -156,8 +156,9 @@ export function PaginatedResourceSection<NodesType>({
  * After "Load more" / "Load previous" the clicked link unmounts when no further
  * page exists, which drops keyboard focus to <body>. Hand it to the first newly
  * loaded resource instead (the link keeps focus while more pages remain).
- * Hydrogen's pagination links override any `onClick` passed to them, so the
- * pending load is detected from the loading state rather than from the click.
+ * <Pagination>'s links (lib/pagination.tsx) override any `onClick` passed to
+ * them, so the pending load is detected from the loading state rather than
+ * from the click.
  */
 function PaginationFocus({
   count,

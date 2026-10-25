@@ -38,16 +38,16 @@ const ENTRY_SERVER_OPTIONS: CspOptions = {
 /**
  * Golden: the header Hydrogen 2026.4.7 returned for ENTRY_SERVER_OPTIONS,
  * captured on 2026-10-25 (before app/entry.server.tsx switched to this
- * module) by calling `createContentSecurityPolicy` from
- * node_modules/@shopify/hydrogen/dist/production/index.js in Node. The
- * production build has no dev sources, so this is the `isDev` false header.
+ * module) by calling `createContentSecurityPolicy` from Hydrogen's production
+ * build in Node. The production build has no dev sources, so this is the
+ * `isDev` false header.
  */
 const HYDROGEN_PRODUCTION_HEADER =
   "base-uri 'self'; default-src 'self' https://cdn.shopify.com https://shopify.com 'nonce-dcd728dc71324a7a2bdcaed45eac59b9'; frame-ancestors 'none'; style-src https://fonts.googleapis.com 'self' 'unsafe-inline' https://cdn.shopify.com; connect-src 'self' https://cdn.shopify.com/ https://monorail-edge.shopifysvc.com https://checkout.shop.example https://mellow.myshopify.com; font-src 'self' https://fonts.gstatic.com https://cdn.shopify.com; img-src 'self' data: blob: https://cdn.shopify.com https://shopify.com; media-src 'self' blob: https://cdn.shopify.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; form-action 'self' https://shopify.com";
 
 /**
- * The same capture from node_modules/@shopify/hydrogen/dist/development/
- * index.js, which always adds the dev sources (the `isDev` true header).
+ * The same capture from Hydrogen's development build, which always adds the
+ * dev sources (the `isDev` true header).
  */
 const HYDROGEN_DEVELOPMENT_HEADER =
   "base-uri 'self'; default-src 'self' https://cdn.shopify.com https://shopify.com http://localhost:* 'nonce-57b19ba28cdbb2d50655ae3418de3254'; frame-ancestors 'none'; style-src https://fonts.googleapis.com 'self' 'unsafe-inline' https://cdn.shopify.com http://localhost:*; connect-src 'self' https://cdn.shopify.com/ https://monorail-edge.shopifysvc.com https://checkout.shop.example https://mellow.myshopify.com http://localhost:* ws://localhost:* ws://127.0.0.1:* ws://*.tryhydrogen.dev:*; font-src 'self' https://fonts.gstatic.com https://cdn.shopify.com; img-src 'self' data: blob: https://cdn.shopify.com https://shopify.com; media-src 'self' blob: https://cdn.shopify.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; form-action 'self' https://shopify.com";

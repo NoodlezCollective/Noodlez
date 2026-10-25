@@ -32,10 +32,10 @@ export default function MockCheckout() {
       <h1>Checkout is not available in mock mode</h1>
       <p style={{marginTop: '1rem'}}>
         This storefront is running with <code>MOCK_STOREFRONT=true</code>, so
-        the cart below lives in memory and no order can be placed. Link a
-        Shopify store (<code>npx shopify hydrogen link</code> then{' '}
-        <code>npx shopify hydrogen env pull</code>) and remove the flag to use
-        Shopify checkout.
+        the cart below lives in memory and no order can be placed. To use
+        Shopify checkout, link a store: copy the storefront settings of its
+        Hydrogen sales channel in the Shopify admin into <code>.dev.vars</code>{' '}
+        and remove the flag.
       </p>
 
       {lines.length ? (
