@@ -531,7 +531,7 @@ test.describe('customer accounts are not connected', () => {
     await expect(details).toHaveAttribute('open', '');
     const steps = main(page).getByRole('list').getByRole('listitem');
     await expect(steps).toHaveCount(4);
-    await expect(steps.first()).toContainText('npx shopify hydrogen link');
+    await expect(steps.first()).toContainText('Customer accounts are deferred');
   });
 });
 

@@ -537,7 +537,7 @@ interface GeneratedMutationTypes {
   };
 }
 
-declare module '@shopify/hydrogen' {
+declare global {
   interface CustomerAccountQueries extends GeneratedQueryTypes {}
   interface CustomerAccountMutations extends GeneratedMutationTypes {}
 }

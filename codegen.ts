@@ -5,14 +5,15 @@ import {pluckConfig, preset} from '@shopify/graphql-codegen';
 /**
  * GraphQL type generation (`npm run codegen`).
  *
- * One `.d.ts` per API, generated against hydrogen-react's schema. Storefront
+ * One `.d.ts` per API, generated against hydrogen-react's schemas. Storefront
  * API operation types extend the global `StorefrontQueries` and
  * `StorefrontMutations` interfaces of our own client
  * (app/lib/storefront/client.server.ts), so `storefront.query(QUERY)` stays
- * typed by the document string. Customer Account API types still extend
- * Hydrogen's interfaces, which its customer-account client reads until
- * Phase 5 of docs/hydrogen-removal-plan.md. The generated files are
- * committed; `npm run codegen && git diff --exit-code *.generated.d.ts`
+ * typed by the document string. Customer Account API operation types extend
+ * the global `CustomerAccountQueries` and `CustomerAccountMutations`
+ * interfaces (app/lib/customer-account/types.ts) the same way, which types
+ * `customerAccount.query/mutate` in the account routes. The generated files
+ * are committed; `npm run codegen && git diff --exit-code *.generated.d.ts`
  * checks for drift.
  */
 const require = createRequire(import.meta.url);
@@ -32,24 +33,11 @@ export const CUSTOMER_ACCOUNT_DOCUMENTS = [
 type InterfaceNames = {queryType: string; mutationType: string};
 type InterfaceExtension = (names: InterfaceNames) => string;
 
-/** Extends global interfaces (our Storefront client's). */
+/** Extends our global operation interfaces (one pair per API). */
 function augmentGlobal(queries: string, mutations: string): InterfaceExtension {
   return ({queryType, mutationType}) =>
     `
 declare global {
-  interface ${queries} extends ${queryType} {}
-  interface ${mutations} extends ${mutationType} {}
-}`;
-}
-
-/** Extends Hydrogen's interfaces (its customer-account client's). */
-function augmentHydrogen(
-  queries: string,
-  mutations: string,
-): InterfaceExtension {
-  return ({queryType, mutationType}) =>
-    `
-declare module '@shopify/hydrogen' {
   interface ${queries} extends ${queryType} {}
   interface ${mutations} extends ${mutationType} {}
 }`;
@@ -78,14 +66,15 @@ const config: CodegenConfig = {
     },
     'customer-accountapi.generated.d.ts': {
       preset,
-      schema: require.resolve('@shopify/hydrogen/customer-account.schema.json'),
+      schema:
+        require.resolve('@shopify/hydrogen-react/customer-account.schema.json'),
       documents: CUSTOMER_ACCOUNT_DOCUMENTS,
       presetConfig: {
         importTypes: {
           namespace: 'CustomerAccountAPI',
           from: '@shopify/hydrogen-react/customer-account-api-types',
         },
-        interfaceExtension: augmentHydrogen(
+        interfaceExtension: augmentGlobal(
           'CustomerAccountQueries',
           'CustomerAccountMutations',
         ),

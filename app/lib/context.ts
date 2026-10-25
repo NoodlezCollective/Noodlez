@@ -1,9 +1,7 @@
-import {
-  createCustomerAccountClient,
-  type CustomerAccount,
-} from '@shopify/hydrogen';
 import {RouterContextProvider} from 'react-router';
 import {createCartService, type CartService} from '~/lib/cart/cart.server';
+import {createCustomerAccountStub} from '~/lib/customer-account/stub.server';
+import type {CustomerAccount} from '~/lib/customer-account/types';
 import {AppSession, isSecureRequest} from '~/lib/session';
 import {
   createStorefrontClient,
@@ -16,7 +14,11 @@ type WaitUntil = (promise: Promise<unknown>) => void;
 
 /** Our cart service (app/lib/cart/cart.server.ts) on the Storefront client. */
 export type AppCart = CartService;
-/** Hydrogen's customer-account client, until Phase 5's stub. */
+/**
+ * Our customer-account stub (app/lib/customer-account/stub.server.ts):
+ * customer accounts are deferred (docs/hydrogen-removal-architecture.md,
+ * ADR-D).
+ */
 export type AppCustomerAccount = CustomerAccount;
 
 /** The per-request services every loader, action and entry.server receive. */
@@ -51,8 +53,8 @@ const LOCALE = {language: 'EN', country: 'US'} as const satisfies I18n;
 
 /**
  * Builds the router context for one request: our Storefront client, with the
- * development mock and the error guard installed on it, Hydrogen's
- * customer-account client, and our cart service running on that client.
+ * development mock and the error guard installed on it, the customer-account
+ * stub, and our cart service running on that client.
  */
 export async function createAppRouterContext(
   request: Request,
@@ -70,12 +72,14 @@ export async function createAppRouterContext(
   ]);
 
   const storefront = createStorefront(request, env, cache, waitUntil);
-  const customerAccount = createCustomerAccount(
-    request,
-    env,
+  // Signed out whether or not the Customer Account API variables are set:
+  // the account routes end on the 503 sign-in page until the OAuth client is
+  // ported, and the cart never attaches a buyer.
+  const customerAccount = createCustomerAccountStub({
     session,
-    waitUntil,
-  );
+    request,
+    language: LOCALE.language,
+  });
   // The cart id cookie is only ever read on the server (from the request's
   // Cookie header); no client code touches it. `Secure` is added over https
   // so local http development keeps working.
@@ -150,26 +154,5 @@ function createStorefront(
     request,
     cache,
     waitUntil,
-  });
-}
-
-/**
- * Unset ids become empty strings: Hydrogen's client treats both alike (not
- * logged in, invalid credentials), and the account routes show the
- * "not configured" page before calling it.
- */
-function createCustomerAccount(
-  request: Request,
-  env: Env,
-  session: AppSession,
-  waitUntil: WaitUntil,
-): AppCustomerAccount {
-  return createCustomerAccountClient({
-    session,
-    request,
-    waitUntil,
-    customerAccountId: env.PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID ?? '',
-    shopId: env.SHOP_ID ?? '',
-    language: LOCALE.language,
   });
 }

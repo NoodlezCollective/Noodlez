@@ -2,11 +2,14 @@ import {Button} from '~/components/ui/Button';
 import {UserIcon} from '~/components/ui/Icons';
 
 /**
- * True when the Customer Account API has been configured for this storefront.
- * Both variables are provided by `npx shopify hydrogen env pull` once the
- * storefront is linked to a Shopify store, and Hydrogen's customer account
- * client needs both: with only one of them a sign-in attempt would fail with a
- * raw 500, so a partial configuration counts as not configured.
+ * True when both Customer Account API variables are set: `SHOP_ID` and
+ * `PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID`, taken from the storefront's
+ * Customer Account API settings in the Shopify admin (`.dev.vars` locally,
+ * Worker variables in production). An OAuth client needs both, so a partial
+ * configuration counts as not configured. Customer accounts are deferred
+ * (docs/hydrogen-removal-architecture.md, ADR-D): until the OAuth client is
+ * ported, the stub in app/lib/customer-account/stub.server.ts answers the
+ * sign-in with the same 503 page even when this returns true.
  */
 export function isCustomerAccountConfigured(
   env: Pick<Env, 'SHOP_ID' | 'PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID'>,
@@ -15,8 +18,10 @@ export function isCustomerAccountConfigured(
 }
 
 /**
- * Rendered (with a 503 status) instead of the sign-in flow when the Customer
- * Account API is not configured. It never pretends to sign the shopper in.
+ * Rendered (with a 503 status) instead of a sign-in flow. The sign-in page
+ * shows it when the Customer Account API variables are missing, and also when
+ * they are set: the customer-account stub answers the sign-in with a 503 until
+ * the OAuth client is ported. It never pretends to sign the shopper in.
  */
 export function AccountUnavailable() {
   return (
@@ -42,25 +47,26 @@ export function AccountUnavailable() {
         <summary>For developers: enabling customer accounts</summary>
         <ol>
           <li>
-            Link the storefront to your Shopify store:{' '}
-            <code>npx shopify hydrogen link</code>.
+            Customer accounts are deferred (see{' '}
+            <code>docs/hydrogen-removal-architecture.md</code>, ADR-D): until
+            the OAuth client is ported, signing in always shows this page.
           </li>
           <li>
-            Pull the environment variables with{' '}
-            <code>npx shopify hydrogen env pull</code>. This adds{' '}
-            <code>PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID</code>,{' '}
+            Set <code>PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID</code>,{' '}
             <code>PUBLIC_CUSTOMER_ACCOUNT_API_URL</code> and{' '}
-            <code>SHOP_ID</code> to <code>.env</code>.
+            <code>SHOP_ID</code> from the storefront’s Customer Account API
+            settings in the Shopify admin: in <code>.dev.vars</code> locally, as
+            Worker variables in production.
           </li>
           <li>
-            Turn on the Customer Account API for the Hydrogen storefront in the
-            Shopify admin and register this storefront’s{' '}
-            <code>/account/authorize</code> callback URL.
+            Port the OAuth client (ADR-D, option D1) to{' '}
+            <code>app/lib/customer-account</code> and register this storefront’s{' '}
+            <code>/account/authorize</code> callback URL in the Shopify admin.
           </li>
           <li>
-            In local development run{' '}
-            <code>npx shopify hydrogen dev --customer-account-push</code> and
-            open the tunnel URL it prints; OAuth does not work on localhost.
+            OAuth needs an https origin: in local development, open the dev
+            server through an HTTPS tunnel and register that URL, because
+            sign-in does not work on <code>http://localhost</code>.
           </li>
         </ol>
       </details>
