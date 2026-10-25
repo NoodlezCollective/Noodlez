@@ -10,16 +10,19 @@
  *   image       -> 1x1 transparent GIF
  *   everything else (document, fetch, media, font ...) -> text/plain, empty
  *
- * Why: the storefront loads Google Fonts and Shopify's consent script on every
- * page, and Hydrogen would talk to Shopify's analytics endpoints. Stubbing
+ * Why: the storefront loads Google Fonts on every page, and, once analytics
+ * is configured, Shopify's consent script and analytics endpoints. Stubbing
  * them keeps runs identical offline, on a laptop and in CI, never sends test
  * traffic to third parties, and keeps the console free of network noise.
  *
  * Consequences specs should know about:
  * - Fonts do not load (the app falls back to system fonts), which only makes
  *   layout assertions more deterministic.
- * - The empty consent script never reports `consentStatus: 'loaded'`, so
- *   Hydrogen's analytics stay idle and its perf-kit script never loads.
+ * - Shopify's consent script is still stubbed, but it is only requested when
+ *   analytics is configured (PUBLIC_CHECKOUT_DOMAIN and PUBLIC_STOREFRONT_ID
+ *   set, mock off), which the mock environment never is. Were it requested,
+ *   the empty script would never report `consentStatus: 'loaded'`, so no
+ *   analytics event would be sent.
  * - WebSockets (Vite HMR) are not intercepted by Playwright routing and are
  *   unaffected.
  * - Requests to the app origin are never touched, including `/api/...`

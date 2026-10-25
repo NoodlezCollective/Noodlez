@@ -437,6 +437,37 @@ describe('HTTP errors', () => {
       '[storefront] CartCreate failed: HTTP 503 (request id none)',
     );
   });
+
+  it.each([
+    ['query', (storefront: Storefront) => storefront.query(SHOP_QUERY)],
+    ['mutate', (storefront: Storefront) => storefront.mutate(CART_MUTATION)],
+  ])(
+    '%s() never follows a redirect, so the token, cookies and body are not replayed to its target',
+    async (_method, call) => {
+      // Arrange: a private token and a visitor's Shopify cookies are at stake.
+      const fetchMock = stubFetch('', {
+        status: 307,
+        headers: {location: 'https://elsewhere.example/graphql'},
+      });
+      const {storefront} = createClient({
+        privateStorefrontToken: PRIVATE_TOKEN,
+        trackingEnabled: true,
+        request: createRequest({
+          'CF-Connecting-IP': BUYER_IP,
+          cookie: '_shopify_y=y1; _shopify_s=s1',
+        }),
+      });
+
+      // Act
+      const error = await rejection(call(storefront));
+
+      // Assert: the 3xx itself is the answer, an HTTP error like any non-2xx.
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0][1]?.redirect).toBe('manual');
+      expect(error).toBeInstanceOf(StorefrontApiHttpError);
+      expect(error).toMatchObject({status: 307});
+    },
+  );
 });
 
 describe('results', () => {
@@ -970,15 +1001,6 @@ describe('client shape', () => {
     expect(storefront.CacheLong).toBe(CacheLong);
     expect(storefront.CacheCustom).toBe(CacheCustom);
   });
-
-  it('leaves responses alone in setCollectedSubrequestHeaders until analytics ships (Phase 4c)', () => {
-    const {storefront} = createClient({trackingEnabled: true});
-    const response = new Response('ok', {headers: {'Set-Cookie': 'session=1'}});
-
-    storefront.setCollectedSubrequestHeaders(response);
-
-    expect(response.headers.getSetCookie()).toEqual(['session=1']);
-  });
 });
 
 describe('types', () => {
@@ -1251,5 +1273,421 @@ describe('forward', () => {
     );
 
     expect(sent(fetchMock).headers.has('cookie')).toBe(false);
+  });
+});
+
+describe('tracking (D-9: only with analytics on)', () => {
+  /** The headers that identify a visitor to the Storefront API. */
+  const VISITOR_TOKEN_HEADERS = [
+    'X-Shopify-UniqueToken',
+    'X-Shopify-VisitToken',
+    'Shopify-Storefront-Y',
+    'Shopify-Storefront-S',
+  ];
+  const UUID_RE =
+    /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/;
+
+  /** One visitor's page request, carrying `cookie` (none when null). */
+  function visitorRequest(cookie: string | null) {
+    return createRequest({
+      'cf-ray': RAY_ID,
+      'CF-Connecting-IP': BUYER_IP,
+      ...(cookie === null ? {} : {cookie}),
+    });
+  }
+
+  /** A client for that request with tracking on (analytics configured). */
+  function createVisitorClient(
+    cookie: string | null,
+    overrides: Partial<CreateStorefrontClientOptions> = {},
+  ) {
+    return createClient({
+      trackingEnabled: true,
+      request: visitorRequest(cookie),
+      ...overrides,
+    });
+  }
+
+  /**
+   * Answers every call with HTTP 200 and the next list of Set-Cookie values;
+   * the last list repeats.
+   */
+  function stubFetchSettingCookies(
+    ...answers: ReadonlyArray<readonly string[]>
+  ) {
+    let calls = 0;
+    const fetchMock = vi.fn(async (..._args: FetchArgs) => {
+      const setCookies = answers[Math.min(calls, answers.length - 1)] ?? [];
+      calls += 1;
+      return new Response(JSON.stringify({data: {shop: {name: 'Mellow'}}}), {
+        status: 200,
+        headers: [
+          ['content-type', 'application/json'],
+          ...setCookies.map((value): [string, string] => ['set-cookie', value]),
+        ],
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  it.each([
+    ['by default', {}],
+    ['with trackingEnabled: false', {trackingEnabled: false}],
+  ])(
+    'is off %s: no cookie or visitor token reaches the Storefront API and nothing is collected',
+    async (_name, overrides) => {
+      // Arrange
+      const fetchMock = stubFetchSettingCookies(['_shopify_y=fresh; Path=/']);
+      const {storefront} = createClient({
+        request: visitorRequest('_shopify_y=y1; _shopify_s=s1; cart=c1-abc'),
+        ...overrides,
+      });
+      const response = new Response('ok', {
+        headers: {'Set-Cookie': 'session=1'},
+      });
+
+      // Act
+      await storefront.query(SHOP_QUERY);
+      await storefront.mutate(CART_MUTATION);
+      storefront.setCollectedSubrequestHeaders(response);
+
+      // Assert
+      for (const call of [0, 1]) {
+        const {headers} = sent(fetchMock, call);
+        expect(headers.has('cookie')).toBe(false);
+        for (const name of VISITOR_TOKEN_HEADERS) {
+          expect(headers.has(name)).toBe(false);
+        }
+      }
+      expect(response.headers.getSetCookie()).toEqual(['session=1']);
+    },
+  );
+
+  it("sends only Shopify's cookies, never the session or cart cookie", async () => {
+    // Arrange: our cookies exactly as the app writes them, among others.
+    const session = await AppSession.init(new Request(ORIGIN), ['secret']);
+    session.set('customerAccount', 'signed-in');
+    const [sessionPair] = (await session.commit()).split(';');
+    const fetchMock = stubFetch();
+    const {storefront} = createVisitorClient(
+      `${sessionPair}; _shopify_y=y1; ${CART_COOKIE_NAME}=c1-abc; theme=dark; _shopify_s=s1; cart_currency=EUR; _shopify_sa_p=p1`,
+    );
+
+    // Act
+    await storefront.query(SHOP_QUERY);
+    await storefront.mutate(CART_MUTATION);
+
+    // Assert
+    expect(sessionPair).toMatch(/^session=/);
+    for (const call of [0, 1]) {
+      expect(sent(fetchMock, call).headers.get('cookie')).toBe(
+        '_shopify_y=y1; _shopify_s=s1; _shopify_sa_p=p1',
+      );
+    }
+  });
+
+  it("sends no cookie header when the request carries none of Shopify's cookies", async () => {
+    const fetchMock = stubFetch();
+    const {storefront} = createVisitorClient(
+      'session=signed-session; cart=c1-abc; theme=dark',
+    );
+
+    await storefront.query(SHOP_QUERY);
+
+    const {headers} = sent(fetchMock);
+    expect(headers.has('cookie')).toBe(false);
+    expect(headers.get('X-Shopify-UniqueToken')).toMatch(UUID_RE);
+  });
+
+  it('sends the visitor tokens from _shopify_y and _shopify_s while the visitor has neither of the newer visitor cookies', async () => {
+    // Arrange
+    const uuid = vi.spyOn(crypto, 'randomUUID');
+    const fetchMock = stubFetch();
+    const {storefront} = createVisitorClient('_shopify_y=y1; _shopify_s=s1');
+
+    // Act
+    await storefront.query(SHOP_QUERY);
+
+    // Assert
+    const {headers} = sent(fetchMock);
+    expect(headers.get('X-Shopify-UniqueToken')).toBe('y1');
+    expect(headers.get('X-Shopify-VisitToken')).toBe('s1');
+    expect(headers.get('Shopify-Storefront-Y')).toBe('y1');
+    expect(headers.get('Shopify-Storefront-S')).toBe('s1');
+    expect(uuid).not.toHaveBeenCalled();
+  });
+
+  it('gives a new visitor random tokens, generated once for the whole request', async () => {
+    // Arrange
+    const uuid = vi.spyOn(crypto, 'randomUUID');
+    const fetchMock = stubFetch();
+    const {storefront} = createVisitorClient(null);
+
+    // Act
+    await storefront.query(SHOP_QUERY);
+    await storefront.mutate(CART_MUTATION);
+
+    // Assert
+    const [first, second] = [0, 1].map((call) => sent(fetchMock, call).headers);
+    const uniqueToken = first.get('X-Shopify-UniqueToken');
+    const visitToken = first.get('X-Shopify-VisitToken');
+    expect(uniqueToken).toMatch(UUID_RE);
+    expect(visitToken).toMatch(UUID_RE);
+    expect(visitToken).not.toBe(uniqueToken);
+    expect(second.get('X-Shopify-UniqueToken')).toBe(uniqueToken);
+    expect(second.get('X-Shopify-VisitToken')).toBe(visitToken);
+    expect(first.has('Shopify-Storefront-Y')).toBe(false);
+    expect(first.has('Shopify-Storefront-S')).toBe(false);
+    expect(first.has('cookie')).toBe(false);
+    expect(uuid).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ['only _shopify_y', '_shopify_y=y1', {unique: 'y1', visit: null}],
+    ['only _shopify_s', '_shopify_s=s1', {unique: null, visit: 's1'}],
+    ['empty values', '_shopify_y=; _shopify_s= ', {unique: null, visit: null}],
+  ])(
+    'generates the tokens the cookies do not supply (%s)',
+    async (_name, cookie, legacy) => {
+      const fetchMock = stubFetch();
+      const {storefront} = createVisitorClient(cookie);
+      const randomToken = expect.stringMatching(UUID_RE);
+
+      await storefront.query(SHOP_QUERY);
+
+      const {headers} = sent(fetchMock);
+      expect(headers.get('Shopify-Storefront-Y')).toBe(legacy.unique);
+      expect(headers.get('Shopify-Storefront-S')).toBe(legacy.visit);
+      expect(headers.get('X-Shopify-UniqueToken')).toEqual(
+        legacy.unique ?? randomToken,
+      );
+      expect(headers.get('X-Shopify-VisitToken')).toEqual(
+        legacy.visit ?? randomToken,
+      );
+    },
+  );
+
+  it.each(['_shopify_analytics', '_shopify_marketing'])(
+    'sends the cookies without visitor tokens once the visitor has %s',
+    async (name) => {
+      // Arrange
+      const uuid = vi.spyOn(crypto, 'randomUUID');
+      const fetchMock = stubFetch();
+      const {storefront} = createVisitorClient(
+        `_shopify_y=y1; ${name}=v1; _shopify_s=s1`,
+      );
+
+      // Act
+      await storefront.query(SHOP_QUERY);
+
+      // Assert
+      const {headers} = sent(fetchMock);
+      expect(headers.get('cookie')).toBe(
+        `_shopify_y=y1; ${name}=v1; _shopify_s=s1`,
+      );
+      for (const header of VISITOR_TOKEN_HEADERS) {
+        expect(headers.has(header)).toBe(false);
+      }
+      expect(uuid).not.toHaveBeenCalled();
+    },
+  );
+
+  it('matches cookie names exactly, so lookalikes neither stop nor supply the tokens', async () => {
+    const fetchMock = stubFetch();
+    const {storefront} = createVisitorClient(
+      'x_shopify_analytics=1; _shopify_marketing_v2=1; _shopify_yy=wrong; _shopify_y=y1',
+    );
+
+    await storefront.query(SHOP_QUERY);
+
+    const {headers} = sent(fetchMock);
+    expect(headers.get('cookie')).toBe(
+      '_shopify_marketing_v2=1; _shopify_yy=wrong; _shopify_y=y1',
+    );
+    expect(headers.get('X-Shopify-UniqueToken')).toBe('y1');
+    expect(headers.get('X-Shopify-VisitToken')).toMatch(UUID_RE);
+  });
+
+  it('keeps queries cached and shared between visitors: the tracking headers are client defaults, not per-call headers', async () => {
+    // Arrange
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 9, 25, 12));
+    const memory = createMemoryCache();
+    const fetchMock = stubFetch();
+    const visitorA = createVisitorClient('_shopify_y=visitor-a', {
+      cache: memory.cache,
+    });
+    const visitorB = createVisitorClient('_shopify_y=visitor-b', {
+      cache: memory.cache,
+    });
+
+    // Act
+    await visitorA.storefront.query(SHOP_QUERY);
+    await visitorA.flush();
+    const answer = await visitorB.storefront.query(SHOP_QUERY);
+
+    // Assert: one upstream call, stored under the key it has without tracking.
+    expect(answer).toEqual({shop: {name: 'Mellow'}});
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const key = await createCacheKey(ORIGIN, [
+      'v1',
+      API_URL,
+      PUBLIC_TOKEN,
+      sent(fetchMock).rawBody,
+    ]);
+    expect([...memory.entries.keys()]).toEqual([key.url]);
+  });
+
+  it("appends the first Storefront API answer's Set-Cookie values after the response's own", async () => {
+    // Arrange
+    stubFetchSettingCookies(
+      [
+        '_shopify_y=y2; Path=/; Max-Age=31536000',
+        '_shopify_s=s2; Path=/; Max-Age=1800',
+      ],
+      ['_shopify_y=later; Path=/'],
+    );
+    const {storefront} = createVisitorClient('_shopify_y=y1; _shopify_s=s1');
+    const response = new Response('ok', {
+      headers: {'Set-Cookie': 'session=1'},
+    });
+
+    // Act: a mutation and an uncached query both reach the API.
+    await storefront.mutate(CART_MUTATION);
+    await storefront.query(SHOP_QUERY);
+    storefront.setCollectedSubrequestHeaders(response);
+
+    // Assert
+    expect(response.headers.getSetCookie()).toEqual([
+      'session=1',
+      '_shopify_y=y2; Path=/; Max-Age=31536000',
+      '_shopify_s=s2; Path=/; Max-Age=1800',
+    ]);
+  });
+
+  it('takes the first answer whatever its status, as Hydrogen did', async () => {
+    // Arrange: the first call fails with HTTP 503, the next one succeeds.
+    const fetchMock = vi
+      .fn<(...args: FetchArgs) => Promise<Response>>()
+      .mockResolvedValueOnce(
+        new Response('', {
+          status: 503,
+          headers: [['set-cookie', '_shopify_s=s2; Path=/']],
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({data: {shop: {name: 'Mellow'}}}), {
+          headers: [['set-cookie', '_shopify_s=later; Path=/']],
+        }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    const {storefront} = createVisitorClient('_shopify_y=y1; _shopify_s=s1');
+    const page = new Response('page');
+
+    // Act
+    const error = await rejection(storefront.mutate(CART_MUTATION));
+    await storefront.query(SHOP_QUERY);
+    storefront.setCollectedSubrequestHeaders(page);
+
+    // Assert
+    expect(error).toBeInstanceOf(StorefrontApiHttpError);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(page.headers.getSetCookie()).toEqual(['_shopify_s=s2; Path=/']);
+  });
+
+  it('appends nothing before the Storefront API has answered', () => {
+    const {storefront} = createClient({trackingEnabled: true});
+    const response = new Response('ok', {headers: {'Set-Cookie': 'session=1'}});
+
+    storefront.setCollectedSubrequestHeaders(response);
+
+    expect(response.headers.getSetCookie()).toEqual(['session=1']);
+  });
+
+  it("replays nothing for a cache hit: another visitor's answer never brings its cookies along", async () => {
+    // Arrange: visitor A's request fills the cache.
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 9, 25, 12));
+    const memory = createMemoryCache();
+    const fetchMock = stubFetchSettingCookies(['_shopify_y=for-a; Path=/']);
+    const visitorA = createVisitorClient('_shopify_y=a', {cache: memory.cache});
+    await visitorA.storefront.query(SHOP_QUERY);
+    await visitorA.flush();
+    const visitorB = createVisitorClient('_shopify_y=b', {cache: memory.cache});
+    const [pageA, pageB] = [new Response('a'), new Response('b')];
+
+    // Act
+    const answer = await visitorB.storefront.query(SHOP_QUERY);
+    visitorA.storefront.setCollectedSubrequestHeaders(pageA);
+    visitorB.storefront.setCollectedSubrequestHeaders(pageB);
+
+    // Assert
+    expect(answer).toEqual({shop: {name: 'Mellow'}});
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(pageA.headers.getSetCookie()).toEqual(['_shopify_y=for-a; Path=/']);
+    expect(pageB.headers.getSetCookie()).toEqual([]);
+  });
+
+  it("replays nothing for a stale hit either; only its background refresh, made with this visitor's cookies, can add some", async () => {
+    // Arrange: visitor A's CacheShort answer has gone stale.
+    const clock = vi
+      .spyOn(Date, 'now')
+      .mockReturnValue(Date.UTC(2026, 9, 25, 13));
+    const memory = createMemoryCache();
+    const fetchMock = stubFetchSettingCookies(
+      ['_shopify_y=for-a; Path=/'],
+      ['_shopify_y=for-b; Path=/'],
+    );
+    const visitorA = createVisitorClient('_shopify_y=a', {cache: memory.cache});
+    await visitorA.storefront.query(SHOP_QUERY, {cache: CacheShort()});
+    await visitorA.flush();
+    clock.mockReturnValue(Date.UTC(2026, 9, 25, 13, 0, 5));
+    const visitorB = createVisitorClient('_shopify_y=b', {cache: memory.cache});
+    const page = new Response('b');
+
+    // Act
+    await visitorB.storefront.query(SHOP_QUERY, {cache: CacheShort()});
+    await visitorB.flush();
+    visitorB.storefront.setCollectedSubrequestHeaders(page);
+
+    // Assert
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(sent(fetchMock, 1).headers.get('cookie')).toBe('_shopify_y=b');
+    expect(page.headers.getSetCookie()).toEqual(['_shopify_y=for-b; Path=/']);
+  });
+
+  it("leaves the proxy to the browser's own headers and collects nothing from it", async () => {
+    // Arrange
+    const fetchMock = stubFetchSettingCookies([
+      '_shopify_y=from-proxy; Path=/',
+    ]);
+    const request = new Request(`${ORIGIN}/api/2026-04/graphql.json`, {
+      method: 'POST',
+      body: PROXY_BODY,
+      headers: {
+        cookie: '_shopify_y=y1; _shopify_s=s1; session=s; theme=dark',
+        'cf-ray': RAY_ID,
+      },
+    });
+    const {storefront} = createClient({trackingEnabled: true, request});
+    const page = new Response('page');
+
+    // Act
+    const proxied = await storefront.forward(request);
+    storefront.setCollectedSubrequestHeaders(page);
+
+    // Assert: the browser's cookies without ours, as with tracking off, and
+    // no tokens made up by the server; Set-Cookie goes back on the proxy
+    // response only.
+    const {headers} = sent(fetchMock);
+    expect(headers.get('cookie')).toBe(
+      '_shopify_y=y1; _shopify_s=s1; theme=dark',
+    );
+    for (const name of VISITOR_TOKEN_HEADERS) {
+      expect(headers.has(name)).toBe(false);
+    }
+    expect(proxied.headers.getSetCookie()).toEqual([
+      '_shopify_y=from-proxy; Path=/',
+    ]);
+    expect(page.headers.getSetCookie()).toEqual([]);
   });
 });

@@ -20,9 +20,9 @@ SHOP_ID=
 # Development only: serve the Mellow demo catalog from an in-memory mock of the
 # Storefront API (no Shopify store needed). Ignored by production builds.
 # Remove or set to false once the store above is linked. In mock mode give
-# PUBLIC_STOREFRONT_API_TOKEN any 32-character placeholder (for example
-# mockmockmockmockmockmockmockmock): Hydrogen logs a console error for other
-# lengths. .dev.vars.e2e is a ready-made mock-mode environment.
+# PUBLIC_STOREFRONT_API_TOKEN any placeholder (for example
+# mockmockmockmockmockmockmockmock); nothing checks its length.
+# .dev.vars.e2e is a ready-made mock-mode environment.
 MOCK_STOREFRONT=false
 # Optional: newsletter signups are POSTed as JSON ({email, source, storefront,
 # timestamp}) to this URL

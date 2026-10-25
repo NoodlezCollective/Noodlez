@@ -23,8 +23,8 @@
  *   errors are recorded. `log`, `info` and `debug` (Vite's "[vite] connected",
  *   the React DevTools hint) are ignored.
  *
- * Baseline allowlist (BASELINE_ALLOWLIST below) applies to every test. It
- * holds exactly one entry; read its comment before adding another.
+ * Baseline allowlist (BASELINE_ALLOWLIST below) applies to every test. It is
+ * empty; read its comment before adding an entry.
  */
 import type {BrowserContext, ConsoleMessage, WebError} from '@playwright/test';
 
@@ -62,38 +62,25 @@ export interface AllowRule {
 
 const WATCHED_CONSOLE_TYPES = new Set(['error', 'warning', 'assert']);
 
-/** Text of the warning Hydrogen logs once per page load in mock mode. */
-export const MOCK_SHOP_WARNING =
-  '[h2:error:Analytics.Provider] - Mock shop is used. Analytics will not work properly.';
-
 /**
- * Allowed in every test.
- *
- * 1. The mock-shop warning. The development Storefront API mock reports the
- *    shop id of Shopify's public mock.shop (…/Shop/68817551382), and
- *    Hydrogen's <Analytics.Provider> warns about that id once per page load,
- *    shortly after hydration (so it can land anywhere in a test). It is
- *    expected by design: this suite only ever runs against the mock. A real
- *    shop id, or any other text, still fails the test.
+ * Allowed in every test: nothing. In mock mode the storefront logs nothing to
+ * the console by design. Analytics, the source of the last baseline entry
+ * (Hydrogen's mock-shop warning, removed in Phase 4c), is off there: it runs
+ * only with PUBLIC_CHECKOUT_DOMAIN and PUBLIC_STOREFRONT_ID set and the mock
+ * off. An entry here hides a message from every test, so add one only for a
+ * message every page logs by design, match its exact text and type, and say
+ * why in this comment.
  *
  * Deliberately NOT allowed (a failure here is a real problem):
  * - `Failed to load resource` for cdn.shopify.com / fonts.googleapis.com /
- *   fonts.gstatic.com and "Unable to load the Customer Privacy API". The
- *   hermetic network stubs (./network.ts) answer every third-party request,
- *   so these cannot happen; an allowance would only hide a broken stub.
- * - "It looks like you passed a private access token": the e2e env uses a
- *   32-character token on purpose (global-setup.ts checks for this up front).
+ *   fonts.gstatic.com. The hermetic network stubs (./network.ts) answer
+ *   every third-party request, so these cannot happen; an allowance would
+ *   only hide a broken stub.
+ * - Anything from analytics or consent: both are off in mock mode, so such a
+ *   message means they switched on where they must not.
  * - React hydration / key warnings and CSP "Refused to ..." reports.
  */
-export const BASELINE_ALLOWLIST: readonly AllowRule[] = [
-  {
-    matcher: (record) =>
-      record.kind === 'console' &&
-      record.type === 'warning' &&
-      record.text === MOCK_SHOP_WARNING,
-    reason: 'Hydrogen warns once per load that the dev mock uses mock.shop.',
-  },
-];
+export const BASELINE_ALLOWLIST: readonly AllowRule[] = [];
 
 function matches(matcher: ConsoleMatcher, record: ConsoleRecord): boolean {
   if (typeof matcher === 'string') return record.text.includes(matcher);

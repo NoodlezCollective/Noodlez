@@ -1,4 +1,5 @@
 import {RouterContextProvider} from 'react-router';
+import {isAnalyticsEnabled} from '~/lib/analytics/config';
 import {createCartService, type CartService} from '~/lib/cart/cart.server';
 import {createCustomerAccountStub} from '~/lib/customer-account/stub.server';
 import type {CustomerAccount} from '~/lib/customer-account/types';
@@ -154,5 +155,8 @@ function createStorefront(
     request,
     cache,
     waitUntil,
+    // Shopify's cookies and visitor tokens go to the Storefront API, and its
+    // Set-Cookie headers come back, only while analytics is on (D-9).
+    trackingEnabled: isAnalyticsEnabled(env),
   });
 }

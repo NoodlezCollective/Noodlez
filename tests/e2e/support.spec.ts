@@ -4,7 +4,7 @@
  * as a guard that silently stops guarding), so each helper is proven here:
  *
  * - console guard: records what it should, ignores what it should, allowances
- *   are scoped and apply retroactively, the baseline is exactly one entry;
+ *   are scoped and apply retroactively, the baseline is empty;
  * - network stubs: third parties are answered locally, the app is untouched;
  * - hydration gate: the page is React-owned when gotoHydrated() returns;
  * - dialog helpers: open / focus trap / Escape / backdrop on the real drawers;
@@ -28,11 +28,7 @@ import {
   productTitle,
   ratingLabel,
 } from './support/catalog';
-import {
-  BASELINE_ALLOWLIST,
-  ConsoleGuard,
-  MOCK_SHOP_WARNING,
-} from './support/console';
+import {BASELINE_ALLOWLIST, ConsoleGuard} from './support/console';
 import {
   WITH_MOTION,
   clickBackdrop,
@@ -50,6 +46,12 @@ import {
 } from './support/layout';
 
 const CART_LINK = /^Cart, \d+ items?$/;
+/**
+ * The warning Hydrogen's <Analytics.Provider> logged on every page in mock
+ * mode, the baseline's only entry until analytics was rebuilt (Phase 4c).
+ */
+const MOCK_SHOP_WARNING_BEFORE_4C =
+  '[h2:error:Analytics.Provider] - Mock shop is used. Analytics will not work properly.';
 
 test.describe('console guard', () => {
   /** A guard on a context of its own, so the test fixture's guard stays quiet. */
@@ -154,25 +156,22 @@ test.describe('console guard', () => {
     });
   });
 
-  test('the baseline allows only the exact mock-shop warning', async ({
-    browser,
-    baseURL,
-  }) => {
-    expect(BASELINE_ALLOWLIST).toHaveLength(1);
+  test('the baseline allowlist is empty', async ({browser, baseURL}) => {
+    expect(BASELINE_ALLOWLIST).toEqual([]);
     await withGuard(browser, baseURL, async (guard, page) => {
       await page.evaluate((warning) => {
-        console.warn(warning); // the real one: allowed
-        console.warn(`${warning} (changed)`); // different text: not allowed
-        console.error(warning); // right text, wrong type: not allowed
-      }, MOCK_SHOP_WARNING);
+        console.warn(warning); // Hydrogen's mock-shop warning, allowed until Phase 4c
+        console.warn('any other warning');
+      }, MOCK_SHOP_WARNING_BEFORE_4C);
 
-      await expect.poll(() => guard.records().length).toBe(3);
+      await expect.poll(() => guard.records().length).toBe(2);
       expect(
         guard.unexpected().map(({type, text}) => `${type}: ${text}`),
       ).toEqual([
-        `warning: ${MOCK_SHOP_WARNING} (changed)`,
-        `error: ${MOCK_SHOP_WARNING}`,
+        `warning: ${MOCK_SHOP_WARNING_BEFORE_4C}`,
+        'warning: any other warning',
       ]);
+      expect(guard.allowances()).toEqual([]);
     });
   });
 });

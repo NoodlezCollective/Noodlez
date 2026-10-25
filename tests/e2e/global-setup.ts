@@ -10,10 +10,6 @@
  * 3. Warm the client side: load the main pages in Chromium, so Vite has
  *    pre-bundled the client dependencies and any "optimized dependencies
  *    changed, reloading" full reload happens now, not in the middle of a test.
- * 4. While doing (3), look for Hydrogen's "private access token" console
- *    error. It means the server's PUBLIC_STOREFRONT_API_TOKEN is not exactly
- *    32 characters (typical when E2E_BASE_URL points at a developer server
- *    that runs with the real .env); every test would fail on it.
  */
 import {
   chromium,
@@ -91,9 +87,8 @@ const PREFLIGHT_HINTS: Record<PreflightProblem, string[]> = {
   ],
   'not-mock': [
     'Something else is serving this address. The suite needs the React Router',
-    'dev server in mock mode (MOCK_STOREFRONT=true, 32-character token), which',
-    'Playwright starts itself with CLOUDFLARE_ENV=e2e (values from .dev.vars.e2e)',
-    'on port 3100:',
+    'dev server in mock mode (MOCK_STOREFRONT=true), which Playwright starts',
+    'itself with CLOUDFLARE_ENV=e2e (values from .dev.vars.e2e) on port 3100:',
     '  - stop whatever is listening there, or set E2E_PORT to a free port;',
     '  - to test your own server, set E2E_BASE_URL and make sure it shows the',
     `    "${MOCK_BADGE_TEXT}" badge (see tests/e2e/README.md).`,
@@ -172,21 +167,9 @@ async function warmServer(baseURL: string): Promise<void> {
 }
 
 /** Loads `path` until a visit completes without a Vite-triggered full reload. */
-async function warmPage(
-  context: BrowserContext,
-  path: string,
-  tokenErrors: Set<string>,
-): Promise<void> {
+async function warmPage(context: BrowserContext, path: string): Promise<void> {
   const page = await context.newPage();
   try {
-    page.on('console', (message) => {
-      if (
-        message.type() === 'error' &&
-        message.text().includes('private access token')
-      ) {
-        tokenErrors.add(path);
-      }
-    });
     for (let visit = 1; visit <= MAX_VISITS_PER_PAGE; visit++) {
       let navigations = 0;
       const onNavigated = (frame: Frame) => {
@@ -209,16 +192,15 @@ async function warmPage(
   }
 }
 
-async function warmClient(baseURL: string): Promise<Set<string>> {
+async function warmClient(baseURL: string): Promise<void> {
   const browser = await chromium.launch();
-  const tokenErrors = new Set<string>();
   try {
     const context = await browser.newContext({baseURL});
     await installNetworkStubs(context, new URL(baseURL).origin);
     const queue = [...WARM_CLIENT_PATHS];
     const worker = async () => {
       for (let path = queue.shift(); path; path = queue.shift()) {
-        await warmPage(context, path, tokenErrors).catch((error: unknown) => {
+        await warmPage(context, path).catch((error: unknown) => {
           const reason = error instanceof Error ? error.message : String(error);
           console.warn(`[e2e warm-up] ${path}: ${reason.split('\n')[0]}`);
         });
@@ -230,7 +212,6 @@ async function warmClient(baseURL: string): Promise<Set<string>> {
   } finally {
     await browser.close();
   }
-  return tokenErrors;
 }
 
 export default async function globalSetup(config: FullConfig): Promise<void> {
@@ -240,18 +221,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   const started = Date.now();
   await preflight(baseURL);
   await warmServer(baseURL);
-  const tokenErrors = await warmClient(baseURL);
-
-  if (tokenErrors.size > 0) {
-    throw new Error(
-      [
-        `Hydrogen logged "It looks like you passed a private access token" on ${tokenErrors.size} warm-up page(s), e.g. ${[...tokenErrors][0]}.`,
-        'The server under test has a PUBLIC_STOREFRONT_API_TOKEN that is not exactly 32 characters,',
-        'so every test would fail on that console error. .dev.vars.e2e uses a 32-character',
-        "placeholder; if you set E2E_BASE_URL, fix that server's .dev.vars (any 32 characters in mock mode).",
-      ].join('\n'),
-    );
-  }
+  await warmClient(baseURL);
 
   process.stderr.write(
     `[e2e] ${baseURL} is a mock-mode dev server; warmed ${WARM_SERVER_PATHS.length} routes in ${((Date.now() - started) / 1000).toFixed(1)}s\n`,

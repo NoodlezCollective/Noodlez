@@ -10,7 +10,7 @@ import {defineConfig, devices} from '@playwright/test';
  * CLOUDFLARE_ENV=e2e, which makes Wrangler load the committed placeholders in
  * .dev.vars.e2e instead of the developer's .dev.vars, on port 3100. Set
  * E2E_BASE_URL to test an already running server instead; it must be in mock
- * mode with a 32-character token.
+ * mode.
  *
  * Browsers: Chromium only (the preinstalled build; never run
  * `playwright install` in the cloud container). Projects and tags:

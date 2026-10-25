@@ -31,8 +31,8 @@ to see it, or run `npm run dev:e2e` in another terminal when the server does
 not come up.
 
 `.dev.vars.e2e` is committed on purpose: placeholders only. The public token
-must stay exactly **32 characters**, otherwise Hydrogen logs "It looks like
-you passed a private access token" on every page.
+can be any placeholder; its length no longer matters (the 32-character rule
+came from Hydrogen's `useCustomerPrivacy`, which is gone).
 
 **Do not edit `app/` while the suite runs.** The dev server hot-reloads, and
 the mock keeps carts in memory: a reload mid-run drops them and fails
@@ -74,8 +74,8 @@ back in with `test.use({reducedMotion: 'no-preference'})`) and `locale: 'en-US'`
 
 Every test fails on an unexpected `console.error`, `console.warn` or uncaught
 page error (`support/console.ts`, an automatic fixture). The baseline allowlist
-has **one** entry: Hydrogen's `[h2:error:Analytics.Provider] - Mock shop is
-used...` warning, which the mock triggers by design. Everything else a test
+is **empty**: in mock mode the storefront logs nothing, and analytics (whose
+mock-shop warning was the last baseline entry) is off. Anything a test
 provokes on purpose must be allowed in that test, with a reason:
 
 ```ts
@@ -87,17 +87,18 @@ test('unknown product', async ({page, consoleGuard}) => {
 ```
 
 Never add a blanket rule. Third-party requests are answered locally by
-`support/network.ts` (fonts, Shopify's consent script, analytics), so network
-errors and "Unable to load the Customer Privacy API" cannot happen and are
-deliberately not allowed: if they appear, a stub is broken.
+`support/network.ts` (fonts, and Shopify's consent script and analytics
+endpoints, which only a store with analytics configured requests), so
+network errors cannot happen and are deliberately not allowed: if they
+appear, a stub is broken.
 
 ## Another server
 
 `E2E_BASE_URL=http://localhost:3000 npm run test:e2e` skips the built-in server
 and tests the one you give it (`E2E_PORT` changes the built-in server's port).
-That server must be in mock mode (it shows the "Development mock data" badge)
-with a 32-character `PUBLIC_STOREFRONT_API_TOKEN`; `global-setup.ts` fails fast
-with an explanation otherwise.
+That server must be in mock mode (it shows the "Development mock data" badge),
+which also keeps analytics off; any placeholder `PUBLIC_STOREFRONT_API_TOKEN`
+works. `global-setup.ts` fails fast with an explanation otherwise.
 
 ## Helpers (`support/`)
 
