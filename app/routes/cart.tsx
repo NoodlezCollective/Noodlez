@@ -7,6 +7,7 @@ import type {
 } from '@shopify/hydrogen-react/storefront-api-types';
 import {CartMain, formatItemCount} from '~/components/CartMain';
 import {CartForm} from '~/lib/cart/CartForm';
+import {isOptimisticLineId} from '~/lib/cart/optimistic';
 import type {CartQueryDataReturn} from '~/lib/cart/types';
 import {useOptimisticCart} from '~/lib/cart/useOptimisticCart';
 import {STOREFRONT_API_ERROR_STATUS} from '~/lib/storefront-errors';
@@ -24,16 +25,26 @@ const CART_INVALID_MESSAGE =
   'That cart request wasn’t understood. Please refresh the page and try again.';
 
 /** The body is attacker-controlled: malformed input is a 400, never a crash. */
-function invalidCartRequest() {
+/**
+ * A real cart POST is a few kilobytes. Anything far larger is refused before
+ * the body is read; parsing it is linear but not free, and nothing legitimate
+ * sends it.
+ */
+const MAX_CART_BODY_BYTES = 64 * 1024;
+
+function invalidCartRequest(
+  status = 400,
+  message: string = CART_INVALID_MESSAGE,
+) {
   return data(
     {
       cart: null,
-      errors: [{message: CART_INVALID_MESSAGE}],
+      errors: [{message}],
       userErrors: [],
       warnings: [],
       analytics: {cartId: undefined},
     },
-    {status: 400},
+    {status},
   );
 }
 
@@ -43,11 +54,14 @@ function isPlainRecord(value: unknown): value is PlainRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Line ids the cart service can use: a list of strings. */
+/** A real line id: a string that is not a pending optimistic id. */
+function isLineId(value: unknown): value is string {
+  return typeof value === 'string' && !isOptimisticLineId(value);
+}
+
+/** Line ids the cart service can use: a list of real line ids. */
 function isLineIdList(value: unknown): value is string[] {
-  return (
-    Array.isArray(value) && value.every((lineId) => typeof lineId === 'string')
-  );
+  return Array.isArray(value) && value.every(isLineId);
 }
 
 /**
@@ -62,13 +76,21 @@ function isLineList(
   return (
     Array.isArray(value) &&
     value.every(
-      (line) => isPlainRecord(line) && typeof line[idKey] === 'string',
+      (line) =>
+        isPlainRecord(line) &&
+        (idKey === 'id' ? isLineId(line.id) : typeof line[idKey] === 'string'),
     )
   );
 }
 
 export async function action({request, context}: Route.ActionArgs) {
   const {cart} = context;
+
+  if (
+    Number(request.headers.get('content-length') ?? 0) > MAX_CART_BODY_BYTES
+  ) {
+    return invalidCartRequest(413, 'That request was too large.');
+  }
 
   let formData: FormData;
   let action: ReturnType<typeof CartForm.getFormInput>['action'];

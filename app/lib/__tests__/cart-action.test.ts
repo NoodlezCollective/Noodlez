@@ -353,13 +353,81 @@ describe('POST /cart with hand-crafted line inputs', () => {
       },
     );
 
-    it('leaves the refusal of optimistic line ids to the cart service', async () => {
-      const cart = createLineCart();
-      const lineIds = ['__h_pending_gid://shopify/ProductVariant/1'];
+    it.each([
+      [
+        'LinesRemove',
+        {lineIds: ['__h_pending_gid://shopify/ProductVariant/1']},
+      ],
+      [
+        'LinesUpdate',
+        {
+          lines: [
+            {id: '__h_pending_gid://shopify/ProductVariant/1', quantity: 2},
+          ],
+        },
+      ],
+    ] as const)(
+      'rejects a pending optimistic line id in %s with 400 before the cart service',
+      async (action, inputs) => {
+        const cart = createLineCart();
 
-      await postCartInput(cart, {action: 'LinesRemove', inputs: {lineIds}});
+        const result = await postCartInput(cart, {action, inputs});
 
-      expect(cart.removeLines).toHaveBeenCalledWith(lineIds);
+        expect(result.init.status).toBe(400);
+        expect(cart.removeLines).not.toHaveBeenCalled();
+        expect(cart.updateLines).not.toHaveBeenCalled();
+      },
+    );
+  });
+});
+
+describe('POST /cart body size', () => {
+  it('refuses a body larger than 64 KiB with 413 before reading it', async () => {
+    const cart = createLineCart();
+    const body = `cartFormInput=${encodeURIComponent(
+      JSON.stringify({action: 'LinesRemove', inputs: {lineIds: []}}),
+    )}&pad=${'x'.repeat(64 * 1024)}`;
+
+    const result = (await callRoute(cartAction, {
+      request: new Request(`${ORIGIN}/cart`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          'content-length': String(body.length),
+        },
+        body,
+      }),
+      context: {cart},
+    })) as {data: Record<string, unknown>; init: {status: number}};
+
+    expect(result.init.status).toBe(413);
+    expect(result.data).toMatchObject({
+      cart: null,
+      errors: [{message: 'That request was too large.'}],
     });
+    expect(cart.removeLines).not.toHaveBeenCalled();
+  });
+
+  it('accepts a body at the limit', async () => {
+    const cart = createLineCart();
+    const prefix = `cartFormInput=${encodeURIComponent(
+      JSON.stringify({action: 'LinesRemove', inputs: {lineIds: []}}),
+    )}&pad=`;
+    const body = `${prefix}${'x'.repeat(64 * 1024 - prefix.length)}`;
+
+    const result = (await callRoute(cartAction, {
+      request: new Request(`${ORIGIN}/cart`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          'content-length': String(body.length),
+        },
+        body,
+      }),
+      context: {cart},
+    })) as {init: {status: number}};
+
+    expect(result.init.status).toBe(200);
+    expect(cart.removeLines).toHaveBeenCalledWith([]);
   });
 });

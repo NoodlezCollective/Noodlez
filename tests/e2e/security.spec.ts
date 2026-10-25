@@ -625,6 +625,30 @@ test.describe('cart action input validation', () => {
     {name: 'an unknown action', form: input('Bogus', {lines})},
   ];
 
+  test('a body above 64 KiB is refused with 413 before it is read', async ({
+    request,
+    baseURL,
+  }) => {
+    const origin = originOf(baseURL);
+    const encoded = encodeURIComponent(
+      JSON.stringify({action: 'LinesRemove', inputs: {lineIds: []}}),
+    );
+    const body = `cartFormInput=${encoded}&pad=${'x'.repeat(64 * 1024)}`;
+
+    const response = await request.post('/cart.data', {
+      headers: {
+        Origin: origin,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      data: body,
+      maxRedirects: 0,
+    });
+
+    expect(response.status()).toBe(413);
+    expect(await response.text()).toContain(COPY.cartTooLarge);
+    expect(response.headers()['set-cookie']).toBeUndefined();
+  });
+
   for (const bad of BAD_REQUESTS) {
     test(`${bad.name} is answered with 400`, async ({request, baseURL}) => {
       const origin = originOf(baseURL);

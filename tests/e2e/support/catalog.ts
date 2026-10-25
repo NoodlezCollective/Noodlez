@@ -492,6 +492,8 @@ export const COPY = {
   newsletterInvalid: 'Enter a valid email address.',
   newsletterUnreadable: 'We could not read that request. Please try again.',
   newsletterTooLarge: 'That request was too large.',
+  /** The cart action's answer (413) to a body above 64 KiB. */
+  cartTooLarge: 'That request was too large.',
   /** The cart action's answer (400) to a request it cannot make sense of. */
   cartInvalidRequest:
     'That cart request wasn’t understood. Please refresh the page and try again.',
