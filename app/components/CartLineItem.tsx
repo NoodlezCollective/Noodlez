@@ -1,6 +1,7 @@
 import type {CartLineUpdateInput} from '@shopify/hydrogen-react/storefront-api-types';
 import type {CartLayout, LineItemChildrenMap} from '~/components/CartMain';
-import {CartForm, type OptimisticCartLine} from '@shopify/hydrogen';
+import {CartForm} from '~/lib/cart/CartForm';
+import type {OptimisticCartLine} from '~/lib/cart/types';
 import {Image, Money} from '@shopify/hydrogen-react';
 import {useVariantUrl} from '~/lib/variants';
 import {Link} from 'react-router';

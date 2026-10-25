@@ -1,7 +1,8 @@
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CartLayout} from '~/components/CartMain';
 import type {MoneyV2} from '@shopify/hydrogen-react/storefront-api-types';
-import {CartForm, type OptimisticCart} from '@shopify/hydrogen';
+import {CartForm} from '~/lib/cart/CartForm';
+import type {OptimisticCart} from '~/lib/cart/types';
 import {Money} from '@shopify/hydrogen-react';
 import {useEffect, useId, useRef, useState} from 'react';
 import {useFetcher} from 'react-router';

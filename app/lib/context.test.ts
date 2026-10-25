@@ -82,7 +82,7 @@ describe('cart id cookie', () => {
     expect(cookie).not.toContain('Secure');
   });
 
-  it('is still read back from the request by the cart handler', async () => {
+  it('is still read back from the request by the cart service', async () => {
     const context = await createAppRouterContext(
       new Request('https://shop.example/', {headers: {Cookie: 'cart=c1-abc'}}),
       ENV,
@@ -117,7 +117,7 @@ describe('Storefront API errors', () => {
     expect((thrown as Response).status).toBe(502);
   });
 
-  it('covers the cart handler, which shares the storefront client', async () => {
+  it('covers the cart service, which shares the storefront client', async () => {
     stubStorefrontApi({errors: [{message: 'Throttled'}]});
     // `cart.get()` only queries the API when the request carries a cart id.
     const context = await createAppRouterContext(

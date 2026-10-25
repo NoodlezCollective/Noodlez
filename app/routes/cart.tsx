@@ -1,13 +1,14 @@
 import {useLoaderData, data, type HeadersFunction} from 'react-router';
 import type {Route} from './+types/cart';
-import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import type {
   CartBuyerIdentityInput,
   CartLineInput,
   CartLineUpdateInput,
 } from '@shopify/hydrogen-react/storefront-api-types';
-import {CartForm, useOptimisticCart} from '@shopify/hydrogen';
 import {CartMain, formatItemCount} from '~/components/CartMain';
+import {CartForm} from '~/lib/cart/CartForm';
+import type {CartQueryDataReturn} from '~/lib/cart/types';
+import {useOptimisticCart} from '~/lib/cart/useOptimisticCart';
 import {STOREFRONT_API_ERROR_STATUS} from '~/lib/storefront-errors';
 import {safeRedirectPath} from '~/lib/urls';
 
@@ -135,7 +136,7 @@ export async function action({request, context}: Route.ActionArgs) {
   }
 
   const cartId = result?.cart?.id;
-  const headers = cartId ? cart.setCartId(result.cart.id) : new Headers();
+  const headers = cartId ? cart.setCartId(cartId) : new Headers();
   const {cart: cartResult, errors: apiErrors, userErrors, warnings} = result;
 
   // GraphQL errors returned next to partial data carry the API's own text

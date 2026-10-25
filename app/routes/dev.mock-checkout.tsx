@@ -1,7 +1,7 @@
 import {Link, useLoaderData} from 'react-router';
-import {CartForm} from '@shopify/hydrogen';
 import {Money} from '@shopify/hydrogen-react';
 import type {Route} from './+types/dev.mock-checkout';
+import {CartForm} from '~/lib/cart/CartForm';
 import {isMockStorefrontEnabled} from '~/lib/mock/flag';
 import {Button} from '~/components/ui/Button';
 

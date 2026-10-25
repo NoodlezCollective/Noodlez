@@ -39,7 +39,7 @@ export async function thrownResponse(
   throw new Error('Expected the route to throw a Response');
 }
 
-/** Minimal Hydrogen cart handler: only what the routes under test call. */
+/** Minimal cart service: only what the routes under test call. */
 export function createFakeCart(
   cartId: string | null = 'gid://shopify/Cart/c1?key=k',
 ) {

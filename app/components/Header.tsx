@@ -1,14 +1,10 @@
 import {Suspense} from 'react';
 import {Await, NavLink, useAsyncValue} from 'react-router';
-import {
-  type CartViewPayload,
-  useAnalytics,
-  useOptimisticCart,
-} from '@shopify/hydrogen';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {Logo} from '~/components/ui/Logo';
 import {CartIcon, MenuIcon, SearchIcon, UserIcon} from '~/components/ui/Icons';
+import {useOptimisticCart} from '~/lib/cart/useOptimisticCart';
 import {
   FALLBACK_HEADER_MENU,
   isExternalUrl,
@@ -235,7 +231,6 @@ function SearchToggle() {
 
 function CartBadge({count}: {count: number}) {
   const {open} = useAside();
-  const {publish, shop, cart, prevCart} = useAnalytics();
 
   return (
     <a
@@ -257,12 +252,6 @@ function CartBadge({count}: {count: number}) {
         }
         e.preventDefault();
         open('cart');
-        publish('cart_viewed', {
-          cart,
-          prevCart,
-          shop,
-          url: window.location.href || '',
-        } as CartViewPayload);
       }}
     >
       <CartIcon />

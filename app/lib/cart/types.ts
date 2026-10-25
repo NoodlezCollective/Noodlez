@@ -6,6 +6,7 @@
  * change their import path.
  */
 import type {
+  CartLine,
   CartLineInput,
   CartUserError as StorefrontCartUserError,
   CartWarning as StorefrontCartWarning,
@@ -63,22 +64,22 @@ export type CartLineLike = {
 
 type Primitive = string | number | boolean | bigint | symbol | null | undefined;
 
-/** Local stand-in for type-fest's PartialDeep (Hydrogen's dependency). */
+/**
+ * Local stand-in for type-fest's PartialDeep (Hydrogen's dependency), with its
+ * default of leaving arrays as they are (`recurseIntoArrays: false`).
+ */
 export type PartialDeep<T> = T extends Primitive
   ? T
-  : T extends Array<infer Item>
-    ? Array<PartialDeep<Item>>
-    : T extends ReadonlyArray<infer Item>
-      ? ReadonlyArray<PartialDeep<Item>>
-      : T extends object
-        ? {[Key in keyof T]?: PartialDeep<T[Key]>}
-        : T;
+  : T extends ReadonlyArray<unknown>
+    ? T
+    : T extends object
+      ? {[Key in keyof T]?: PartialDeep<T[Key]>}
+      : T;
 
 /** A cart line, with `isOptimistic` while a cart action is pending for it. */
-export type OptimisticCartLine<T = CartLineLike | CartReturn> =
-  T extends CartLike
-    ? T['lines']['nodes'][number] & {isOptimistic?: boolean}
-    : T & {isOptimistic?: boolean};
+export type OptimisticCartLine<T = CartLine | CartReturn> = T extends CartLike
+  ? T['lines']['nodes'][number] & {isOptimistic?: boolean}
+  : T & {isOptimistic?: boolean};
 
 /** The cart with pending cart actions applied (`useOptimisticCart`). */
 export type OptimisticCart<T = CartReturn> = T extends undefined | null

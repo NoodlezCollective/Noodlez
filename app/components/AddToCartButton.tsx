@@ -1,7 +1,8 @@
 import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {type FetcherWithComponents} from 'react-router';
-import {CartForm, type OptimisticCartLineInput} from '@shopify/hydrogen';
 import {Button} from '~/components/ui/Button';
+import {CartForm} from '~/lib/cart/CartForm';
+import type {OptimisticCartLineInput} from '~/lib/cart/types';
 import type {CartActionData} from '~/routes/cart';
 
 const FALLBACK_ERROR =

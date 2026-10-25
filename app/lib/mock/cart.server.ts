@@ -2,9 +2,9 @@
  * In-memory cart store for the development mock.
  *
  * Carts live for the lifetime of the dev server process. Cart ids are stored
- * by Hydrogen in the `cart` cookie exactly like real Shopify cart ids, so the
- * rest of the application (CartForm actions, optimistic UI, cart drawer) runs
- * unchanged against this store.
+ * by the cart service in the `cart` cookie exactly like real Shopify cart
+ * ids, so the rest of the application (CartForm actions, optimistic UI, cart
+ * drawer) runs unchanged against this store.
  */
 import {connection, money, type GqlObject, type MockCatalog} from './graph.server';
 

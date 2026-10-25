@@ -1,49 +1,21 @@
 import {
-  cartGetIdDefault,
-  cartSetIdDefault,
-  createCartHandler,
   createCustomerAccountClient,
   type CustomerAccount,
-  type HydrogenCart,
-  type HydrogenCartCustom,
 } from '@shopify/hydrogen';
 import {RouterContextProvider} from 'react-router';
-import type {CartApiQueryFragment} from 'storefrontapi.generated';
-import {CART_DISCOUNT_CODES_UPDATE_MUTATION} from '~/lib/cart/queries';
-import {CART_QUERY_FRAGMENT} from '~/lib/fragments';
+import {createCartService, type CartService} from '~/lib/cart/cart.server';
 import {AppSession, isSecureRequest} from '~/lib/session';
 import {
   createStorefrontClient,
   type I18n,
   type Storefront,
 } from '~/lib/storefront/client.server';
-import type {HydrogenStorefront} from '~/lib/storefront/hydrogen-compat';
 import {guardStorefrontErrors} from '~/lib/storefront-errors';
-
-declare global {
-  // Augment HydrogenCustomCartFragment with the codegen'd cart fragment type so
-  // that context.cart.get() and all cart mutations return the extended cart type.
-  interface HydrogenCustomCartFragment extends CartApiQueryFragment {}
-}
 
 type WaitUntil = (promise: Promise<unknown>) => void;
 
-/** Hydrogen's discount-code update, replaced in this phase (D-8). */
-type LegacyCartMethods = {
-  updateDiscountCodes: HydrogenCart['updateDiscountCodes'];
-};
-type CartOptionalInput = Parameters<
-  LegacyCartMethods['updateDiscountCodes']
->[1];
-type CartMutationResult = Awaited<
-  ReturnType<LegacyCartMethods['updateDiscountCodes']>
->;
-
-/**
- * Hydrogen's cart handler running on our Storefront client, until Phase 3 of
- * docs/hydrogen-removal-plan.md replaces it with our own cart service.
- */
-export type AppCart = HydrogenCartCustom<LegacyCartMethods>;
+/** Our cart service (app/lib/cart/cart.server.ts) on the Storefront client. */
+export type AppCart = CartService;
 /** Hydrogen's customer-account client, until Phase 5's stub. */
 export type AppCustomerAccount = CustomerAccount;
 
@@ -79,8 +51,8 @@ const LOCALE = {language: 'EN', country: 'US'} as const satisfies I18n;
 
 /**
  * Builds the router context for one request: our Storefront client, with the
- * development mock and the error guard installed on it, plus Hydrogen's
- * customer-account client and cart handler running on that client.
+ * development mock and the error guard installed on it, Hydrogen's
+ * customer-account client, and our cart service running on that client.
  */
 export async function createAppRouterContext(
   request: Request,
@@ -104,7 +76,15 @@ export async function createAppRouterContext(
     session,
     waitUntil,
   );
-  const cart = createLegacyCart(request, storefront, customerAccount);
+  // The cart id cookie is only ever read on the server (from the request's
+  // Cookie header); no client code touches it. `Secure` is added over https
+  // so local http development keeps working.
+  const cart = createCartService({
+    storefront,
+    customerAccount,
+    requestHeaders: request.headers,
+    secureCookie: isSecureRequest(request),
+  });
 
   /**
    * Development only: serve Mellow demo data instead of calling Shopify.
@@ -122,7 +102,7 @@ export async function createAppRouterContext(
   /**
    * Reject (502) when the Storefront API answers with GraphQL errors and no
    * data, instead of handing loaders an object full of `undefined`s. Applied
-   * after the mock so development behaves like production. The cart handler
+   * after the mock so development behaves like production. The cart service
    * shares this storefront object, so cart queries and mutations are covered.
    */
   guardStorefrontErrors(storefront);
@@ -175,70 +155,4 @@ function createCustomerAccount(
     shopId: env.SHOP_ID ?? '',
     language: LOCALE.language,
   });
-}
-
-/**
- * Hydrogen's cart handler on our client. It calls `storefront.query` and
- * `storefront.mutate` through the object at call time, so the mock and the
- * guard installed afterwards apply to every cart operation.
- */
-function createLegacyCart(
-  request: Request,
-  storefront: Storefront,
-  customerAccount: AppCustomerAccount,
-): AppCart {
-  const cart: AppCart = createCartHandler<LegacyCartMethods>({
-    storefront: storefront as unknown as HydrogenStorefront,
-    customerAccount,
-    getCartId: cartGetIdDefault(request.headers),
-    // The cart id cookie is only ever read on the server (`cartGetIdDefault`
-    // parses the request header); no client code touches it. `Secure` is
-    // added over https so local http development keeps working.
-    setCartId: cartSetIdDefault({
-      httponly: true,
-      samesite: 'Lax',
-      secure: isSecureRequest(request),
-    }),
-    cartQueryFragment: CART_QUERY_FRAGMENT,
-    customMethods: {
-      updateDiscountCodes: (discountCodes, optionalParams) =>
-        updateDiscountCodes(cart, storefront, discountCodes, optionalParams),
-    },
-  });
-  return cart;
-}
-
-/**
- * Hydrogen's `updateDiscountCodes` without the `@defer` its mutation uses,
- * which our JSON-only client cannot read (D-8). With a cart, the deduplicated
- * codes replace the cart's; without one, a new cart is created with them.
- * `visitorConsent` is not supported (no caller passes it).
- */
-async function updateDiscountCodes(
-  cart: AppCart,
-  storefront: Storefront,
-  discountCodes: string[],
-  optionalParams?: CartOptionalInput,
-): Promise<CartMutationResult> {
-  const codes = [...new Set(discountCodes)];
-  const cartId = optionalParams?.cartId ?? cart.getCartId();
-  if (!cartId) return cart.create({discountCodes: codes}, optionalParams);
-
-  const {cartDiscountCodesUpdate, errors} = await storefront.mutate(
-    CART_DISCOUNT_CODES_UPDATE_MUTATION,
-    {
-      variables: {
-        cartId,
-        discountCodes: codes,
-        country: optionalParams?.country,
-        language: optionalParams?.language,
-      },
-    },
-  );
-  // Hydrogen's result shape (`formatAPIResult`), typed the way Hydrogen types
-  // its own cart mutations although they only select the minimal cart fields.
-  return {
-    ...cartDiscountCodesUpdate,
-    ...(errors ? {errors} : {}),
-  } as CartMutationResult;
 }
