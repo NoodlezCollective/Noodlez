@@ -1712,6 +1712,7 @@ Gate: standard, full e2e.
 - Optimistic cart (Phase 3): `useOptimisticCart` returns the cart object itself (null stays null) when no pending action changes the lines, instead of a clone with recomputed totals; non-positive or fractional quantities are normalised.
 - Cart service (Phase 3): a failed `create` keeps the cookie's cart id for the rest of the request; an absolute same-origin redirect target is reduced to its path; the sitemap type lookup uses own keys only (Phase 4a).
 - The consent script loads only when analytics is configured.
+- Analytics details (Phase 4c): events report hydrogen-react's version as `assetVersionId` instead of Hydrogen's; the add-to-cart detection keeps an in-memory cart baseline instead of Hydrogen's `cartLastUpdatedAt` in localStorage (the cart id is never persisted client-side); events queue in memory (at most 50) until consent is known; server-side query and mutation fetches use `redirect: 'manual'`; analytics is refused with a server log when `PUBLIC_STOREFRONT_API_TOKEN` is a private (`shpat_`) token.
 - The mock-shop console warning disappears and the e2e allowlist becomes empty (Phase 4c).
 - Tracking cookies are forwarded only when analytics is enabled (Phase 4c).
 - Stores with the account variables set still get the 503 page. POST `/account/logout` clears the session and redirects to `/`; before, it gave a dev 400 or a production 500 (Phase 5).
