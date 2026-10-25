@@ -1,9 +1,4 @@
 import {
-  Analytics,
-  getShopAnalytics,
-  type CartReturn as HydrogenCartReturn,
-} from '@shopify/hydrogen';
-import {
   Outlet,
   useRouteError,
   isRouteErrorResponse,
@@ -16,11 +11,12 @@ import {
 } from 'react-router';
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
+import {AnalyticsProvider} from '~/lib/analytics';
+import {getAnalyticsConfig} from '~/lib/analytics/shop.server';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {SITE_SETTINGS_QUERY, mapSiteSettings} from '~/lib/content/metaobjects';
 import {SHOPIFY_RESOURCES} from '~/lib/content/config';
 import {isMockStorefrontEnabled} from '~/lib/mock/flag';
-import type {HydrogenStorefront} from '~/lib/storefront/hydrogen-compat';
 import {useNonce} from '~/lib/nonce';
 import {DEFAULT_DESCRIPTION, DEFAULT_TITLE} from '~/lib/seo';
 import tokenStyles from '~/styles/tokens.css?url';
@@ -101,19 +97,10 @@ export async function loader(args: Route.LoaderArgs) {
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
     isMockStorefront: isMockStorefrontEnabled(env),
-    shop: getShopAnalytics({
-      storefront: storefront as unknown as HydrogenStorefront,
-      // getShopAnalytics' own default when no storefront id is configured.
-      publicStorefrontId: env.PUBLIC_STOREFRONT_ID ?? '0',
-    }),
-    consent: {
-      checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
-      storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
-      withPrivacyBanner: false,
-      // localize the privacy banner
-      country: args.context.storefront.i18n.country,
-      language: args.context.storefront.i18n.language,
-    },
+    // Off unless PUBLIC_CHECKOUT_DOMAIN and PUBLIC_STOREFRONT_ID are set and
+    // the mock is off; then no shop query runs and the browser loads no
+    // consent script (app/lib/analytics).
+    analytics: getAnalyticsConfig({env, storefront}),
   };
 }
 
@@ -170,10 +157,10 @@ function loadDeferredData({context}: Route.LoaderArgs) {
     });
 
   return {
-    // Hydrogen's CartAnalytics awaits this promise without a catch, so a
-    // rejected cart query (502 from the Storefront API guard) would surface as
-    // an unhandled rejection in the browser; the header and drawer already
-    // render their own fallbacks for a null cart.
+    // The header, the cart drawer and the analytics provider await this
+    // promise; a rejected cart query (502 from the Storefront API guard)
+    // becomes null, which each of them handles, instead of an unhandled
+    // rejection in the browser.
     cart: cart.get().catch((error: Error) => {
       console.error(error);
       return null;
@@ -221,17 +208,11 @@ export default function App() {
   }
 
   return (
-    <Analytics.Provider
-      // Hydrogen's provider is typed for its own cart; ours selects the same
-      // fields it reads. The cast goes with the provider in Phase 4c.
-      cart={data.cart as unknown as Promise<HydrogenCartReturn | null>}
-      shop={data.shop}
-      consent={data.consent}
-    >
+    <AnalyticsProvider config={data.analytics} cart={data.cart}>
       <PageLayout {...data}>
         <Outlet />
       </PageLayout>
-    </Analytics.Provider>
+    </AnalyticsProvider>
   );
 }
 

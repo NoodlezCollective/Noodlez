@@ -4,7 +4,7 @@ import type {Route} from './+types/products.$handle';
 import {useSelectedOptionsInUrl} from '~/lib/useSelectedOptionsInUrl';
 import {getSelectedProductOptions, useOptimisticVariant} from '~/lib/variants';
 import {useNonce} from '~/lib/nonce';
-import {Analytics} from '@shopify/hydrogen';
+import {Analytics} from '~/lib/analytics';
 import {
   getProductOptions,
   getAdjacentAndFirstAvailableVariants,

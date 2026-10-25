@@ -12,8 +12,8 @@ import SearchPage, {loader, meta} from '~/routes/search';
 // the analytics component for stand-ins.
 const {searchView} = vi.hoisted(() => ({searchView: vi.fn()}));
 
-vi.mock('@shopify/hydrogen', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@shopify/hydrogen')>();
+vi.mock('~/lib/analytics', async (importOriginal) => {
+  const original = await importOriginal<typeof import('~/lib/analytics')>();
   return {
     ...original,
     Analytics: {
