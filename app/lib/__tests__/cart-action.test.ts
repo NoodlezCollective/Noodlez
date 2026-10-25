@@ -151,3 +151,215 @@ describe('POST /cart with malformed input', () => {
     expect(result.init.status).toBe(400);
   });
 });
+
+/** What the cart service answers after a successful line change. */
+const LINE_CHANGE_RESULT = {
+  cart: {id: 'gid://shopify/Cart/c1?key=k'},
+  userErrors: [],
+  errors: undefined,
+  warnings: [],
+};
+
+/**
+ * A cart whose line methods succeed, so a test can see whether the action
+ * reached them: an invalid request must stop before the cart service.
+ */
+function createLineCart() {
+  return {
+    ...createFakeCart(),
+    addLines: vi.fn(async (..._args: unknown[]) => LINE_CHANGE_RESULT),
+    updateLines: vi.fn(async (..._args: unknown[]) => LINE_CHANGE_RESULT),
+    removeLines: vi.fn(async (..._args: unknown[]) => LINE_CHANGE_RESULT),
+  };
+}
+
+/** Posts `{action, inputs}` as the JSON of the cartFormInput field. */
+function postCartInput(
+  cart: ReturnType<typeof createLineCart>,
+  cartFormInput: unknown,
+) {
+  const formData = new FormData();
+  formData.set('cartFormInput', JSON.stringify(cartFormInput));
+  return callRoute(cartAction, {
+    request: new Request(`${ORIGIN}/cart`, {method: 'POST', body: formData}),
+    context: {cart},
+  }) as Promise<{data: Record<string, unknown>; init: {status: number}}>;
+}
+
+describe('POST /cart with hand-crafted line inputs', () => {
+  // The body is attacker-controlled: every shape the cart UI cannot produce is
+  // a 400 before the cart service, never a TypeError (a 500) inside it.
+  it.each([
+    ['LinesUpdate', 'lines of bare id strings', {lines: ['gid://x']}],
+    ['LinesUpdate', 'a null line', {lines: [null]}],
+    ['LinesUpdate', 'a line without an id', {lines: [{}]}],
+    ['LinesUpdate', 'a line with a numeric id', {lines: [{id: 5}]}],
+    ['LinesUpdate', 'a line with a null id', {lines: [{id: null}]}],
+    [
+      'LinesUpdate',
+      'a null line after a valid one',
+      {lines: [{id: 'gid://x', quantity: 1}, null]},
+    ],
+    ['LinesUpdate', 'a line that is an array', {lines: [['gid://x']]}],
+    ['LinesUpdate', 'lines that are an object', {lines: {id: 'gid://x'}}],
+    ['LinesUpdate', 'no lines at all', {}],
+    ['LinesRemove', 'line ids that are objects', {lineIds: [{id: 'gid://x'}]}],
+    ['LinesRemove', 'a numeric line id', {lineIds: [5]}],
+    ['LinesRemove', 'a null line id', {lineIds: [null]}],
+    [
+      'LinesRemove',
+      'a numeric line id after a valid one',
+      {lineIds: ['gid://x', 5]},
+    ],
+    ['LinesRemove', 'a line id that is an array', {lineIds: [['gid://x']]}],
+    ['LinesRemove', 'one line id that is not a list', {lineIds: 'gid://x'}],
+    ['LinesRemove', 'no line ids at all', {}],
+    ['LinesAdd', 'a null line', {lines: [null]}],
+    ['LinesAdd', 'lines of bare strings', {lines: ['gid://x']}],
+    ['LinesAdd', 'a line without a merchandise id', {lines: [{quantity: 1}]}],
+    [
+      'LinesAdd',
+      'a numeric merchandise id',
+      {lines: [{merchandiseId: 5, quantity: 1}]},
+    ],
+    [
+      'LinesAdd',
+      'a null line after a valid one',
+      {lines: [{merchandiseId: 'gid://x', quantity: 1}, null]},
+    ],
+    ['LinesAdd', 'a line that is an array', {lines: [['gid://x']]}],
+    ['LinesAdd', 'no lines at all', {}],
+  ])(
+    'answers 400 for %s with %s, without reaching the cart',
+    async (action, _label, inputs) => {
+      // Arrange
+      const cart = createLineCart();
+
+      // Act
+      const result = await postCartInput(cart, {action, inputs});
+
+      // Assert
+      expect(result.init.status).toBe(400);
+      expect(result.data).toMatchObject({
+        cart: null,
+        userErrors: [],
+        errors: [{message: expect.stringMatching(/refresh the page/i)}],
+      });
+      expect(cart.addLines).not.toHaveBeenCalled();
+      expect(cart.updateLines).not.toHaveBeenCalled();
+      expect(cart.removeLines).not.toHaveBeenCalled();
+    },
+  );
+
+  it('answers 400 when a repeated lineIds field carries an uploaded file', async () => {
+    const cart = createLineCart();
+    const formData = new FormData();
+    formData.set('cartFormInput', JSON.stringify({action: 'LinesRemove'}));
+    formData.append('lineIds', 'gid://shopify/CartLine/l1');
+    formData.append('lineIds', new File(['x'], 'x.txt'));
+
+    const result = (await callRoute(cartAction, {
+      request: new Request(`${ORIGIN}/cart`, {method: 'POST', body: formData}),
+      context: {cart},
+    })) as {init: {status: number}};
+
+    expect(result.init.status).toBe(400);
+    expect(cart.removeLines).not.toHaveBeenCalled();
+  });
+
+  describe('valid line changes', () => {
+    const LINE_IDS = ['gid://shopify/CartLine/l1', 'gid://shopify/CartLine/l2'];
+
+    it('removes lines by their string ids', async () => {
+      const cart = createLineCart();
+
+      const result = await postCartInput(cart, {
+        action: 'LinesRemove',
+        inputs: {lineIds: LINE_IDS},
+      });
+
+      expect(result.init.status).toBe(200);
+      expect(cart.removeLines).toHaveBeenCalledWith(LINE_IDS);
+    });
+
+    it('removes lines named by a repeated lineIds form field', async () => {
+      const cart = createLineCart();
+      const formData = new FormData();
+      formData.set('cartFormInput', JSON.stringify({action: 'LinesRemove'}));
+      for (const lineId of LINE_IDS) formData.append('lineIds', lineId);
+
+      const result = (await callRoute(cartAction, {
+        request: new Request(`${ORIGIN}/cart`, {
+          method: 'POST',
+          body: formData,
+        }),
+        context: {cart},
+      })) as {init: {status: number}};
+
+      expect(result.init.status).toBe(200);
+      expect(cart.removeLines).toHaveBeenCalledWith(LINE_IDS);
+    });
+
+    it('updates lines that carry a string id', async () => {
+      const cart = createLineCart();
+      const lines = [
+        {id: LINE_IDS[0], quantity: 2},
+        {id: LINE_IDS[1], quantity: 0},
+      ];
+
+      const result = await postCartInput(cart, {
+        action: 'LinesUpdate',
+        inputs: {lines},
+      });
+
+      expect(result.init.status).toBe(200);
+      expect(cart.updateLines).toHaveBeenCalledWith(lines);
+    });
+
+    it('adds lines that carry a string merchandise id, whatever else they hold', async () => {
+      const cart = createLineCart();
+      const lines = [
+        {
+          merchandiseId: 'gid://shopify/ProductVariant/1',
+          quantity: 2,
+          attributes: [{key: 'gift', value: 'yes'}],
+          selectedVariant: {id: 'gid://shopify/ProductVariant/1'},
+        },
+        {merchandiseId: 'gid://shopify/ProductVariant/2'},
+      ];
+
+      const result = await postCartInput(cart, {
+        action: 'LinesAdd',
+        inputs: {lines},
+      });
+
+      expect(result.init.status).toBe(200);
+      expect(cart.addLines).toHaveBeenCalledWith(lines);
+    });
+
+    it.each([
+      ['LinesAdd', {lines: []}, 'addLines'],
+      ['LinesUpdate', {lines: []}, 'updateLines'],
+      ['LinesRemove', {lineIds: []}, 'removeLines'],
+    ] as const)(
+      'still forwards an empty list for %s, as before',
+      async (action, inputs, method) => {
+        const cart = createLineCart();
+
+        const result = await postCartInput(cart, {action, inputs});
+
+        expect(result.init.status).toBe(200);
+        expect(cart[method]).toHaveBeenCalledWith([]);
+      },
+    );
+
+    it('leaves the refusal of optimistic line ids to the cart service', async () => {
+      const cart = createLineCart();
+      const lineIds = ['__h_pending_gid://shopify/ProductVariant/1'];
+
+      await postCartInput(cart, {action: 'LinesRemove', inputs: {lineIds}});
+
+      expect(cart.removeLines).toHaveBeenCalledWith(lineIds);
+    });
+  });
+});

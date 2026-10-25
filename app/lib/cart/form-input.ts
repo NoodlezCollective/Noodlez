@@ -67,9 +67,29 @@ function isDataField(name: string): boolean {
   return name !== CART_FORM_INPUT_NAME && name !== PROTOTYPE_KEY;
 }
 
+/** Every value submitted under each field name, in submission order. */
+type FieldGroups = ReadonlyMap<string, FormDataEntryValue[]>;
+
+/**
+ * The form's values grouped by field name, in one pass over its entries; the
+ * names keep the order in which they first appear. The form is
+ * attacker-controlled and `formData.getAll(name)` walks every field, so a
+ * lookup per distinct name would cost time quadratic in the number of fields.
+ * The groups are local to this call until it returns them, so filling them in
+ * place changes nothing a caller can see.
+ */
+function groupByName(formData: FormData): FieldGroups {
+  const groups = new Map<string, FormDataEntryValue[]>();
+  for (const [name, value] of formData.entries()) {
+    const values = groups.get(name);
+    if (values) values.push(value);
+    else groups.set(name, [value]);
+  }
+  return groups;
+}
+
 /** One value as submitted; a name submitted more than once gives all its values. */
-function readFieldValue(formData: FormData, name: string): unknown {
-  const values = formData.getAll(name);
+function toInputValue(values: FormDataEntryValue[]): unknown {
   return values.length > 1 ? values : toFieldValue(values[0]);
 }
 
@@ -79,10 +99,11 @@ function readFieldValue(formData: FormData, name: string): unknown {
  * boolean. Built with `Object.fromEntries`, which defines each key as plain
  * data instead of assigning it.
  */
-function readFields(formData: FormData): PlainRecord {
-  const names = [...new Set(formData.keys())].filter(isDataField);
+function readFields(groups: FieldGroups): PlainRecord {
   return Object.fromEntries(
-    names.map((name) => [name, readFieldValue(formData, name)]),
+    [...groups]
+      .filter(([name]) => isDataField(name))
+      .map(([name, values]) => [name, toInputValue(values)]),
   );
 }
 
@@ -91,11 +112,11 @@ function readFields(formData: FormData): PlainRecord {
  * gives no action; JSON that is not an object is ignored. Throws when the field
  * is repeated or is not valid JSON.
  */
-function readCartInput(formData: FormData): {
+function readCartInput(groups: FieldGroups): {
   action: string | undefined;
   inputs: PlainRecord;
 } {
-  const submitted = formData.getAll(CART_FORM_INPUT_NAME);
+  const submitted = groups.get(CART_FORM_INPUT_NAME) ?? [];
   if (submitted.length > 1) {
     throw new Error(
       `Expected one "${CART_FORM_INPUT_NAME}" field, got ${submitted.length}`,
@@ -120,9 +141,11 @@ function readCartInput(formData: FormData): {
  * The form is attacker-controlled on the server, so the result only promises
  * `action` is a string or `undefined` and `inputs` is a plain object; callers
  * still validate the inputs they use. Invalid JSON throws a `SyntaxError`
- * (the cart route answers 400).
+ * (the cart route answers 400). The time taken grows linearly with the number
+ * of fields, however many distinct names they have.
  */
 export function getFormInput(formData: FormData): CartFormInput {
-  const {action, inputs} = readCartInput(formData);
-  return {action, inputs: {...inputs, ...readFields(formData)}};
+  const groups = groupByName(formData);
+  const {action, inputs} = readCartInput(groups);
+  return {action, inputs: {...inputs, ...readFields(groups)}};
 }

@@ -610,6 +610,18 @@ test.describe('cart action input validation', () => {
       name: 'lineIds that are not an array',
       form: input('LinesRemove', {lineIds: 5}),
     },
+    {
+      name: 'a line that is null',
+      form: input('LinesAdd', {lines: [null]}),
+    },
+    {
+      name: 'an update line without an id',
+      form: input('LinesUpdate', {lines: [{}]}),
+    },
+    {
+      name: 'a line id that is not a string',
+      form: input('LinesRemove', {lineIds: [5]}),
+    },
     {name: 'an unknown action', form: input('Bogus', {lines})},
   ];
 

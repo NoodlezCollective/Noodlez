@@ -7,8 +7,10 @@ import type {Storefront} from '~/lib/storefront/client.server';
  * headers and 404s are Hydrogen's, so the output does not change by a byte.
  * Differences: a type is looked up only among its own keys (`constructor` or
  * `__proto__` are unknown types, a 404), a type without a page count fails
- * like a missing type, and messages use the `[sitemap]` prefix. TypeScript
- * replaces Hydrogen's runtime checks for missing arguments.
+ * like a missing type, every value written into the XML is escaped (Hydrogen
+ * wrote them as they were; for a value without `& < > " '` the bytes are the
+ * same), and messages use the `[sitemap]` prefix. TypeScript replaces
+ * Hydrogen's runtime checks for missing arguments.
  */
 
 export type SitemapType =
@@ -81,6 +83,16 @@ const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
 const XML_HEADERS = {
   'Content-Type': 'application/xml',
   'Cache-Control': `max-age=${ONE_DAY_IN_SECONDS}`,
+};
+
+/** The five characters the sitemap protocol asks to be written as entities. */
+const XML_SPECIAL_CHARACTERS = /[&<>"']/g;
+const XML_ENTITIES: Readonly<Record<string, string>> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&apos;',
 };
 
 // Hydrogen's templates, verbatim (blank lines and all).
@@ -292,6 +304,19 @@ export async function getSitemap(options: SitemapOptions): Promise<Response> {
   );
 }
 
+/**
+ * Text that is safe in an element and in a double-quoted attribute. One pass,
+ * so the `&` of an entity this writes is never escaped again. Values are
+ * converted to text first, as the template literals that wrote them did, so an
+ * item the API sent incomplete still gives a page.
+ */
+function escapeXml(value: string): string {
+  return String(value).replace(
+    XML_SPECIAL_CHARACTERS,
+    (character) => XML_ENTITIES[character],
+  );
+}
+
 /** Own keys only: `constructor` or `__proto__` are not sitemap types. */
 function hasSitemapQuery(type: string): type is SitemapType {
   return Object.hasOwn(SITEMAP_QUERIES, type);
@@ -312,17 +337,16 @@ function renderSitemapLinks(
   count: number,
   baseUrl: string,
 ): string {
-  return Array.from(
-    {length: count},
-    (_, index) =>
-      `  <sitemap><loc>${baseUrl}/sitemap/${type}/${index + 1}.xml</loc></sitemap>
-`,
-  ).join('');
+  return Array.from({length: count}, (_, index) => {
+    const loc = escapeXml(`${baseUrl}/sitemap/${type}/${index + 1}.xml`);
+    return `  <sitemap><loc>${loc}</loc></sitemap>
+`;
+  }).join('');
 }
 
 function renderCustomSitemapLink(url: string, baseUrl: string): string {
   const path = url.startsWith('/') ? url : '/' + url;
-  return '  <sitemap><loc>' + baseUrl + path + '</loc></sitemap>';
+  return '  <sitemap><loc>' + escapeXml(baseUrl + path) + '</loc></sitemap>';
 }
 
 function renderUrlSet(
@@ -339,7 +363,7 @@ function renderUrlSet(
 /** A sitemap without items lists one URL, so search consoles see no error. */
 function renderFallbackUrlSet(url: string): string {
   const entry = `
-  <url><loc>${url}</loc></url>
+  <url><loc>${escapeXml(url)}</loc></url>
 `;
   return SITEMAP_PREFIX + entry + SITEMAP_SUFFIX;
 }
@@ -369,16 +393,16 @@ function renderUrlTag(
     .join('\n');
 
   return `<url>
-  <loc>${url}</loc>
-  <lastmod>${updatedAt}</lastmod>
-  <changefreq>${changeFreq}</changefreq>
+  <loc>${escapeXml(url)}</loc>
+  <lastmod>${escapeXml(updatedAt)}</lastmod>
+  <changefreq>${escapeXml(changeFreq)}</changefreq>
 ${alternates}
 </url>
   `.trim();
 }
 
 function renderAlternateTag(url: string, locale: string): string {
-  return `  <xhtml:link rel="alternate" hreflang="${locale}" href="${url}" />`;
+  return `  <xhtml:link rel="alternate" hreflang="${escapeXml(locale)}" href="${escapeXml(url)}" />`;
 }
 
 function xmlResponse(body: string): Response {

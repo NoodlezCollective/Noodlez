@@ -1,4 +1,4 @@
-import {describe, expect, it} from 'vitest';
+import {afterEach, describe, expect, it, vi} from 'vitest';
 import {CART_ACTIONS, CART_FORM_INPUT_NAME, getFormInput} from './form-input';
 
 /** Every action Hydrogen's `CartForm.ACTIONS` offered, which the cart route switches on. */
@@ -358,6 +358,117 @@ describe('getFormInput', () => {
       const formData = plainForm([['a__proto__b', '1']]);
 
       expect(getFormInput(formData).inputs).toEqual({a__proto__b: '1'});
+    });
+  });
+
+  describe('forms with many fields', () => {
+    const DISTINCT_NAMES = 20_000;
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    /** `count` fields, each with a name of its own, in submission order. */
+    function distinctFields(
+      count: number,
+    ): Array<[name: string, value: string]> {
+      return Array.from({length: count}, (_, index) => [
+        `field-${index}`,
+        `value-${index}`,
+      ]);
+    }
+
+    // POST /cart is public: a form can carry any number of distinct names, and a
+    // lookup per name (`getAll`) walks the whole form each time, so the cost
+    // grows with the square of the field count (the Phase 3/4a security review
+    // measured about 23 s of CPU in workerd at 80,000 names).
+    it('reads thousands of distinct field names without a lookup per name (no getAll)', () => {
+      // Arrange
+      const formData = plainForm(distinctFields(DISTINCT_NAMES));
+      const getAll = vi.spyOn(FormData.prototype, 'getAll');
+
+      // Act
+      const {inputs} = getFormInput(formData);
+
+      // Assert
+      expect(getAll).toHaveBeenCalledTimes(0);
+      expect(Object.keys(inputs)).toHaveLength(DISTINCT_NAMES);
+      expect(inputs['field-0']).toBe('value-0');
+      expect(inputs[`field-${DISTINCT_NAMES - 1}`]).toBe(
+        `value-${DISTINCT_NAMES - 1}`,
+      );
+    });
+
+    it('finds the cartFormInput field among thousands of others without getAll', () => {
+      // Arrange
+      const formData = cartForm(
+        {action: 'LinesRemove', inputs: {lineIds: ['gid://l/1']}},
+        distinctFields(DISTINCT_NAMES),
+      );
+      const getAll = vi.spyOn(FormData.prototype, 'getAll');
+
+      // Act
+      const result = getFormInput(formData);
+
+      // Assert
+      expect(getAll).toHaveBeenCalledTimes(0);
+      expect(result.action).toBe('LinesRemove');
+      expect(result.inputs.lineIds).toEqual(['gid://l/1']);
+      expect(Object.keys(result.inputs)).toHaveLength(DISTINCT_NAMES + 1);
+    });
+
+    it('keeps a repeated name as an array while reading thousands of other names', () => {
+      // Arrange
+      const formData = plainForm([
+        ['lineIds', 'a'],
+        ...distinctFields(DISTINCT_NAMES),
+        ['lineIds', 'b'],
+        ['subscribe', 'on'],
+      ]);
+
+      // Act
+      const {inputs} = getFormInput(formData);
+
+      // Assert
+      expect(inputs.lineIds).toEqual(['a', 'b']);
+      expect(inputs.subscribe).toBe(true);
+      expect(inputs[`field-${DISTINCT_NAMES - 1}`]).toBe(
+        `value-${DISTINCT_NAMES - 1}`,
+      );
+    });
+
+    it('lists the names in the order each first appeared, repeats included', () => {
+      const result = getFormInput(
+        plainForm([
+          ['lineIds', 'a'],
+          ['other', 'x'],
+          ['lineIds', 'b'],
+          ['last', 'y'],
+          ['other', 'z'],
+        ]),
+      );
+
+      expect(Object.keys(result.inputs)).toEqual(['lineIds', 'other', 'last']);
+      expect(result.inputs).toEqual({
+        lineIds: ['a', 'b'],
+        other: ['x', 'z'],
+        last: 'y',
+      });
+    });
+
+    it('reads the cartFormInput field wherever it sits among the other fields', () => {
+      const formData = new FormData();
+      formData.append('first', '1');
+      formData.append(
+        CART_FORM_INPUT_NAME,
+        JSON.stringify({action: 'NoteUpdate', inputs: {note: 'from json'}}),
+      );
+      formData.append('last', '2');
+
+      expect(getFormInput(formData)).toEqual({
+        action: 'NoteUpdate',
+        inputs: {note: 'from json', first: '1', last: '2'},
+      });
     });
   });
 

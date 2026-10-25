@@ -37,6 +37,36 @@ function invalidCartRequest() {
   );
 }
 
+type PlainRecord = Record<string, unknown>;
+
+function isPlainRecord(value: unknown): value is PlainRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Line ids the cart service can use: a list of strings. */
+function isLineIdList(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((lineId) => typeof lineId === 'string')
+  );
+}
+
+/**
+ * Lines the cart service can read: a list of objects that each hold a string
+ * under `idKey` (`merchandiseId` to add a line, `id` to update one). Shopify
+ * validates the rest of each line.
+ */
+function isLineList(
+  value: unknown,
+  idKey: 'id' | 'merchandiseId',
+): value is PlainRecord[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (line) => isPlainRecord(line) && typeof line[idKey] === 'string',
+    )
+  );
+}
+
 export async function action({request, context}: Route.ActionArgs) {
   const {cart} = context;
 
@@ -58,16 +88,18 @@ export async function action({request, context}: Route.ActionArgs) {
   try {
     switch (action) {
       case CartForm.ACTIONS.LinesAdd:
-        if (!Array.isArray(inputs.lines)) return invalidCartRequest();
+        if (!isLineList(inputs.lines, 'merchandiseId')) {
+          return invalidCartRequest();
+        }
         result = await cart.addLines(inputs.lines as CartLineInput[]);
         break;
       case CartForm.ACTIONS.LinesUpdate:
-        if (!Array.isArray(inputs.lines)) return invalidCartRequest();
+        if (!isLineList(inputs.lines, 'id')) return invalidCartRequest();
         result = await cart.updateLines(inputs.lines as CartLineUpdateInput[]);
         break;
       case CartForm.ACTIONS.LinesRemove:
-        if (!Array.isArray(inputs.lineIds)) return invalidCartRequest();
-        result = await cart.removeLines(inputs.lineIds as string[]);
+        if (!isLineIdList(inputs.lineIds)) return invalidCartRequest();
+        result = await cart.removeLines(inputs.lineIds);
         break;
       case CartForm.ACTIONS.DiscountCodesUpdate: {
         const formDiscountCode = inputs.discountCode;

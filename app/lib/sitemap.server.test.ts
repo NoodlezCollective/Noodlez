@@ -719,3 +719,188 @@ describe('sitemaps on our Storefront client', () => {
     ]);
   });
 });
+
+/**
+ * Hydrogen wrote `loc`, `lastmod`, `changefreq`, `hreflang` and the origin into
+ * the XML as they were. A handle, a date or a host with `&`, `<`, `>`, `"` or
+ * `'` then made the document invalid, and a quote could end an attribute early.
+ * Everything written is escaped; the values this app produces contain none of
+ * these characters, so its output does not change (the golden tests above).
+ */
+describe('XML escaping', () => {
+  type ExtraOptions = Partial<
+    Pick<
+      Parameters<typeof getSitemap>[0],
+      'getLink' | 'locales' | 'getChangeFreq' | 'noItemsFallback'
+    >
+  >;
+
+  /** A products sitemap page listing `item`; `linkTo` does not encode its handle. */
+  async function productsSitemap(
+    item: SitemapItem,
+    options: ExtraOptions = {},
+  ): Promise<string> {
+    const {storefront} = createFakeStorefront(sitemapItems([item]));
+    const response = await getSitemap({
+      storefront,
+      request: pageRequest('products', '1'),
+      params: {type: 'products', page: '1'},
+      getLink: linkTo,
+      ...options,
+    });
+    return response.text();
+  }
+
+  it.each([
+    ['an ampersand', 'a&b', 'a&amp;b'],
+    ['angle brackets', '<s>', '&lt;s&gt;'],
+    ['double quotes', 'say"hi"', 'say&quot;hi&quot;'],
+    ['an apostrophe', "it's", 'it&apos;s'],
+  ])('escapes %s in a location', async (_label, handle, escaped) => {
+    const xml = await productsSitemap({handle, updatedAt: PILLOW.updatedAt});
+
+    expect(locs(xml)).toEqual([`${ORIGIN}/products/${escaped}`]);
+  });
+
+  it('writes a handle with every special character as one byte-exact entry', async () => {
+    const xml = await productsSitemap({
+      handle: 'a&b<s>"q"\'',
+      updatedAt: PILLOW.updatedAt,
+    });
+
+    expect(xml).toBe(
+      [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml"><url>',
+        '  <loc>https://shop.example/products/a&amp;b&lt;s&gt;&quot;q&quot;&apos;</loc>',
+        '  <lastmod>2026-09-01T00:00:00Z</lastmod>',
+        '  <changefreq>weekly</changefreq>',
+        '',
+        '</url></urlset>',
+      ].join('\n'),
+    );
+  });
+
+  it('keeps a handle from closing its location and adding markup of its own', async () => {
+    const xml = await productsSitemap({
+      handle: 'x</loc><url><loc>https://evil.example',
+      updatedAt: PILLOW.updatedAt,
+    });
+
+    expect(xml.match(/<url>/g)).toHaveLength(1);
+    expect(locs(xml)).toEqual([
+      `${ORIGIN}/products/x&lt;/loc&gt;&lt;url&gt;&lt;loc&gt;https://evil.example`,
+    ]);
+  });
+
+  it('escapes an ampersand once, however it sits among the other characters', async () => {
+    const xml = await productsSitemap({
+      handle: '<&amp;>',
+      updatedAt: PILLOW.updatedAt,
+    });
+
+    expect(locs(xml)).toEqual([`${ORIGIN}/products/&lt;&amp;amp;&gt;`]);
+  });
+
+  it('escapes the last modification date and the change frequency', async () => {
+    const xml = await productsSitemap(
+      {handle: 'h', updatedAt: '2026-09-01<&>'},
+      {getChangeFreq: () => 'weekly"daily\''},
+    );
+
+    expect(xml).toContain('<lastmod>2026-09-01&lt;&amp;&gt;</lastmod>');
+    expect(xml).toContain('<changefreq>weekly&quot;daily&apos;</changefreq>');
+  });
+
+  it('escapes the language and the link of an alternate, which sit in attributes', async () => {
+    const xml = await productsSitemap(
+      {handle: 'h&1', updatedAt: PILLOW.updatedAt},
+      {locales: ['en"US', 'fr&CA']},
+    );
+
+    expect(xml).toContain(
+      '  <xhtml:link rel="alternate" hreflang="en&quot;US" href="https://shop.example/en&quot;us/products/h&amp;1" />',
+    );
+    expect(xml).toContain(
+      '  <xhtml:link rel="alternate" hreflang="fr&amp;CA" href="https://shop.example/fr&amp;ca/products/h&amp;1" />',
+    );
+  });
+
+  it('keeps a quote in a handle from ending the href attribute early', async () => {
+    const xml = await productsSitemap(
+      {handle: 'h" rel="x', updatedAt: PILLOW.updatedAt},
+      {locales: ['en-US']},
+    );
+
+    expect(xml).toContain(
+      'href="https://shop.example/en-us/products/h&quot; rel=&quot;x" />',
+    );
+  });
+
+  it.each([
+    ['an ampersand', 'sh&p', 'sh&amp;p'],
+    ['an apostrophe', "sh'p", 'sh&apos;p'],
+    ['a double quote', 'sh"p', 'sh&quot;p'],
+  ])(
+    'escapes %s in the request origin of the index and of a custom child sitemap',
+    async (_label, host, escapedHost) => {
+      const {storefront} = createFakeStorefront(pageCounts({pages: 1}));
+
+      const response = await getSitemapIndex({
+        storefront,
+        request: indexRequest(`https://${host}.example/sitemap.xml`),
+        types: ['pages'],
+        customChildSitemaps: ['/feed.xml?a=1&b=2'],
+      });
+
+      expect(await response.text()).toBe(
+        [
+          '<?xml version="1.0" encoding="UTF-8"?>',
+          '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+          `  <sitemap><loc>https://${escapedHost}.example/sitemap/pages/1.xml</loc></sitemap>`,
+          `  <sitemap><loc>https://${escapedHost}.example/feed.xml?a=1&amp;b=2</loc></sitemap>`,
+          '</sitemapindex>',
+        ].join('\n'),
+      );
+    },
+  );
+
+  it('escapes the request origin in the entries of a page and the fallback entry of an empty one', async () => {
+    const request = new Request('https://sh&p.example/sitemap/products/1.xml');
+    const params = {type: 'products', page: '1'};
+
+    const listed = await getSitemap({
+      storefront: createFakeStorefront(sitemapItems([PILLOW])).storefront,
+      request,
+      params,
+      getLink: linkTo,
+    });
+    const empty = await getSitemap({
+      storefront: createFakeStorefront(sitemapItems([])).storefront,
+      request,
+      params,
+      getLink: linkTo,
+      noItemsFallback: '/?a=1&b=<2>',
+    });
+
+    expect(locs(await listed.text())).toEqual([
+      'https://sh&amp;p.example/products/cloudalign-pillow',
+    ]);
+    expect(locs(await empty.text())).toEqual([
+      'https://sh&amp;p.example/?a=1&amp;b=&lt;2&gt;',
+    ]);
+  });
+
+  it('leaves the characters that are legal in XML text exactly as they are', async () => {
+    const handle = 'a-b_c.d~e!f*g(h)i,j;k:l@m+n$o=p%20q?r#s/t über-日本語-🎉';
+    const xml = await productsSitemap({handle, updatedAt: PILLOW.updatedAt});
+
+    expect(locs(xml)).toEqual([`${ORIGIN}/products/${handle}`]);
+  });
+
+  it('does not fail the page for an item the API sent without a date', async () => {
+    const xml = productsSitemap({handle: 'h', updatedAt: null as never});
+
+    await expect(xml).resolves.toContain(`<loc>${ORIGIN}/products/h</loc>`);
+  });
+});

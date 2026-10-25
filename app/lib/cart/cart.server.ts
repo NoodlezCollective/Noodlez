@@ -7,6 +7,7 @@ import type {
 import type {Storefront} from '~/lib/storefront/client.server';
 import type {StorefrontApiError} from '~/lib/storefront/types';
 import {readCartId, serializeCartIdCookie} from './cookie';
+import {isOptimisticLineId} from './optimistic';
 import {
   CART_BUYER_IDENTITY_UPDATE_MUTATION,
   CART_CREATE_MUTATION,
@@ -85,12 +86,6 @@ type CartMutationPayload =
   | null
   | undefined;
 
-/**
- * The id prefix of the lines `useOptimisticCart` shows while a cart action is
- * pending. The same value as OPTIMISTIC_LINE_ID_PREFIX in optimistic.ts,
- * repeated here so the server cart does not depend on the optimistic-UI module.
- */
-const OPTIMISTIC_LINE_ID_PREFIX = '__h_pending_';
 /** Tells Shopify checkout that the buyer is logged in (Hydrogen parity). */
 const LOGGED_IN_PARAM = 'logged_in';
 
@@ -194,10 +189,7 @@ async function getCart(
   // No cart: it is gone, or the answer was errors-only, which the app's
   // guardStorefrontErrors has already turned into a 502 rejection.
   if (!cart) return null;
-  const checkoutUrl = isLoggedIn
-    ? withLoggedInFlag(cart.checkoutUrl)
-    : cart.checkoutUrl;
-  return {...cart, checkoutUrl, ...withErrors(errors)};
+  return {...withLoggedInCheckoutUrl(cart, isLoggedIn), ...withErrors(errors)};
 }
 
 /** The logged-in customer's buyer goes under the input's buyer identity. */
@@ -319,13 +311,14 @@ function toCartLineInput(line: OptimisticCartLineInput): CartLineInput {
 
 /**
  * Optimistic lines do not exist in the Storefront API yet; the UI keeps their
- * controls disabled until the server answers, so one here is a bug.
+ * controls disabled until the server answers, so one here is a bug. An id that
+ * is not a string is no optimistic id: the Storefront API refuses it.
  */
 function assertNoOptimisticLines(
   method: 'updateLines' | 'removeLines',
   lineIds: string[],
 ): void {
-  if (lineIds.some((id) => id.startsWith(OPTIMISTIC_LINE_ID_PREFIX))) {
+  if (lineIds.some(isOptimisticLineId)) {
     throw new Error(
       `Tried to perform an action on an optimistic line. Make sure to disable your "${method}" CartForm action when the line is optimistic.`,
     );
@@ -347,6 +340,19 @@ function withErrors(errors: StorefrontApiError[] | undefined): {
   errors?: StorefrontApiError[];
 } {
   return errors ? {errors} : {};
+}
+
+/**
+ * A logged-in customer's checkout URL carries `logged_in=true`. Like Hydrogen,
+ * only a string `checkoutUrl` is rewritten (a cart fragment may leave it out);
+ * any other cart is returned as it is. Never modifies the cart.
+ */
+function withLoggedInCheckoutUrl<TCart extends {checkoutUrl: string}>(
+  cart: TCart,
+  isLoggedIn: boolean,
+): TCart {
+  if (!isLoggedIn || typeof cart.checkoutUrl !== 'string') return cart;
+  return {...cart, checkoutUrl: withLoggedInFlag(cart.checkoutUrl)};
 }
 
 function withLoggedInFlag(checkoutUrl: string): string {

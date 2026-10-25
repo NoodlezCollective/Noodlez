@@ -260,6 +260,26 @@ describe('get', () => {
     expect(result?.checkoutUrl).toBe(CHECKOUT_URL);
   });
 
+  // Hydrogen only rewrote a checkoutUrl that was a string (a custom cart
+  // fragment may leave it out); `new URL(undefined)` would throw instead.
+  it.each([
+    ['missing', {id: CART_ID, totalQuantity: 2, lines: QUERY_CART.lines}],
+    ['null', {...QUERY_CART, checkoutUrl: null}],
+  ])(
+    'answers the cart as the API sent it to a logged-in customer when its checkout URL is %s',
+    async (_label, answered) => {
+      const storefront = createStorefront({
+        query: async () => ({cart: answered}),
+      });
+      const customerAccount = createCustomerAccount({loggedIn: true});
+      const {cart} = setup({cookie: CART_COOKIE, storefront, customerAccount});
+
+      const result = await cart.get();
+
+      expect(result).toStrictEqual(answered);
+    },
+  );
+
   it('never modifies the API result', async () => {
     const answered = structuredClone(QUERY_CART);
     const storefront = createStorefront({
@@ -579,6 +599,29 @@ describe('updateLines', () => {
     expect(storefront.mutate).not.toHaveBeenCalled();
   });
 
+  // The cart action answers 400 for these before the service (the first line
+  // of defence); the service must not throw a TypeError if one gets here (the
+  // second), it leaves the Storefront API to refuse them.
+  it.each([
+    ['a line that is a bare string', ['x']],
+    ['a line without an id', [{quantity: 1}]],
+    ['a line with a numeric id', [{id: 5, quantity: 1}]],
+  ])(
+    'leaves %s to the Storefront API instead of throwing a TypeError',
+    async (_label, lines) => {
+      const {cart, storefront} = setup({cookie: CART_COOKIE});
+
+      await cart.updateLines(lines as never);
+
+      expect(mutations(storefront)).toEqual([
+        {
+          document: CART_LINES_UPDATE_MUTATION,
+          variables: {cartId: CART_ID, lines},
+        },
+      ]);
+    },
+  );
+
   it('does not create a cart: without one the API rejects the missing id, as before', async () => {
     const {cart, storefront} = setup();
 
@@ -626,6 +669,35 @@ describe('removeLines', () => {
     await cart.removeLines([lineId]);
 
     expect(mutations(storefront)[0].variables?.lineIds).toEqual([lineId]);
+  });
+
+  it.each([
+    ['an object', {id: 'x'}],
+    ['a number', 5],
+    ['null', null],
+  ])(
+    'leaves a line id that is %s to the Storefront API instead of throwing a TypeError',
+    async (_label, lineId) => {
+      const {cart, storefront} = setup({cookie: CART_COOKIE});
+
+      await cart.removeLines([lineId] as never);
+
+      expect(mutations(storefront)).toEqual([
+        {
+          document: CART_LINES_REMOVE_MUTATION,
+          variables: {cartId: CART_ID, lineIds: [lineId]},
+        },
+      ]);
+    },
+  );
+
+  it('still refuses an optimistic line id that follows one that is not a string', async () => {
+    const {cart, storefront} = setup({cookie: CART_COOKIE});
+
+    await expect(
+      cart.removeLines([5, OPTIMISTIC_LINE_ID] as never),
+    ).rejects.toThrow('Tried to perform an action on an optimistic line.');
+    expect(storefront.mutate).not.toHaveBeenCalled();
   });
 });
 
