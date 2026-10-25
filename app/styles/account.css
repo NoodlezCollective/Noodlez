@@ -42,7 +42,7 @@
   font-size: var(--text-base);
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: #4b4661;
+  color: var(--color-muted);
   white-space: nowrap;
   transition:
     color var(--duration-fast) ease,

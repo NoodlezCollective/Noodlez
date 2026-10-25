@@ -65,7 +65,8 @@
 .gallery__viewport {
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius-sm);
   background: var(--color-lavender-tint);
 }
 
@@ -171,8 +172,8 @@
   width: 64px;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  border: 2px solid transparent;
-  border-radius: 8px;
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-xs);
   background: var(--color-lavender-tint);
   transition: border-color var(--duration-fast) ease;
 }
@@ -188,7 +189,7 @@
 }
 
 .gallery__thumb.is-active {
-  border-color: #3b3a44;
+  border-color: var(--color-ink);
 }
 
 @media (min-width: 64em) {
@@ -211,10 +212,11 @@
 }
 
 .product-info__title {
-  font-size: clamp(1.85rem, 1.4rem + 1.4vw, 2.25rem);
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-size: clamp(2rem, 1.4rem + 2vw, 3rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: var(--tracking-tight);
+  text-transform: uppercase;
   color: var(--color-heading);
 }
 
@@ -243,7 +245,7 @@
 .savings-note__toggle {
   font-size: inherit;
   letter-spacing: inherit;
-  color: #5f5a7c;
+  color: var(--color-muted);
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color var(--duration-fast) ease;
@@ -297,7 +299,7 @@
 
 .product-option__prefix,
 .product-option__group-label {
-  color: #5f5a7c;
+  color: var(--color-muted);
 }
 
 .product-option__group {
@@ -392,7 +394,7 @@
   min-height: 40px;
   padding: 0 1.15rem;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--color-surface);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -465,7 +467,7 @@
   height: 42px;
   overflow: hidden;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--color-surface);
 }
 
@@ -552,7 +554,8 @@
 /* ---------- Reviews ---------- */
 .reviews {
   padding: 1.6rem 1.75rem 1.35rem;
-  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius-sm);
   background: var(--color-lavender-tint);
 }
 
@@ -654,7 +657,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #c9c5e6;
+  background: var(--color-lavender-mid);
   transition:
     background-color var(--duration-fast) ease,
     transform var(--duration-fast) ease;

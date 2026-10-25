@@ -19,13 +19,15 @@
   gap: 1.5rem;
   margin-block: 1.25rem 2rem;
   padding: 1.75rem var(--gutter) 2rem;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(
-    135deg,
-    var(--color-lavender-soft) 0%,
-    var(--color-lavender-tint) 55%,
-    #f9f8ff 100%
-  );
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius-sm);
+  background: var(--color-ink);
+  color: var(--color-on-dark);
+  box-shadow: 8px 8px 0 var(--color-accent);
+}
+
+.collection-header .eyebrow {
+  color: var(--color-accent);
 }
 
 .collection-header__content {
@@ -38,21 +40,25 @@
 }
 
 .collection-header__title {
-  font-size: clamp(2rem, 1.4rem + 2.4vw, var(--text-3xl));
+  font-size: clamp(2.5rem, 1.4rem + 3.6vw, 4.5rem);
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--color-on-dark);
 }
 
 .collection-header__description {
-  font-size: var(--text-base);
-  line-height: 1.65;
-  letter-spacing: 0.02em;
-  color: var(--color-ink);
+  font-size: var(--text-md);
+  line-height: 1.55;
+  color: var(--color-on-dark-muted);
+  max-width: 54ch;
 }
 
 .collection-header__media {
   aspect-ratio: 16 / 9;
-  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-on-dark);
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  background: var(--color-lavender);
+  background: var(--color-ink-800);
 }
 
 .collection-header__media img {
@@ -155,7 +161,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--color-primary);
   color: #fff;
   font-size: 11px;
@@ -193,7 +199,7 @@
   min-height: 40px;
   padding: 0.4rem 2.5rem 0.4rem 1.1rem;
   border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--color-surface);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -266,7 +272,7 @@
   height: 20px;
   padding: 0 6px;
   margin-left: 0.5rem;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--color-lavender);
   color: var(--color-primary);
   font-family: var(--font-body);
@@ -614,7 +620,7 @@
   min-height: 34px;
   padding: 0 0.65rem 0 0.9rem;
   border: 1px solid var(--color-lavender);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--color-lavender-tint);
   color: var(--color-primary);
   font-size: var(--text-sm);
@@ -652,7 +658,7 @@
 .skeleton-card .skeleton--button {
   height: 44px;
   margin-top: 1.25rem;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
 }
 
 .empty-state__actions {
@@ -752,8 +758,8 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(45, 36, 92, 0) 35%,
-    rgba(45, 36, 92, 0.82) 100%
+    rgba(18, 16, 32, 0) 35%,
+    rgba(18, 16, 32, 0.85) 100%
   );
 }
 
@@ -835,7 +841,7 @@
   min-height: 60px;
   padding: 6px 6px 6px 0;
   border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
   transition:
@@ -984,7 +990,7 @@
   min-height: 52px;
   padding: 4px 4px 4px 0;
   border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--color-surface);
   transition:
     border-color var(--duration-fast) ease,

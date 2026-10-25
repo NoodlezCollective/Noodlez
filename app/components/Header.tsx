@@ -21,7 +21,7 @@ interface HeaderProps {
 type Viewport = 'desktop' | 'mobile';
 
 /**
- * Sticky lavender header: primary navigation (left), wordmark (center) and
+ * Sticky ink-dark header: wordmark (left), primary navigation and
  * account / search / cart actions (right). On small screens the navigation
  * moves into the mobile drawer behind the menu button.
  */

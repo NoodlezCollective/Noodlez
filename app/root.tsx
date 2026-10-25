@@ -33,7 +33,7 @@ import {ErrorView} from './components/ErrorView';
 export type RootLoader = typeof loader;
 
 const FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap';
+  'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -178,7 +178,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta name="theme-color" content="#4c4184" />
+        <meta name="theme-color" content="#121020" />
         <meta property="og:site_name" content="Mellow" />
         <link rel="stylesheet" href={tokenStyles}></link>
         <link rel="stylesheet" href={resetStyles}></link>

@@ -63,7 +63,7 @@ export function buttonClassName({
 }
 
 /**
- * Pill-shaped Mellow button. Renders a `<Link>` when `to` is provided,
+ * Square, uppercase storefront button. Renders a `<Link>` when `to` is provided,
  * an `<a>` when `href` is provided, otherwise a `<button>`.
  */
 export const Button = forwardRef<
