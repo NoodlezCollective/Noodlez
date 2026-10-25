@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {createHydrogenRouterContext} from './context';
+import {createAppRouterContext} from './context';
 
 const ENV = {
   SESSION_SECRET: 'test-secret',
@@ -15,7 +15,7 @@ const EXECUTION_CONTEXT = {
 } as unknown as ExecutionContext;
 
 function createContext(url = 'https://shop.example/', env: Env = ENV) {
-  return createHydrogenRouterContext(new Request(url), env, EXECUTION_CONTEXT);
+  return createAppRouterContext(new Request(url), env, EXECUTION_CONTEXT);
 }
 
 /** Makes the Storefront API answer every request with `body` (HTTP 200). */
@@ -83,7 +83,7 @@ describe('cart id cookie', () => {
   });
 
   it('is still read back from the request by the cart handler', async () => {
-    const context = await createHydrogenRouterContext(
+    const context = await createAppRouterContext(
       new Request('https://shop.example/', {headers: {Cookie: 'cart=c1-abc'}}),
       ENV,
       EXECUTION_CONTEXT,
@@ -120,7 +120,7 @@ describe('Storefront API errors', () => {
   it('covers the cart handler, which shares the storefront client', async () => {
     stubStorefrontApi({errors: [{message: 'Throttled'}]});
     // `cart.get()` only queries the API when the request carries a cart id.
-    const context = await createHydrogenRouterContext(
+    const context = await createAppRouterContext(
       new Request('https://shop.example/', {headers: {Cookie: 'cart=c1-abc'}}),
       ENV,
       EXECUTION_CONTEXT,

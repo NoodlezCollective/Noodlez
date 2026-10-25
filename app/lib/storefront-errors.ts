@@ -1,4 +1,4 @@
-import type {Storefront} from '@shopify/hydrogen';
+import type {Storefront} from '~/lib/storefront/client.server';
 
 /** Status returned when the Storefront API answers with errors and no data. */
 export const STOREFRONT_API_ERROR_STATUS = 502;

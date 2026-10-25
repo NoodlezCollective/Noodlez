@@ -16,6 +16,7 @@ import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {SITE_SETTINGS_QUERY, mapSiteSettings} from '~/lib/content/metaobjects';
 import {SHOPIFY_RESOURCES} from '~/lib/content/config';
 import {isMockStorefrontEnabled} from '~/lib/mock/flag';
+import type {HydrogenStorefront} from '~/lib/storefront/hydrogen-compat';
 import {DEFAULT_DESCRIPTION, DEFAULT_TITLE} from '~/lib/seo';
 import tokenStyles from '~/styles/tokens.css?url';
 import resetStyles from '~/styles/reset.css?url';
@@ -96,8 +97,9 @@ export async function loader(args: Route.LoaderArgs) {
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
     isMockStorefront: isMockStorefrontEnabled(env),
     shop: getShopAnalytics({
-      storefront,
-      publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
+      storefront: storefront as unknown as HydrogenStorefront,
+      // getShopAnalytics' own default when no storefront id is configured.
+      publicStorefrontId: env.PUBLIC_STOREFRONT_ID ?? '0',
     }),
     consent: {
       checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,

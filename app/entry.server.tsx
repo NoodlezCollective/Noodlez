@@ -1,18 +1,16 @@
 import {ServerRouter} from 'react-router';
 import {isbot} from 'isbot';
 import {renderToReadableStream} from 'react-dom/server';
-import {
-  createContentSecurityPolicy,
-  type HydrogenRouterContextProvider,
-} from '@shopify/hydrogen';
+import {createContentSecurityPolicy} from '@shopify/hydrogen';
 import type {EntryContext} from 'react-router';
+import type {AppRouterContext} from '~/lib/context';
 
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
-  context: HydrogenRouterContextProvider,
+  context: AppRouterContext,
 ) {
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {

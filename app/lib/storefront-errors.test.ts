@@ -1,4 +1,4 @@
-import type {Storefront} from '@shopify/hydrogen';
+import type {Storefront} from '~/lib/storefront/client.server';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {
   STOREFRONT_API_ERROR_STATUS,

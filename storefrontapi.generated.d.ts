@@ -1,7 +1,45 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 /* eslint-disable eslint-comments/no-unlimited-disable */
 /* eslint-disable */
-import type * as StorefrontAPI from '@shopify/hydrogen/storefront-api-types';
+import type * as StorefrontAPI from '@shopify/hydrogen-react/storefront-api-types';
+
+export type CartApiMutationFragment = Pick<
+  StorefrontAPI.Cart,
+  'id' | 'totalQuantity' | 'checkoutUrl'
+>;
+
+export type CartApiErrorFragment = Pick<
+  StorefrontAPI.CartUserError,
+  'message' | 'field' | 'code'
+>;
+
+export type CartApiWarningFragment = Pick<
+  StorefrontAPI.CartWarning,
+  'code' | 'message' | 'target'
+>;
+
+export type CartDiscountCodesUpdateMutationVariables = StorefrontAPI.Exact<{
+  cartId: StorefrontAPI.Scalars['ID']['input'];
+  discountCodes:
+    | Array<StorefrontAPI.Scalars['String']['input']>
+    | StorefrontAPI.Scalars['String']['input'];
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type CartDiscountCodesUpdateMutation = {
+  cartDiscountCodesUpdate?: StorefrontAPI.Maybe<{
+    cart?: StorefrontAPI.Maybe<
+      Pick<StorefrontAPI.Cart, 'id' | 'totalQuantity' | 'checkoutUrl'>
+    >;
+    userErrors: Array<
+      Pick<StorefrontAPI.CartUserError, 'message' | 'field' | 'code'>
+    >;
+    warnings: Array<
+      Pick<StorefrontAPI.CartWarning, 'code' | 'message' | 'target'>
+    >;
+  }>;
+};
 
 export type CollectionFilterFragment = Pick<
   StorefrontAPI.Filter,
@@ -2814,9 +2852,14 @@ interface GeneratedQueryTypes {
   };
 }
 
-interface GeneratedMutationTypes {}
+interface GeneratedMutationTypes {
+  '#graphql\n  mutation cartDiscountCodesUpdate(\n    $cartId: ID!\n    $discountCodes: [String!]!\n    $country: CountryCode = ZZ\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {\n      cart {\n        ...CartApiMutation\n      }\n      userErrors {\n        ...CartApiError\n      }\n      warnings {\n        ...CartApiWarning\n      }\n    }\n  }\n  #graphql\n  fragment CartApiMutation on Cart {\n    id\n    totalQuantity\n    checkoutUrl\n  }\n\n  #graphql\n  fragment CartApiError on CartUserError {\n    message\n    field\n    code\n  }\n\n  #graphql\n  fragment CartApiWarning on CartWarning {\n    code\n    message\n    target\n  }\n\n': {
+    return: CartDiscountCodesUpdateMutation;
+    variables: CartDiscountCodesUpdateMutationVariables;
+  };
+}
 
-declare module '@shopify/hydrogen' {
+declare global {
   interface StorefrontQueries extends GeneratedQueryTypes {}
   interface StorefrontMutations extends GeneratedMutationTypes {}
 }

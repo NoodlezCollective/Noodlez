@@ -1,6 +1,5 @@
 /// <reference types="vite/client" />
 /// <reference types="react-router" />
-/// <reference types="@shopify/hydrogen/react-router-types" />
 
 // Enhance TypeScript's built-in typings.
 import '@total-typescript/ts-reset';
@@ -25,11 +24,25 @@ declare global {
     ): Response | Promise<Response>;
   }
   /**
-   * Project-specific environment variables (see .dev.vars.example).
-   * Hydrogen's own variables (PUBLIC_STORE_DOMAIN, SESSION_SECRET, ...)
-   * are declared by `HydrogenEnv`.
+   * The Worker's variables and secrets: every variable the app reads. Set
+   * them with Wrangler (`wrangler secret put`, dashboard variables) in
+   * production and in .dev.vars locally; see .dev.vars.example.
    */
   interface Env {
+    SESSION_SECRET: string;
+    PUBLIC_STORE_DOMAIN: string;
+    PUBLIC_STOREFRONT_API_TOKEN: string;
+    /**
+     * Server-only and not configured yet. When set, the Worker's own Storefront
+     * API calls use it (with the buyer IP) instead of the public token; it never
+     * reaches the browser or the same-origin Storefront API proxy.
+     */
+    PRIVATE_STOREFRONT_API_TOKEN?: string;
+    PUBLIC_STOREFRONT_ID?: string;
+    PUBLIC_CHECKOUT_DOMAIN?: string;
+    PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID?: string;
+    PUBLIC_CUSTOMER_ACCOUNT_API_URL?: string;
+    SHOP_ID?: string;
     /**
      * Development only. When set to "true" the Storefront API is replaced by a
      * local in-memory mock with Mellow demo data so the UI can be developed and

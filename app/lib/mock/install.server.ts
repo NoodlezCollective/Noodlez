@@ -1,5 +1,5 @@
 import {graphql} from 'graphql';
-import type {Storefront} from '@shopify/hydrogen';
+import type {Storefront} from '~/lib/storefront/client.server';
 import {getCatalog} from './graph.server';
 import {createRootValue} from './root.server';
 import {getMockSchema} from './schema.server';

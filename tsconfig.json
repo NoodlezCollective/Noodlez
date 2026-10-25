@@ -25,11 +25,7 @@
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "types": [
-      "react-router",
-      "@shopify/hydrogen/react-router-types",
-      "vite/client"
-    ],
+    "types": ["react-router", "vite/client"],
     "paths": {
       "~/*": ["./app/*"],
       "storefrontapi.generated": ["./storefrontapi.generated.d.ts"],

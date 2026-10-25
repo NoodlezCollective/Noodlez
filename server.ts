@@ -1,6 +1,7 @@
-import * as serverBuild from 'virtual:react-router/server-build';
-import {createRequestHandler, storefrontRedirect} from '@shopify/hydrogen';
-import {createHydrogenRouterContext} from '~/lib/context';
+import {createRequestHandler} from 'react-router';
+import {storefrontRedirect} from '@shopify/hydrogen';
+import {createAppRouterContext, type AppRouterContext} from '~/lib/context';
+import type {HydrogenStorefront} from '~/lib/storefront/hydrogen-compat';
 import {safeRedirectPath} from '~/lib/urls';
 
 /**
@@ -15,30 +16,78 @@ import {safeRedirectPath} from '~/lib/urls';
 const MAX_PATH_SEGMENTS = 16;
 
 /**
+ * Tells Shopify's consent script on document responses that the same-origin
+ * Storefront API proxy exists (Hydrogen's `_sfapi_proxy` marker).
+ */
+const STOREFRONT_API_PROXY_TIMING = '_sfapi_proxy;desc=1';
+
+/**
+ * React Router's request handler, created once per isolate. The server build
+ * is imported on first use, as in React Router's Cloudflare template.
+ */
+const handleRequest = createRequestHandler(
+  () => import('virtual:react-router/server-build'),
+  import.meta.env.MODE,
+);
+
+/**
+ * Runs `update` on the response, or on a mutable copy when its headers are
+ * immutable: a response passed straight through from `fetch()` (or built
+ * with `Response.redirect()`) cannot be changed in place.
+ */
+function withMutableHeaders(
+  response: Response,
+  update: (response: Response) => void,
+): Response {
+  try {
+    update(response);
+    return response;
+  } catch {
+    const copy = new Response(response.body, response);
+    update(copy);
+    return copy;
+  }
+}
+
+/**
  * Headers every response should carry. Document responses get them in
  * app/entry.server.tsx; this fills the gaps for resource routes (robots,
- * sitemaps), `*.data` requests, redirects and early 404s.
+ * sitemaps), `*.data` requests, redirects, early 404s and the Storefront API
+ * proxy. Values a route already set are kept.
  */
-function ensureSecurityHeaders(response: Response) {
-  const apply = (headers: Headers) => {
+export function ensureSecurityHeaders(response: Response): Response {
+  return withMutableHeaders(response, ({headers}) => {
     if (!headers.has('X-Content-Type-Options')) {
       headers.set('X-Content-Type-Options', 'nosniff');
     }
     if (!headers.has('Referrer-Policy')) {
       headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     }
-  };
+  });
+}
 
-  try {
-    apply(response.headers);
-    return response;
-  } catch {
-    // A response passed straight through from `fetch()` has immutable
-    // headers; serve a mutable copy rather than failing the request.
-    const copy = new Response(response.body, response);
-    apply(copy.headers);
-    return copy;
+/**
+ * Requests Hydrogen's request handler turned away before routing: a GET or
+ * HEAD request with a body is a 400, and a path with empty segments (`//`)
+ * is a permanent redirect to the collapsed path. Null for anything else.
+ */
+export function rejectMalformedRequest(request: Request): Response | null {
+  const {method} = request;
+  if ((method === 'GET' || method === 'HEAD') && request.body) {
+    return new Response(`${method} requests cannot have a body`, {
+      status: 400,
+    });
   }
+
+  const {pathname} = new URL(request.url);
+  if (pathname.includes('//')) {
+    return new Response(null, {
+      status: 301,
+      headers: {Location: pathname.replace(/\/+/g, '/')},
+    });
+  }
+
+  return null;
 }
 
 /**
@@ -64,8 +113,87 @@ export function withSafeRedirectParams(request: Request): Request {
     : request;
 }
 
+/** Hydrogen's test: a navigation, or a request that accepts HTML. */
+function isDocumentRequest(request: Request): boolean {
+  return (
+    request.headers.get('sec-fetch-dest') === 'document' ||
+    Boolean(request.headers.get('accept')?.includes('text/html'))
+  );
+}
+
 /**
- * Export a fetch handler in module format.
+ * What React Router's response still needs: the session cookie when the
+ * session changed (appended, so a cart cookie set by the route survives), the
+ * headers the Storefront client collected from its subrequests, and the
+ * proxy marker on documents.
+ */
+async function finishResponse(
+  request: Request,
+  response: Response,
+  {session, storefront}: AppRouterContext,
+): Promise<Response> {
+  const sessionCookie = session.isPending ? await session.commit() : null;
+  return withMutableHeaders(response, (target) => {
+    if (sessionCookie !== null) {
+      target.headers.append('Set-Cookie', sessionCookie);
+    }
+    storefront.setCollectedSubrequestHeaders(target);
+    if (isDocumentRequest(request)) {
+      target.headers.append('Server-Timing', STOREFRONT_API_PROXY_TIMING);
+    }
+  });
+}
+
+/**
+ * The deep-path guard and the malformed-request rules run before any work;
+ * then the router context is built and the request goes either to the
+ * Storefront API proxy or to React Router, whose 404s get a Storefront
+ * redirect lookup. Security headers are added by the caller.
+ */
+async function respond(
+  request: Request,
+  env: Env,
+  executionContext: ExecutionContext,
+): Promise<Response> {
+  if (new URL(request.url).pathname.split('/').length > MAX_PATH_SEGMENTS) {
+    return new Response('Not found', {status: 404});
+  }
+
+  const rejected = rejectMalformedRequest(request);
+  if (rejected) return rejected;
+
+  const context = await createAppRouterContext(request, env, executionContext);
+  const {storefront} = context;
+
+  // Same-origin Storefront API proxy for the browser (consent, analytics).
+  if (storefront.isStorefrontApiUrl(request)) {
+    return storefront.forward(request);
+  }
+
+  const response = await finishResponse(
+    request,
+    await handleRequest(request, context),
+    context,
+  );
+
+  /**
+   * Check for redirects only when there's a 404 from the app.
+   * If the redirect doesn't exist, then `storefrontRedirect`
+   * will pass through the 404 response.
+   */
+  if (response.status === 404) {
+    return storefrontRedirect({
+      request: withSafeRedirectParams(request),
+      response,
+      storefront: storefront as unknown as HydrogenStorefront,
+    });
+  }
+
+  return response;
+}
+
+/**
+ * The Worker's fetch handler (module format).
  */
 export default {
   async fetch(
@@ -74,51 +202,9 @@ export default {
     executionContext: ExecutionContext,
   ): Promise<Response> {
     try {
-      if (new URL(request.url).pathname.split('/').length > MAX_PATH_SEGMENTS) {
-        return ensureSecurityHeaders(new Response('Not found', {status: 404}));
-      }
-
-      const hydrogenContext = await createHydrogenRouterContext(
-        request,
-        env,
-        executionContext,
+      return ensureSecurityHeaders(
+        await respond(request, env, executionContext),
       );
-
-      /**
-       * Create a Hydrogen request handler that internally
-       * delegates to React Router for routing and rendering.
-       */
-      const handleRequest = createRequestHandler({
-        build: serverBuild,
-        mode: import.meta.env.MODE,
-        getLoadContext: () => hydrogenContext,
-      });
-
-      const response = await handleRequest(request);
-
-      if (hydrogenContext.session.isPending) {
-        response.headers.set(
-          'Set-Cookie',
-          await hydrogenContext.session.commit(),
-        );
-      }
-
-      if (response.status === 404) {
-        /**
-         * Check for redirects only when there's a 404 from the app.
-         * If the redirect doesn't exist, then `storefrontRedirect`
-         * will pass through the 404 response.
-         */
-        return ensureSecurityHeaders(
-          await storefrontRedirect({
-            request: withSafeRedirectParams(request),
-            response,
-            storefront: hydrogenContext.storefront,
-          }),
-        );
-      }
-
-      return ensureSecurityHeaders(response);
     } catch (error) {
       console.error(error);
       return ensureSecurityHeaders(
@@ -126,4 +212,4 @@ export default {
       );
     }
   },
-};
+} satisfies ExportedHandler<Env>;
