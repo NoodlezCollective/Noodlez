@@ -1,7 +1,7 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 /* eslint-disable eslint-comments/no-unlimited-disable */
 /* eslint-disable */
-import type * as CustomerAccountAPI from '@shopify/hydrogen/customer-account-api-types';
+import type * as CustomerAccountAPI from '@shopify/hydrogen-react/customer-account-api-types';
 
 export type CustomerAddressUpdateMutationVariables = CustomerAccountAPI.Exact<{
   address: CustomerAccountAPI.CustomerAddressInput;
@@ -537,7 +537,7 @@ interface GeneratedMutationTypes {
   };
 }
 
-declare module '@shopify/hydrogen' {
+declare global {
   interface CustomerAccountQueries extends GeneratedQueryTypes {}
   interface CustomerAccountMutations extends GeneratedMutationTypes {}
 }

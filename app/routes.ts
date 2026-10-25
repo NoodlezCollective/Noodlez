@@ -1,9 +1,7 @@
 import {flatRoutes} from '@react-router/fs-routes';
-import {type RouteConfig} from '@react-router/dev/routes';
-import {hydrogenRoutes} from '@shopify/hydrogen';
+import type {RouteConfig} from '@react-router/dev/routes';
 
-export default hydrogenRoutes([
-  ...(await flatRoutes()),
-  // Manual route definitions can be added to this array, in addition to or instead of using the `flatRoutes` file-based routing convention.
-  // See https://reactrouter.com/api/framework-conventions/routes.ts#routests
-]) satisfies RouteConfig;
+// File-based routes from app/routes. Manual route definitions can be added to
+// the array instead of, or in addition to, the flat-routes convention:
+// https://reactrouter.com/api/framework-conventions/routes.ts#routests
+export default flatRoutes() satisfies RouteConfig;

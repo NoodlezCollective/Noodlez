@@ -1,22 +1,35 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs.$blogHandle._index';
-import {Image, getPaginationVariables} from '@shopify/hydrogen';
+import {Pagination, getPaginationVariables} from '~/lib/pagination';
+import {Image} from '@shopify/hydrogen-react';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {LONG_DATE_FORMAT, formatDate} from '~/lib/dates';
+import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
+import {Button} from '~/components/ui/Button';
+import {ArrowRightIcon} from '~/components/ui/Icons';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.blog.title ?? ''} blog`}];
+  if (!data?.blog) return notFoundMeta('Blog');
+
+  const {blog, origin} = data;
+  const title = `${blog.seo?.title || blog.title} | ${SITE_NAME}`;
+  const description = blog.seo?.description;
+  return [
+    {title},
+    ...(description ? [{name: 'description', content: description}] : []),
+    {property: 'og:title', content: title},
+    ...(description
+      ? [{property: 'og:description', content: description}]
+      : []),
+    {property: 'og:type', content: 'website'},
+    canonicalLink(origin, `/blogs/${blog.handle}`),
+  ];
 };
 
 export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
+  return {...criticalData};
 }
 
 /**
@@ -32,15 +45,12 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
     throw new Response(`blog not found`, {status: 404});
   }
 
-  const [{blog}] = await Promise.all([
-    context.storefront.query(BLOGS_QUERY, {
-      variables: {
-        blogHandle: params.blogHandle,
-        ...paginationVariables,
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+  const {blog} = await context.storefront.query(BLOGS_QUERY, {
+    variables: {
+      blogHandle: params.blogHandle,
+      ...paginationVariables,
+    },
+  });
 
   if (!blog?.articles) {
     throw new Response('Not found', {status: 404});
@@ -48,16 +58,7 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
 
   redirectIfHandleIsLocalized(request, {handle: params.blogHandle, data: blog});
 
-  return {blog};
-}
-
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
+  return {blog, origin: new URL(request.url).origin};
 }
 
 export default function Blog() {
@@ -65,19 +66,76 @@ export default function Blog() {
   const {articles} = blog;
 
   return (
-    <div className="blog">
-      <h1>{blog.title}</h1>
-      <div className="blog-grid">
-        <PaginatedResourceSection<ArticleItemFragment> connection={articles}>
-          {({node: article, index}) => (
-            <ArticleItem
-              article={article}
-              key={article.id}
-              loading={index < 2 ? 'eager' : 'lazy'}
-            />
-          )}
-        </PaginatedResourceSection>
-      </div>
+    <div className="content-page container">
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <Link to="/blogs" prefetch="intent">
+          Journal
+        </Link>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{blog.title}</span>
+      </nav>
+      <header className="page-header">
+        <p className="eyebrow page-header__eyebrow">Mellow journal</p>
+        <h1>{blog.title}</h1>
+        {blog.seo?.description ? (
+          <p className="page-header__description">{blog.seo.description}</p>
+        ) : null}
+      </header>
+
+      <Pagination<ArticleItemFragment> connection={articles}>
+        {({
+          nodes,
+          isLoading,
+          PreviousLink,
+          NextLink,
+          hasPreviousPage,
+          hasNextPage,
+        }) =>
+          nodes.length ? (
+            <>
+              {hasPreviousPage ? (
+                <div className="content-pagination">
+                  <PreviousLink className="btn btn--outline btn--sm">
+                    {isLoading ? 'Loading…' : 'Load previous'}
+                  </PreviousLink>
+                </div>
+              ) : null}
+              <ul className="article-grid">
+                {nodes.map((article, index) => (
+                  <ArticleItem
+                    article={article}
+                    key={article.id}
+                    loading={index < 3 ? 'eager' : 'lazy'}
+                  />
+                ))}
+              </ul>
+              {hasNextPage ? (
+                <div className="content-pagination">
+                  <NextLink className="btn btn--outline btn--sm">
+                    {isLoading ? 'Loading…' : 'Load more articles'}
+                  </NextLink>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <div className="empty-state content-empty">
+              <h2 className="empty-state__title">No articles yet</h2>
+              <p>
+                This blog doesn&rsquo;t have any published articles. Check back
+                soon or browse the rest of the journal.
+              </p>
+              <div className="empty-state__actions">
+                <Button to="/blogs" variant="outline">
+                  Back to the journal
+                </Button>
+                <Button to="/collections/all" variant="ghost">
+                  Shop best sellers
+                </Button>
+              </div>
+            </div>
+          )
+        }
+      </Pagination>
     </div>
   );
 }
@@ -89,29 +147,45 @@ function ArticleItem({
   article: ArticleItemFragment;
   loading?: HTMLImageElement['loading'];
 }) {
-  const publishedAt = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(article.publishedAt!));
+  const publishedAt = formatDate(article.publishedAt, LONG_DATE_FORMAT);
+  // The merchant's excerpt when there is one, else the start of the article.
+  // Both come from the API as single-line plain text, already truncated.
+  const excerpt = article.excerpt || article.content;
+
   return (
-    <div className="blog-article" key={article.id}>
-      <Link to={`/blogs/${article.blog.handle}/${article.handle}`}>
-        {article.image && (
-          <div className="blog-article-image">
+    <li className="article-card">
+      <Link
+        className="article-card__link"
+        prefetch="intent"
+        to={`/blogs/${article.blog.handle}/${article.handle}`}
+      >
+        <div className="article-card__media">
+          {article.image ? (
             <Image
               alt={article.image.altText || article.title}
               aspectRatio="3/2"
               data={article.image}
               loading={loading}
-              sizes="(min-width: 768px) 50vw, 100vw"
+              sizes="(min-width: 64em) 33vw, (min-width: 40em) 50vw, 100vw"
             />
-          </div>
-        )}
-        <h3>{article.title}</h3>
-        <small>{publishedAt}</small>
+          ) : null}
+        </div>
+        <div className="article-card__body">
+          <p className="article-card__meta">
+            {publishedAt ? (
+              <time dateTime={article.publishedAt}>{publishedAt}</time>
+            ) : null}
+            {publishedAt && article.author?.name ? <> &middot; </> : null}
+            {article.author?.name}
+          </p>
+          <h2 className="article-card__title">{article.title}</h2>
+          {excerpt ? <p className="article-card__excerpt">{excerpt}</p> : null}
+          <span className="article-card__cta">
+            Read more <ArrowRightIcon size={16} />
+          </span>
+        </div>
       </Link>
-    </div>
+    </li>
   );
 }
 
@@ -144,11 +218,9 @@ const BLOGS_QUERY = `#graphql
         pageInfo {
           hasPreviousPage
           hasNextPage
-          hasNextPage
           endCursor
           startCursor
         }
-
       }
     }
   }
@@ -156,7 +228,8 @@ const BLOGS_QUERY = `#graphql
     author: authorV2 {
       name
     }
-    contentHtml
+    content(truncateAt: 160)
+    excerpt(truncateAt: 160)
     handle
     id
     image {
@@ -173,3 +246,9 @@ const BLOGS_QUERY = `#graphql
     }
   }
 ` as const;
+
+/**
+ * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
+ * while the route stays in the rendered tree (not-found title, `noindex`).
+ */
+export {RouteErrorBoundary as ErrorBoundary} from '~/components/ErrorView';

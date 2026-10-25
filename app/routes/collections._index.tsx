@@ -1,94 +1,86 @@
-import {useLoaderData, Link} from 'react-router';
+import {useLoaderData} from 'react-router';
 import type {Route} from './+types/collections._index';
-import {getPaginationVariables, Image} from '@shopify/hydrogen';
+import {getPaginationVariables} from '~/lib/pagination';
 import type {CollectionFragment} from 'storefrontapi.generated';
+import {CollectionCard} from '~/components/collection/CollectionCard';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {Button} from '~/components/ui/Button';
+
+const TITLE = 'Collections | Mellow';
+const DESCRIPTION =
+  'Browse Mellow by category: ergonomic pillows, adaptive comforters, plush bath essentials and money-saving bundles.';
+
+export const meta: Route.MetaFunction = ({data}) => {
+  return [
+    {title: TITLE},
+    {name: 'description', content: DESCRIPTION},
+    {property: 'og:title', content: TITLE},
+    {property: 'og:description', content: DESCRIPTION},
+    {property: 'og:type', content: 'website'},
+    {
+      tagName: 'link',
+      rel: 'canonical',
+      href: `${data?.origin ?? ''}/collections`,
+    },
+  ];
+};
 
 export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
+  return {...criticalData};
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
 async function loadCriticalData({context, request}: Route.LoaderArgs) {
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: 4,
+  const paginationVariables = getPaginationVariables(request, {pageBy: 12});
+
+  const {collections} = await context.storefront.query(COLLECTIONS_QUERY, {
+    variables: paginationVariables,
   });
 
-  const [{collections}] = await Promise.all([
-    context.storefront.query(COLLECTIONS_QUERY, {
-      variables: paginationVariables,
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
-
-  return {collections};
-}
-
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
+  return {origin: new URL(request.url).origin, collections};
 }
 
 export default function Collections() {
   const {collections} = useLoaderData<typeof loader>();
 
   return (
-    <div className="collections">
-      <h1>Collections</h1>
+    <div className="collections-page container">
+      <header className="page-header page-header--center collections-header">
+        <p className="eyebrow page-header__eyebrow">Browse</p>
+        <h1>Collections</h1>
+        <p className="page-header__description">
+          Find your perfect sleep setup: pillows, comforters, bath essentials
+          and bundles, all designed to make sleep effortless.
+        </p>
+        <div className="collections-header__actions">
+          <Button to="/collections/all" variant="outline">
+            Shop all products
+          </Button>
+        </div>
+      </header>
       <PaginatedResourceSection<CollectionFragment>
         connection={collections}
-        resourcesClassName="collections-grid"
+        resourcesClassName="collection-grid"
+        ariaLabel="Collections"
+        emptyState={
+          <div className="empty-state">
+            <p className="empty-state__title">No collections yet</p>
+            <p>Browse every product while we organise the shelves.</p>
+            <div className="empty-state__actions">
+              <Button to="/collections/all">Shop all</Button>
+            </div>
+          </div>
+        }
       >
         {({node: collection, index}) => (
-          <CollectionItem
+          <CollectionCard
             key={collection.id}
             collection={collection}
-            index={index}
+            loading={index < 6 ? 'eager' : 'lazy'}
           />
         )}
       </PaginatedResourceSection>
     </div>
-  );
-}
-
-function CollectionItem({
-  collection,
-  index,
-}: {
-  collection: CollectionFragment;
-  index: number;
-}) {
-  return (
-    <Link
-      className="collection-item"
-      key={collection.id}
-      to={`/collections/${collection.handle}`}
-      prefetch="intent"
-    >
-      {collection?.image && (
-        <Image
-          alt={collection.image.altText || collection.title}
-          aspectRatio="1/1"
-          data={collection.image}
-          loading={index < 3 ? 'eager' : undefined}
-          sizes="(min-width: 45em) 400px, 100vw"
-        />
-      )}
-      <h5>{collection.title}</h5>
-    </Link>
   );
 }
 
@@ -97,6 +89,7 @@ const COLLECTIONS_QUERY = `#graphql
     id
     title
     handle
+    description
     image {
       id
       url

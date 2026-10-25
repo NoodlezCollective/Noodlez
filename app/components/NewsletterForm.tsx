@@ -1,0 +1,83 @@
+import {useEffect, useId, useRef} from 'react';
+import {useFetcher} from 'react-router';
+import {Button} from '~/components/ui/Button';
+import type {NewsletterActionData} from '~/routes/newsletter';
+
+export function NewsletterForm({
+  id,
+  source,
+  placeholder = 'Enter your email',
+  ctaLabel = 'Sign Up',
+}: {
+  id: string;
+  source: string;
+  placeholder?: string;
+  ctaLabel?: string;
+}) {
+  const fetcher = useFetcher<NewsletterActionData>({key: `newsletter-${id}`});
+  const formRef = useRef<HTMLFormElement>(null);
+  const inputId = useId();
+  const messageId = useId();
+  const data = fetcher.data;
+  const busy = fetcher.state !== 'idle';
+
+  useEffect(() => {
+    if (data?.status === 'subscribed') formRef.current?.reset();
+  }, [data]);
+
+  return (
+    <fetcher.Form
+      ref={formRef}
+      method="post"
+      action="/newsletter"
+      className="newsletter-form"
+    >
+      <label htmlFor={inputId} className="sr-only">
+        Email address
+      </label>
+      <div className="newsletter-form__row">
+        <input
+          id={inputId}
+          type="email"
+          name="email"
+          required
+          placeholder={placeholder}
+          autoComplete="email"
+          aria-describedby={data ? messageId : undefined}
+          aria-invalid={data?.ok === false ? true : undefined}
+        />
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          className="sr-only"
+          aria-hidden="true"
+          defaultValue=""
+        />
+        <input type="hidden" name="source" value={source} />
+        <Button type="submit" loading={busy}>
+          {ctaLabel}
+        </Button>
+      </div>
+      {/* The live region stays mounted (empty) so screen readers announce the
+          message when its text is swapped in; a region that mounts together
+          with its text is often not announced. */}
+      <div id={messageId} className="newsletter-form__status" role="status">
+        {data ? (
+          <p
+            className={`form-message ${
+              data.status === 'subscribed'
+                ? 'form-message--success'
+                : data.ok
+                  ? ''
+                  : 'form-message--error'
+            }`}
+          >
+            {data.message}
+          </p>
+        ) : null}
+      </div>
+    </fetcher.Form>
+  );
+}

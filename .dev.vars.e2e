@@ -1,0 +1,14 @@
+# Committed on purpose: placeholders only. Wrangler loads this file instead of
+# .dev.vars when CLOUDFLARE_ENV=e2e, which `npm run dev:e2e` and the Playwright
+# webServer (playwright.config.ts) set. The suite runs the development
+# Storefront API mock (app/lib/mock), so nothing here is a real credential.
+# Never put real store values in this file.
+SESSION_SECRET=e2e-only-session-secret-not-for-production
+PUBLIC_STORE_DOMAIN=mellow-e2e.myshopify.com
+# Any placeholder works: nothing checks the token's length any more (the
+# 32-character rule came from Hydrogen's useCustomerPrivacy, which is gone).
+PUBLIC_STOREFRONT_API_TOKEN=mockmockmockmockmockmockmockmock
+MOCK_STOREFRONT=true
+# Intentionally unset: PUBLIC_CHECKOUT_DOMAIN and PUBLIC_STOREFRONT_ID (analytics
+# stays off; mock mode turns it off anyway), the Customer Account API variables
+# (so /account shows the "not configured" page) and NEWSLETTER_WEBHOOK_URL.

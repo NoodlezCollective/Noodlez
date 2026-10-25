@@ -1,0 +1,67 @@
+import {useState} from 'react';
+import {ContentImage} from '~/components/ContentImage';
+import {Marquee} from '~/components/ui/Marquee';
+import {PauseToggle} from '~/components/ui/PauseToggle';
+import type {PressLogo} from '~/lib/content/types';
+
+/**
+ * "As seen in" strip. Logos uploaded to Shopify render as images; otherwise a
+ * typographic treatment of the publication name is used. The strip scrolls on
+ * its own, so it pauses on hover/focus and has a pause button (WCAG 2.2.2).
+ */
+export function PressBar({logos}: {logos: PressLogo[]}) {
+  const [paused, setPaused] = useState(false);
+  if (!logos.length) return null;
+  // Repeat the logos so each half of the loop is wider than the viewport. Only
+  // the first copy is exposed (the Marquee hides and disables the repeats), so
+  // the logos and their links are read and focusable exactly once.
+  const copies = Math.max(1, Math.ceil(12 / logos.length));
+  return (
+    <section className="press-bar" aria-label="As seen in">
+      <Marquee duration={40} gap={0} copies={copies} paused={paused}>
+        {logos.map((logo) => (
+          <span className="press-bar__item" key={logo.id}>
+            {logo.url ? (
+              <a
+                href={logo.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${logo.name} (opens in a new tab)`}
+              >
+                <PressLogoMark logo={logo} />
+              </a>
+            ) : (
+              <PressLogoMark logo={logo} />
+            )}
+          </span>
+        ))}
+      </Marquee>
+      <PauseToggle
+        className="press-bar__toggle"
+        label="Pause press logos"
+        paused={paused}
+        onToggle={() => setPaused((value) => !value)}
+      />
+    </section>
+  );
+}
+
+function PressLogoMark({logo}: {logo: PressLogo}) {
+  return logo.image ? (
+    <ContentImage image={logo.image} alt={logo.name} sizes="160px" />
+  ) : (
+    <span className={`press-logo ${pressLogoStyle(logo.name)}`}>
+      {logo.name}
+    </span>
+  );
+}
+
+function pressLogoStyle(name: string) {
+  const key = name.toLowerCase();
+  if (key.includes('forbes') || key.includes('digest'))
+    return 'press-logo--serif';
+  if (key.includes('usa today')) return 'press-logo--dot press-logo--caps';
+  if (key.includes('scary')) return 'press-logo--script';
+  if (key.includes('us weekly')) return 'press-logo--caps';
+  return '';
+}

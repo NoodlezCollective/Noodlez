@@ -1,19 +1,29 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.page.title ?? ''}`}];
+  if (!data?.page) return notFoundMeta('Page');
+
+  const {page, origin} = data;
+  const title = `${page.seo?.title || page.title} | ${SITE_NAME}`;
+  const description = page.seo?.description || page.bodySummary;
+  return [
+    {title},
+    ...(description ? [{name: 'description', content: description}] : []),
+    {property: 'og:title', content: title},
+    ...(description
+      ? [{property: 'og:description', content: description}]
+      : []),
+    {property: 'og:type', content: 'website'},
+    canonicalLink(origin, `/pages/${page.handle}`),
+  ];
 };
 
 export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
+  return {...criticalData};
 }
 
 /**
@@ -25,14 +35,11 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
     throw new Error('Missing page handle');
   }
 
-  const [{page}] = await Promise.all([
-    context.storefront.query(PAGE_QUERY, {
-      variables: {
-        handle: params.handle,
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+  const {page} = await context.storefront.query(PAGE_QUERY, {
+    variables: {
+      handle: params.handle,
+    },
+  });
 
   if (!page) {
     throw new Response('Not Found', {status: 404});
@@ -42,28 +49,21 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
 
   return {
     page,
+    origin: new URL(request.url).origin,
   };
-}
-
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
 }
 
 export default function Page() {
   const {page} = useLoaderData<typeof loader>();
 
   return (
-    <div className="page">
-      <header>
+    <article className="content-page container container--text">
+      <header className="page-header">
+        <p className="eyebrow page-header__eyebrow">Mellow</p>
         <h1>{page.title}</h1>
       </header>
-      <main dangerouslySetInnerHTML={{__html: page.body}} />
-    </div>
+      <div className="prose" dangerouslySetInnerHTML={{__html: page.body}} />
+    </article>
   );
 }
 
@@ -79,6 +79,7 @@ const PAGE_QUERY = `#graphql
       id
       title
       body
+      bodySummary
       seo {
         description
         title
@@ -86,3 +87,9 @@ const PAGE_QUERY = `#graphql
     }
   }
 ` as const;
+
+/**
+ * Keeps thrown responses (404, 502) inside this route: its `meta` only applies
+ * while the route stays in the rendered tree (not-found title, `noindex`).
+ */
+export {RouteErrorBoundary as ErrorBoundary} from '~/components/ErrorView';

@@ -1,93 +1,132 @@
-import type {CartLineUpdateInput} from '@shopify/hydrogen/storefront-api-types';
+import type {CartLineUpdateInput} from '@shopify/hydrogen-react/storefront-api-types';
 import type {CartLayout, LineItemChildrenMap} from '~/components/CartMain';
-import {CartForm, Image, type OptimisticCartLine} from '@shopify/hydrogen';
+import {CartForm} from '~/lib/cart/CartForm';
+import type {OptimisticCartLine} from '~/lib/cart/types';
+import {Image, Money} from '@shopify/hydrogen-react';
 import {useVariantUrl} from '~/lib/variants';
 import {Link} from 'react-router';
-import {ProductPrice} from './ProductPrice';
+import {Price} from '~/components/ui/Price';
+import {MinusIcon, PlusIcon, TrashIcon} from '~/components/ui/Icons';
 import {useAside} from './Aside';
-import type {
-  CartApiQueryFragment,
-  CartLineFragment,
-} from 'storefrontapi.generated';
+import type {CartApiQueryFragment} from 'storefrontapi.generated';
 
 export type CartLine = OptimisticCartLine<CartApiQueryFragment>;
 
 /**
- * A single line item in the cart. It displays the product image, title, price.
- * It also provides controls to update the quantity or remove the line item.
- * If the line is a parent line that has child components (like warranties or gift wrapping), they are
- * rendered nested below the parent line.
+ * A single line item in the cart: product image, title, selected options,
+ * unit price, quantity stepper, remove button and line total.
+ * If the line is a parent line that has child components (like warranties or
+ * gift wrapping), they are rendered nested below the parent line.
  */
 export function CartLineItem({
   layout,
   line,
   childrenMap,
+  onRemove,
 }: {
   layout: CartLayout;
   line: CartLine;
   childrenMap: LineItemChildrenMap;
+  /** Called when the shopper activates "remove" (lets the cart restore focus). */
+  onRemove?: (lineId: string) => void;
 }) {
-  const {id, merchandise} = line;
+  const {id, merchandise, isOptimistic} = line;
   const {product, title, image, selectedOptions} = merchandise;
   const lineItemUrl = useVariantUrl(product.handle, selectedOptions);
   const {close} = useAside();
   const lineItemChildren = childrenMap[id];
   const childrenLabelId = `cart-line-children-${id}`;
+  const options = selectedOptions.filter(
+    (option) => option.value !== 'Default Title',
+  );
+  const closeIfAside = () => {
+    if (layout === 'aside') close();
+  };
 
   return (
-    <li key={id} className="cart-line">
-      <div className="cart-line-inner">
-        {image && (
+    <li
+      key={id}
+      className={`cart-line ${isOptimistic ? 'is-optimistic' : ''}`.trim()}
+    >
+      <Link
+        className="cart-line__media"
+        prefetch="intent"
+        to={lineItemUrl}
+        onClick={closeIfAside}
+        tabIndex={-1}
+        aria-hidden="true"
+      >
+        {image ? (
           <Image
-            alt={title}
+            alt={image.altText || title}
             aspectRatio="1/1"
             data={image}
-            height={100}
+            height={96}
             loading="lazy"
-            width={100}
+            width={96}
+            sizes="96px"
           />
-        )}
+        ) : null}
+      </Link>
 
-        <div>
-          <Link
-            prefetch="intent"
-            to={lineItemUrl}
-            onClick={() => {
-              if (layout === 'aside') {
-                close();
-              }
-            }}
-          >
-            <p>
-              <strong>{product.title}</strong>
-            </p>
-          </Link>
-          <ProductPrice price={line?.cost?.totalAmount} />
-          <ul>
-            {selectedOptions.map((option) => (
-              <li key={option.name}>
-                <small>
-                  {option.name}: {option.value}
-                </small>
-              </li>
-            ))}
-          </ul>
+      <div className="cart-line__body">
+        <div className="cart-line__header">
+          <div className="cart-line__heading">
+            <Link
+              className="cart-line__title"
+              prefetch="intent"
+              to={lineItemUrl}
+              onClick={closeIfAside}
+            >
+              {product.title}
+            </Link>
+            {options.length ? (
+              <p className="cart-line__options">
+                {options.map((option, index) => (
+                  <span key={option.name}>
+                    {index > 0 ? ' · ' : ''}
+                    {option.name}: {option.value}
+                  </span>
+                ))}
+              </p>
+            ) : null}
+          </div>
+          {line.cost?.totalAmount ? (
+            <Money className="cart-line__total" data={line.cost.totalAmount} />
+          ) : null}
+        </div>
+
+        <Price
+          className="cart-line__price"
+          price={line.cost?.amountPerQuantity}
+          compareAtPrice={line.cost?.compareAtAmountPerQuantity}
+          size="sm"
+        />
+
+        <div className="cart-line__actions">
           <CartLineQuantity line={line} />
+          <CartLineRemoveButton
+            lineIds={[id]}
+            disabled={!!isOptimistic}
+            productTitle={product.title}
+            onRemove={() => onRemove?.(id)}
+          />
         </div>
       </div>
 
       {lineItemChildren ? (
-        <div>
+        <div className="cart-line__children-wrap">
           <p id={childrenLabelId} className="sr-only">
             Line items with {product.title}
           </p>
-          <ul aria-labelledby={childrenLabelId} className="cart-line-children">
+          <ul aria-labelledby={childrenLabelId} className="cart-line__children">
             {lineItemChildren.map((childLine) => (
               <CartLineItem
                 childrenMap={childrenMap}
                 key={childLine.id}
                 line={childLine}
                 layout={layout}
+                onRemove={onRemove}
               />
             ))}
           </ul>
@@ -107,33 +146,45 @@ function CartLineQuantity({line}: {line: CartLine}) {
   const {id: lineId, quantity, isOptimistic} = line;
   const prevQuantity = Number(Math.max(0, quantity - 1).toFixed(0));
   const nextQuantity = Number((quantity + 1).toFixed(0));
+  // Removing is the trash button's job; "decrease" stops at 1. It is
+  // `aria-disabled` rather than `disabled` so the focused button keeps focus
+  // when it reaches 1 (a disabled button drops focus to <body>).
+  const atMinimum = quantity <= 1;
 
   return (
-    <div className="cart-line-quantity">
-      <small>Quantity: {quantity} &nbsp;&nbsp;</small>
+    <div className="qty" role="group" aria-label="Quantity">
       <CartLineUpdateButton lines={[{id: lineId, quantity: prevQuantity}]}>
         <button
           aria-label="Decrease quantity"
-          disabled={quantity <= 1 || !!isOptimistic}
+          aria-disabled={atMinimum || undefined}
+          className="qty__btn"
+          disabled={!!isOptimistic}
           name="decrease-quantity"
+          onClick={(event) => {
+            if (atMinimum) event.preventDefault();
+          }}
+          type="submit"
           value={prevQuantity}
         >
-          <span>&#8722; </span>
+          <MinusIcon size={16} />
         </button>
       </CartLineUpdateButton>
-      &nbsp;
+      <span className="qty__value">
+        <span className="sr-only">Quantity </span>
+        {quantity}
+      </span>
       <CartLineUpdateButton lines={[{id: lineId, quantity: nextQuantity}]}>
         <button
           aria-label="Increase quantity"
-          name="increase-quantity"
-          value={nextQuantity}
+          className="qty__btn"
           disabled={!!isOptimistic}
+          name="increase-quantity"
+          type="submit"
+          value={nextQuantity}
         >
-          <span>&#43;</span>
+          <PlusIcon size={16} />
         </button>
       </CartLineUpdateButton>
-      &nbsp;
-      <CartLineRemoveButton lineIds={[lineId]} disabled={!!isOptimistic} />
     </div>
   );
 }
@@ -146,9 +197,13 @@ function CartLineQuantity({line}: {line: CartLine}) {
 function CartLineRemoveButton({
   lineIds,
   disabled,
+  productTitle,
+  onRemove,
 }: {
   lineIds: string[];
   disabled: boolean;
+  productTitle: string;
+  onRemove?: () => void;
 }) {
   return (
     <CartForm
@@ -157,8 +212,14 @@ function CartLineRemoveButton({
       action={CartForm.ACTIONS.LinesRemove}
       inputs={{lineIds}}
     >
-      <button disabled={disabled} type="submit">
-        Remove
+      <button
+        aria-label={`Remove ${productTitle} from cart`}
+        className="icon-btn cart-line__remove"
+        disabled={disabled}
+        onClick={onRemove}
+        type="submit"
+      >
+        <TrashIcon size={20} />
       </button>
     </CartForm>
   );

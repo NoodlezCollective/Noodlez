@@ -1,78 +1,159 @@
-import {useLoaderData} from 'react-router';
+import {useEffect, useRef} from 'react';
+import {data, useLoaderData, useNavigation} from 'react-router';
 import type {Route} from './+types/search';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
+import {Analytics} from '~/lib/analytics';
+import {getPaginationVariables} from '~/lib/pagination';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
+import {Button} from '~/components/ui/Button';
+import {SearchIcon} from '~/components/ui/Icons';
+import {PRODUCT_CARD_FRAGMENT} from '~/lib/fragments';
 import {
   type RegularSearchReturn,
   type PredictiveSearchReturn,
+  formatSearchTotal,
   getEmptyPredictiveSearchResult,
+  getEmptyRegularSearchResult,
+  parseSearchLimit,
+  searchUnavailable,
 } from '~/lib/search';
+import {describeErrors} from '~/lib/storefront-errors';
 import type {
   RegularSearchQuery,
   PredictiveSearchQuery,
 } from 'storefrontapi.generated';
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Search`}];
+export const meta: Route.MetaFunction = ({data}) => {
+  const term = data?.type === 'regular' ? data.term : '';
+  const title = term
+    ? `Search results for “${term}” | Mellow`
+    : 'Search | Mellow';
+  return [
+    {title},
+    {
+      name: 'description',
+      content:
+        'Search Mellow pillows, comforters, bath essentials and bundles.',
+    },
+    {name: 'robots', content: 'noindex'},
+  ];
 };
+
+/** The trimmed `q` search parameter. */
+function readTerm(url: URL) {
+  return String(url.searchParams.get('q') || '').trim();
+}
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
-  const isPredictive = url.searchParams.has('predictive');
-  const searchPromise: Promise<PredictiveSearchReturn | RegularSearchReturn> =
-    isPredictive
-      ? predictiveSearch({request, context})
-      : regularSearch({request, context});
+  const type = url.searchParams.has('predictive') ? 'predictive' : 'regular';
 
-  searchPromise.catch((error: Error) => {
-    console.error(error);
-    return {term: '', result: null, error: error.message};
-  });
-
-  return await searchPromise;
+  try {
+    return type === 'predictive'
+      ? await predictiveSearch({request, context})
+      : await regularSearch({request, context});
+  } catch (error) {
+    // The cause stays in the server log (GraphQL errors only as their count
+    // and codes outside development: their messages echo the search term);
+    // the shopper gets a generic message and a 503.
+    console.error(`[search] ${type} search failed`, error);
+    return data(searchUnavailable(type, readTerm(url)), {status: 503});
+  }
 }
+
+const SEARCH_INPUT_ID = 'search-page-input';
 
 /**
  * Renders the /search route
  */
 export default function SearchPage() {
-  const {type, term, result, error} = useLoaderData<typeof loader>();
-  if (type === 'predictive') return null;
+  const response = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+  const refocusInput = useRef(false);
+
+  // The form is keyed by the term, so a new search replaces its input; hand
+  // keyboard focus back to the field once the results have loaded.
+  useEffect(() => {
+    if (navigation.state !== 'idle' || !refocusInput.current) return;
+    refocusInput.current = false;
+    document.getElementById(SEARCH_INPUT_ID)?.focus();
+  }, [navigation.state]);
+
+  if (response.type === 'predictive') return null;
+
+  const {term, result, error} = response;
+  const total = result?.total ?? 0;
+  const hasResults = Boolean(term) && total > 0;
 
   return (
-    <div className="search">
-      <h1>Search</h1>
-      <SearchForm>
-        {({inputRef}) => (
-          <>
-            <input
-              defaultValue={term}
-              name="q"
-              placeholder="Search…"
-              ref={inputRef}
-              type="search"
-            />
-            &nbsp;
-            <button type="submit">Search</button>
-          </>
-        )}
-      </SearchForm>
-      {error && <p style={{color: 'red'}}>{error}</p>}
-      {!term || !result?.total ? (
-        <SearchResults.Empty />
+    <div className="search-page container">
+      <header className="page-header page-header--center search-header">
+        <p className="eyebrow page-header__eyebrow">Search</p>
+        <h1>Search</h1>
+        {/* Keyed by the term so the input follows the URL (chips, Back). */}
+        <SearchForm
+          key={term}
+          action="/search"
+          className="search-form"
+          onSubmit={() => {
+            refocusInput.current = true;
+          }}
+        >
+          {({inputRef}) => (
+            <div className="search-form__field">
+              <label className="sr-only" htmlFor={SEARCH_INPUT_ID}>
+                Search products, pages and articles
+              </label>
+              <SearchIcon className="search-form__icon" size={22} />
+              <input
+                id={SEARCH_INPUT_ID}
+                defaultValue={term}
+                name="q"
+                placeholder="Search pillows, comforters, bundles…"
+                ref={inputRef}
+                type="search"
+                autoComplete="off"
+              />
+              <Button type="submit">Search</Button>
+            </div>
+          )}
+        </SearchForm>
+      </header>
+
+      {error ? (
+        <p className="search-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      {hasResults ? (
+        <p className="search-summary" aria-live="polite">
+          {formatSearchTotal(total, false)} for <q>{term}</q>
+        </p>
+      ) : null}
+
+      {error ? null : !hasResults ? (
+        <SearchResults.Empty term={term} />
       ) : (
         <SearchResults result={result} term={term}>
           {({articles, pages, products, term}) => (
-            <div>
+            <div className="search-results">
               <SearchResults.Products products={products} term={term} />
-              <SearchResults.Pages pages={pages} term={term} />
-              <SearchResults.Articles articles={articles} term={term} />
+              {pages?.nodes.length || articles?.nodes.length ? (
+                <div className="search-results__secondary">
+                  <SearchResults.Pages pages={pages} term={term} />
+                  <SearchResults.Articles articles={articles} term={term} />
+                </div>
+              ) : null}
             </div>
           )}
         </SearchResults>
       )}
-      <Analytics.SearchView data={{searchTerm: term, searchResults: result}} />
+      {term && result ? (
+        <Analytics.SearchView
+          data={{searchTerm: term, searchResults: result}}
+        />
+      ) : null}
     </div>
   );
 }
@@ -84,41 +165,9 @@ export default function SearchPage() {
 const SEARCH_PRODUCT_FRAGMENT = `#graphql
   fragment SearchProduct on Product {
     __typename
-    handle
-    id
+    ...ProductCard
     publishedAt
-    title
     trackingParameters
-    vendor
-    selectedOrFirstAvailableVariant(
-      selectedOptions: []
-      ignoreUnknownOptions: true
-      caseInsensitiveMatch: true
-    ) {
-      id
-      image {
-        url
-        altText
-        width
-        height
-      }
-      price {
-        amount
-        currencyCode
-      }
-      compareAtPrice {
-        amount
-        currencyCode
-      }
-      selectedOptions {
-        name
-        value
-      }
-      product {
-        handle
-        title
-      }
-    }
   }
 ` as const;
 
@@ -139,6 +188,9 @@ const SEARCH_ARTICLE_FRAGMENT = `#graphql
     id
     title
     trackingParameters
+    blog {
+      handle
+    }
   }
 ` as const;
 
@@ -165,7 +217,7 @@ export const SEARCH_QUERY = `#graphql
     articles: search(
       query: $term,
       types: [ARTICLE],
-      first: $first,
+      first: 10,
     ) {
       nodes {
         ...on Article {
@@ -176,7 +228,7 @@ export const SEARCH_QUERY = `#graphql
     pages: search(
       query: $term,
       types: [PAGE],
-      first: $first,
+      first: 10,
     ) {
       nodes {
         ...on Page {
@@ -194,6 +246,7 @@ export const SEARCH_QUERY = `#graphql
       types: [PRODUCT],
       unavailableProducts: HIDE,
     ) {
+      totalCount
       nodes {
         ...on Product {
           ...SearchProduct
@@ -204,6 +257,7 @@ export const SEARCH_QUERY = `#graphql
       }
     }
   }
+  ${PRODUCT_CARD_FRAGMENT}
   ${SEARCH_PRODUCT_FRAGMENT}
   ${SEARCH_PAGE_FRAGMENT}
   ${SEARCH_ARTICLE_FRAGMENT}
@@ -222,8 +276,13 @@ async function regularSearch({
 >): Promise<RegularSearchReturn> {
   const {storefront} = context;
   const url = new URL(request.url);
-  const variables = getPaginationVariables(request, {pageBy: 8});
-  const term = String(url.searchParams.get('q') || '');
+  const variables = getPaginationVariables(request, {pageBy: 12});
+  const term = readTerm(url);
+
+  // Nothing to look for: no API call, and no empty search sent to analytics.
+  if (!term) {
+    return {type: 'regular', term, result: getEmptyRegularSearchResult()};
+  }
 
   // Search articles, pages, and products for the `q` term
   const {
@@ -234,20 +293,18 @@ async function regularSearch({
       variables: {...variables, term},
     });
 
-  if (!items) {
-    throw new Error('No search data returned from Shopify API');
+  if (errors?.length) {
+    throw new Error(`Shopify API errors: ${describeErrors(errors)}`);
   }
 
-  const total = Object.values(items).reduce(
-    (acc: number, {nodes}: {nodes: Array<unknown>}) => acc + nodes.length,
-    0,
-  );
+  // Products are paginated, so count them from the connection's totalCount
+  // (every page reports the same number); pages and articles are fetched whole.
+  const total =
+    (items.products?.totalCount ?? items.products?.nodes.length ?? 0) +
+    (items.pages?.nodes.length ?? 0) +
+    (items.articles?.nodes.length ?? 0);
 
-  const error = errors
-    ? errors.map(({message}: {message: string}) => message).join(', ')
-    : undefined;
-
-  return {type: 'regular', term, error, result: {total, items}};
+  return {type: 'regular', term, result: {total, items}};
 }
 
 /**
@@ -322,6 +379,10 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
         amount
         currencyCode
       }
+      compareAtPrice {
+        amount
+        currencyCode
+      }
     }
   }
 ` as const;
@@ -330,7 +391,6 @@ const PREDICTIVE_SEARCH_QUERY_FRAGMENT = `#graphql
   fragment PredictiveQuery on SearchQuerySuggestion {
     __typename
     text
-    styledText
     trackingParameters
   }
 ` as const;
@@ -387,8 +447,8 @@ async function predictiveSearch({
 >): Promise<PredictiveSearchReturn> {
   const {storefront} = context;
   const url = new URL(request.url);
-  const term = String(url.searchParams.get('q') || '').trim();
-  const limit = Number(url.searchParams.get('limit') || 10);
+  const term = readTerm(url);
+  const limit = parseSearchLimit(url.searchParams.get('limit'));
   const type = 'predictive';
 
   if (!term) return {type, term, result: getEmptyPredictiveSearchResult()};
@@ -408,17 +468,18 @@ async function predictiveSearch({
     });
 
   if (errors) {
-    throw new Error(
-      `Shopify API errors: ${errors.map(({message}: {message: string}) => message).join(', ')}`,
-    );
+    throw new Error(`Shopify API errors: ${describeErrors(errors)}`);
   }
 
   if (!items) {
     throw new Error('No predictive search data returned from Shopify API');
   }
 
-  const total = Object.values(items).reduce(
-    (acc: number, item: Array<unknown>) => acc + item.length,
+  // Query suggestions only feed the <datalist>; they are not listed results,
+  // so they do not count towards what the live region announces.
+  const total = Object.entries(items).reduce(
+    (acc: number, [key, item]) =>
+      key === 'queries' ? acc : acc + (item as Array<unknown>).length,
     0,
   );
 

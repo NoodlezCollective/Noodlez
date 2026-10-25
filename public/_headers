@@ -1,0 +1,5 @@
+# Static assets are served by Workers Static Assets before server.ts runs, so
+# the security headers the Worker adds to its own responses are set here.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

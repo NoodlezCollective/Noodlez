@@ -1,0 +1,291 @@
+/*
+ * --------------------------------------------------
+ * Content styles: Shopify pages, policies, blogs and articles.
+ * Shared UI (.page-header, .prose, .breadcrumbs, .empty-state) lives in app.css.
+ * --------------------------------------------------
+ */
+
+.content-page {
+  padding-bottom: var(--section-gap);
+}
+
+.content-page .page-header {
+  padding-block: 3rem 2rem;
+}
+
+.content-page .breadcrumbs {
+  padding-top: 2rem;
+}
+
+.content-page .breadcrumbs + .page-header {
+  padding-top: 1.25rem;
+}
+
+.content-page .breadcrumbs a {
+  color: var(--color-primary);
+}
+
+.content-page .breadcrumbs [aria-current='page'] {
+  color: var(--color-ink);
+}
+
+.content-page .page-header--center .page-header__description {
+  margin-inline: auto;
+}
+
+.content-pagination {
+  display: flex;
+  justify-content: center;
+  padding-block: 1.5rem;
+}
+
+.content-empty {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+.content-empty .empty-state__title {
+  font-size: var(--text-lg);
+}
+
+.empty-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ---------- Policies ---------- */
+.policy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.policy-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+
+.policy-card:hover {
+  text-decoration: none;
+  border-color: var(--color-primary-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.policy-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.policy-card__title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.policy-card__description {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.policy-card__arrow {
+  flex: none;
+  color: var(--color-primary);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.policy-card:hover .policy-card__arrow {
+  transform: translateX(4px);
+}
+
+.policy__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border-light);
+}
+
+/* ---------- Blog index ---------- */
+.blog-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48em) {
+  .blog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64em) {
+  .blog-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.blog-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-lavender-tint);
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) ease;
+}
+
+.blog-card:hover {
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.blog-card__title {
+  font-size: var(--text-lg);
+}
+
+.blog-card__description {
+  line-height: 1.6;
+  color: var(--color-ink);
+}
+
+.blog-card__cta,
+.article-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* ---------- Article cards ---------- */
+.article-grid {
+  display: grid;
+  gap: 2.5rem 1.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 40em) {
+  .article-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64em) {
+  .article-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.article-card__link {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.article-card__link:hover {
+  text-decoration: none;
+}
+
+.article-card__media {
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-lavender-tint);
+}
+
+.article-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.article-card__link:hover img {
+  transform: scale(1.02);
+}
+
+.article-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 0.5rem;
+}
+
+.article-card__meta,
+.article__meta {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.article-card__title {
+  font-size: var(--text-lg);
+}
+
+.article-card__link:hover .article-card__title {
+  color: var(--color-primary);
+}
+
+.article-card__excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.6;
+  color: var(--color-ink);
+}
+
+/* ---------- Article page ---------- */
+.article__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-block: 1.25rem 2rem;
+}
+
+.article__header h1 {
+  font-size: clamp(2rem, 1.4rem + 2vw, 2.75rem);
+}
+
+.article__hero {
+  margin-bottom: 2.5rem;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-lavender-tint);
+}
+
+.article__hero img {
+  width: 100%;
+  height: auto;
+}
+
+.article__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--color-border-light);
+}

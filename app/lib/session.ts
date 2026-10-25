@@ -1,4 +1,3 @@
-import type {HydrogenSession} from '@shopify/hydrogen';
 import {
   createCookieSessionStorage,
   type SessionStorage,
@@ -6,11 +5,19 @@ import {
 } from 'react-router';
 
 /**
- * This is a custom session implementation for your Hydrogen shop.
- * Feel free to customize it to your needs, add helper methods, or
- * swap out the cookie-based implementation with something else!
+ * True when the request reached the worker over https. Cookies get the
+ * `Secure` attribute only then, so local http development keeps working.
  */
-export class AppSession implements HydrogenSession {
+export function isSecureRequest(request: Request): boolean {
+  return new URL(request.url).protocol === 'https:';
+}
+
+/**
+ * The storefront's cookie session (React Router's cookie session storage).
+ * `isPending` records unsaved changes; server.ts commits them into a
+ * `Set-Cookie` header on the response.
+ */
+export class AppSession {
   public isPending = false;
 
   #sessionStorage;
@@ -28,6 +35,7 @@ export class AppSession implements HydrogenSession {
         httpOnly: true,
         path: '/',
         sameSite: 'lax',
+        secure: isSecureRequest(request),
         secrets,
       },
     });

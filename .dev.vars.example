@@ -1,0 +1,31 @@
+# Copy to .dev.vars (never commit .dev.vars): Wrangler and the Vite dev server
+# read it as the Worker's variables. Values come from your Shopify store's
+# Hydrogen sales channel (Shopify admin > Sales channels > Hydrogen > Storefront
+# settings); see docs/shopify-setup.md. In production set them with
+# `npx wrangler secret put <NAME>` (secrets) or as plain variables.
+SESSION_SECRET=replace-with-a-long-random-string
+PUBLIC_STORE_DOMAIN=ynvg9n-mw.myshopify.com
+PUBLIC_STOREFRONT_API_TOKEN=
+# Optional, server-side only: a private Storefront API token raises the rate
+# limit and is never sent to browsers. Leave empty to use the public token.
+# PRIVATE_STOREFRONT_API_TOKEN=
+PUBLIC_STOREFRONT_ID=
+PUBLIC_CHECKOUT_DOMAIN=
+# Customer Account API (only if using /account)
+PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID=
+PUBLIC_CUSTOMER_ACCOUNT_API_URL=
+SHOP_ID=
+
+# --- Mellow storefront options ---------------------------------------------
+# Development only: serve the Mellow demo catalog from an in-memory mock of the
+# Storefront API (no Shopify store needed). Ignored by production builds.
+# Remove or set to false once the store above is linked. In mock mode give
+# PUBLIC_STOREFRONT_API_TOKEN any placeholder (for example
+# mockmockmockmockmockmockmockmock); nothing checks its length.
+# .dev.vars.e2e is a ready-made mock-mode environment.
+MOCK_STOREFRONT=false
+# Optional: newsletter signups are POSTed as JSON ({email, source, storefront,
+# timestamp}) to this URL
+# (Shopify Flow, Klaviyo, Zapier …). Without it the form reports that the
+# integration is not connected.
+NEWSLETTER_WEBHOOK_URL=

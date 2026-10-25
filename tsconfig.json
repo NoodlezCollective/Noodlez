@@ -8,7 +8,8 @@
     "*.tsx",
     "*.d.ts",
     ".graphqlrc.ts",
-    ".react-router/types/**/*"
+    ".react-router/types/**/*",
+    "tests/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "build", "packages/**/dist/**/*"],
   "compilerOptions": {
@@ -24,12 +25,7 @@
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "types": [
-      "@shopify/oxygen-workers-types",
-      "react-router",
-      "@shopify/hydrogen/react-router-types",
-      "vite/client"
-    ],
+    "types": ["react-router", "vite/client"],
     "paths": {
       "~/*": ["./app/*"],
       "storefrontapi.generated": ["./storefrontapi.generated.d.ts"],
@@ -39,6 +35,8 @@
     "rootDirs": [".", "./.react-router/types"],
     "incremental": true,
     "composite": false,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   }
 }

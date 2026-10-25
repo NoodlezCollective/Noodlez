@@ -1,15 +1,44 @@
-import {redirect, useLoaderData} from 'react-router';
+import {Link, redirect, useLoaderData} from 'react-router';
 import type {Route} from './+types/account.orders.$id';
-import {Money, Image} from '@shopify/hydrogen';
+import {Money, Image} from '@shopify/hydrogen-react';
 import type {
   OrderLineItemFullFragment,
   OrderQuery,
 } from 'customer-accountapi.generated';
 import {CUSTOMER_ORDER_QUERY} from '~/graphql/customer-account/CustomerOrderQuery';
+import {Button} from '~/components/ui/Button';
+import {ChevronLeftIcon} from '~/components/ui/Icons';
+import {OrderStatusBadge} from '~/components/account/OrderStatusBadge';
+import {formatOrderDate} from '~/components/account/orderUtils';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Order ${data?.order?.name}`}];
+  return [
+    {
+      title: data?.order?.name
+        ? `Order ${data.order.name} | Mellow`
+        : 'Order | Mellow',
+    },
+  ];
 };
+
+const ORDER_GID_PREFIX = 'gid://shopify/Order/';
+
+/**
+ * Order links carry the order GID as base64 (see account.orders._index.tsx).
+ * Anything that is not base64 of an order GID is not a link we issued.
+ */
+function decodeOrderId(token: string): string | null {
+  try {
+    const orderId = atob(token);
+    return orderId.startsWith(ORDER_GID_PREFIX) &&
+      orderId.length > ORDER_GID_PREFIX.length
+      ? orderId
+      : null;
+  } catch {
+    // `atob` throws a DOMException for characters outside the base64 alphabet.
+    return null;
+  }
+}
 
 export async function loader({params, context}: Route.LoaderArgs) {
   const {customerAccount} = context;
@@ -17,7 +46,10 @@ export async function loader({params, context}: Route.LoaderArgs) {
     return redirect('/account/orders');
   }
 
-  const orderId = atob(params.id);
+  const orderId = decodeOrderId(params.id);
+  if (!orderId) {
+    throw new Response('Order not found', {status: 404});
+  }
   const {data, errors}: {data: OrderQuery; errors?: Array<{message: string}>} =
     await customerAccount.query(CUSTOMER_ORDER_QUERY, {
       variables: {
@@ -81,142 +113,188 @@ export default function OrderRoute() {
     discountPercentage,
     fulfillmentStatus,
   } = useLoaderData<typeof loader>();
+  const status =
+    fulfillmentStatus && fulfillmentStatus !== 'N/A'
+      ? fulfillmentStatus
+      : order.fulfillmentStatus;
+  const hasDiscount = Boolean(
+    (discountValue && discountValue.amount) || discountPercentage,
+  );
+  const address = order.shippingAddress;
+
   return (
-    <div className="account-order">
-      <h2>Order {order.name}</h2>
-      <p>Placed on {new Date(order.processedAt!).toDateString()}</p>
-      {order.confirmationNumber && (
-        <p>Confirmation: {order.confirmationNumber}</p>
-      )}
-      <br />
-      <div>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Product</th>
-              <th scope="col">Price</th>
-              <th scope="col">Quantity</th>
-              <th scope="col">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lineItems.map((lineItem, lineItemIndex) => (
-              // eslint-disable-next-line react/no-array-index-key
-              <OrderLineRow key={lineItemIndex} lineItem={lineItem} />
-            ))}
-          </tbody>
-          <tfoot>
-            {((discountValue && discountValue.amount) ||
-              discountPercentage) && (
-              <tr>
-                <th scope="row" colSpan={3}>
-                  <p>Discounts</p>
-                </th>
-                <th scope="row">
-                  <p>Discounts</p>
-                </th>
-                <td>
-                  {discountPercentage ? (
-                    <span>-{discountPercentage}% OFF</span>
-                  ) : (
-                    discountValue && <Money data={discountValue!} />
-                  )}
-                </td>
-              </tr>
-            )}
-            <tr>
-              <th scope="row" colSpan={3}>
-                <p>Subtotal</p>
-              </th>
-              <th scope="row">
-                <p>Subtotal</p>
-              </th>
-              <td>
-                <Money data={order.subtotal!} />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row" colSpan={3}>
-                Tax
-              </th>
-              <th scope="row">
-                <p>Tax</p>
-              </th>
-              <td>
-                <Money data={order.totalTax!} />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row" colSpan={3}>
-                Total
-              </th>
-              <th scope="row">
-                <p>Total</p>
-              </th>
-              <td>
-                <Money data={order.totalPrice!} />
-              </td>
-            </tr>
-          </tfoot>
-        </table>
+    <div className="account-section account-order">
+      <Link className="account-back" to="/account/orders" prefetch="intent">
+        <ChevronLeftIcon size={16} />
+        Back to orders
+      </Link>
+
+      <header className="account-section__header account-order__header">
         <div>
-          <h3>Shipping Address</h3>
-          {order?.shippingAddress ? (
-            <address>
-              <p>{order.shippingAddress.name}</p>
-              {order.shippingAddress.formatted ? (
-                <p>{order.shippingAddress.formatted}</p>
-              ) : (
-                ''
-              )}
-              {order.shippingAddress.formattedArea ? (
-                <p>{order.shippingAddress.formattedArea}</p>
-              ) : (
-                ''
-              )}
-            </address>
-          ) : (
-            <p>No shipping address defined</p>
-          )}
-          <h3>Status</h3>
-          <div>
-            <p>{fulfillmentStatus}</p>
-          </div>
+          <h2>Order {order.name}</h2>
+          <p className="text-muted">
+            Placed{' '}
+            <time dateTime={order.processedAt!}>
+              {formatOrderDate(order.processedAt)}
+            </time>
+            {order.confirmationNumber ? (
+              <> &middot; Confirmation {order.confirmationNumber}</>
+            ) : null}
+          </p>
         </div>
+        <div className="order-card__badges">
+          <OrderStatusBadge prefix="Fulfillment" status={status} />
+        </div>
+      </header>
+
+      <div className="account-order__grid">
+        <section
+          className="account-card account-order__items"
+          aria-label="Items"
+        >
+          <table className="order-table">
+            <thead>
+              <tr>
+                <th scope="col">Product</th>
+                <th scope="col" className="is-numeric">
+                  Price
+                </th>
+                <th scope="col" className="is-numeric">
+                  Qty
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {lineItems.map((lineItem) => (
+                <OrderLineRow key={lineItem.id} lineItem={lineItem} />
+              ))}
+            </tbody>
+          </table>
+
+          <dl className="order-totals">
+            {hasDiscount ? (
+              <div className="order-totals__row order-totals__row--discount">
+                <dt>Discounts</dt>
+                <dd>
+                  {discountPercentage ? (
+                    <span>−{discountPercentage}%</span>
+                  ) : discountValue ? (
+                    <>
+                      −<Money as="span" data={discountValue} />
+                    </>
+                  ) : null}
+                </dd>
+              </div>
+            ) : null}
+            <div className="order-totals__row">
+              <dt>Subtotal</dt>
+              <dd>
+                {order.subtotal ? (
+                  <Money as="span" data={order.subtotal} />
+                ) : (
+                  '—'
+                )}
+              </dd>
+            </div>
+            <div className="order-totals__row">
+              <dt>Tax</dt>
+              <dd>
+                {order.totalTax ? (
+                  <Money as="span" data={order.totalTax} />
+                ) : (
+                  '—'
+                )}
+              </dd>
+            </div>
+            <div className="order-totals__row order-totals__row--total">
+              <dt>Total</dt>
+              <dd>
+                <Money as="span" data={order.totalPrice} />
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <aside
+          className="account-card account-order__aside"
+          aria-label="Delivery"
+        >
+          <div className="account-order__block">
+            <h3 className="account-card__subtitle">Shipping address</h3>
+            {address ? (
+              <address className="account-address">
+                {(address.formatted.length
+                  ? address.formatted
+                  : [address.name, address.formattedArea].filter(Boolean)
+                ).join('\n')}
+              </address>
+            ) : (
+              <p className="text-muted">No shipping address on this order.</p>
+            )}
+          </div>
+
+          <div className="account-order__block">
+            <h3 className="account-card__subtitle">Status</h3>
+            {status ? (
+              <OrderStatusBadge status={status} />
+            ) : (
+              <p className="text-muted">Not available yet.</p>
+            )}
+          </div>
+
+          {order.statusPageUrl ? (
+            <Button
+              href={order.statusPageUrl}
+              rel="noreferrer"
+              size="sm"
+              target="_blank"
+              variant="outline"
+            >
+              Track your order
+            </Button>
+          ) : null}
+        </aside>
       </div>
-      <br />
-      <p>
-        <a target="_blank" href={order.statusPageUrl} rel="noreferrer">
-          View Order Status →
-        </a>
-      </p>
     </div>
   );
 }
 
 function OrderLineRow({lineItem}: {lineItem: OrderLineItemFullFragment}) {
+  const discount = Number(lineItem.totalDiscount?.amount ?? 0);
   return (
-    <tr key={lineItem.id}>
+    <tr>
       <td>
-        <div>
-          {lineItem?.image && (
-            <div>
-              <Image data={lineItem.image} width={96} height={96} />
-            </div>
-          )}
-          <div>
-            <p>{lineItem.title}</p>
-            <small>{lineItem.variantTitle}</small>
+        <div className="order-table__product">
+          <div className="order-table__media">
+            {lineItem?.image ? (
+              <Image
+                alt={lineItem.image.altText || lineItem.title}
+                aspectRatio="1/1"
+                data={lineItem.image}
+                height={64}
+                sizes="64px"
+                width={64}
+              />
+            ) : null}
+          </div>
+          <div className="order-table__details">
+            <p className="order-table__title">{lineItem.title}</p>
+            {lineItem.variantTitle &&
+            lineItem.variantTitle !== 'Default Title' ? (
+              <p className="order-table__variant">{lineItem.variantTitle}</p>
+            ) : null}
+            {discount > 0 ? (
+              <p className="order-table__discount">
+                Discount −<Money as="span" data={lineItem.totalDiscount} />
+              </p>
+            ) : null}
           </div>
         </div>
       </td>
-      <td>
-        <Money data={lineItem.price!} />
+      <td className="is-numeric">
+        {lineItem.price ? <Money as="span" data={lineItem.price} /> : '—'}
       </td>
-      <td>{lineItem.quantity}</td>
-      <td>
-        <Money data={lineItem.totalDiscount!} />
-      </td>
+      <td className="is-numeric">{lineItem.quantity}</td>
     </tr>
   );
 }

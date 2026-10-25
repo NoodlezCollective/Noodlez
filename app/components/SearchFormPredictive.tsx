@@ -5,14 +5,14 @@ import {
   type Fetcher,
 } from 'react-router';
 import React, {useRef, useEffect} from 'react';
-import type {PredictiveSearchReturn} from '~/lib/search';
+import type {PredictiveSearchResponse} from '~/lib/search';
 import {useAside} from './Aside';
 
 type SearchFormPredictiveChildren = (args: {
   fetchResults: (event: React.ChangeEvent<HTMLInputElement>) => void;
   goToSearch: () => void;
   inputRef: React.MutableRefObject<HTMLInputElement | null>;
-  fetcher: Fetcher<PredictiveSearchReturn>;
+  fetcher: Fetcher<PredictiveSearchResponse>;
 }) => React.ReactNode;
 
 type SearchFormPredictiveProps = Omit<FormProps, 'children'> & {
@@ -29,25 +29,28 @@ export function SearchFormPredictive({
   className = 'predictive-search-form',
   ...props
 }: SearchFormPredictiveProps) {
-  const fetcher = useFetcher<PredictiveSearchReturn>({key: 'search'});
+  const fetcher = useFetcher<PredictiveSearchResponse>({key: 'search'});
   const inputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
   const aside = useAside();
 
-  /** Reset the input value and blur the input */
-  function resetInput(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (inputRef?.current?.value) {
-      inputRef.current.blur();
-    }
-  }
-
   /** Navigate to the search page with the current input value */
   function goToSearch() {
-    const term = inputRef?.current?.value;
-    void navigate(SEARCH_ENDPOINT + (term ? `?q=${term}` : ''));
+    const term = inputRef?.current?.value.trim();
+    void navigate(
+      SEARCH_ENDPOINT + (term ? `?q=${encodeURIComponent(term)}` : ''),
+    );
     aside.close();
+  }
+
+  /**
+   * Enter (or the mobile keyboard's "Search" key) opens the full results for
+   * the typed term. An empty input does nothing.
+   */
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (inputRef?.current?.value.trim()) goToSearch();
   }
 
   /** Fetch search results based on the input value */
@@ -69,7 +72,12 @@ export function SearchFormPredictive({
   }
 
   return (
-    <fetcher.Form {...props} className={className} onSubmit={resetInput}>
+    <fetcher.Form
+      action={SEARCH_ENDPOINT}
+      {...props}
+      className={className}
+      onSubmit={handleSubmit}
+    >
       {children({inputRef, fetcher, fetchResults, goToSearch})}
     </fetcher.Form>
   );

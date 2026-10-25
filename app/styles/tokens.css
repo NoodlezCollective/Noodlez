@@ -1,0 +1,91 @@
+/*
+ * --------------------------------------------------
+ * Mellow design tokens
+ * Palette sampled from the reference screenshots.
+ * --------------------------------------------------
+ */
+:root {
+  /* Brand */
+  --color-primary: #4c4184; /* buttons, logo, press bar, play button */
+  --color-primary-hover: #3d3470;
+  --color-primary-deep: #4d408d; /* announcement bar */
+  --color-primary-soft: #a39bd4; /* logo accent, trust icons */
+  --color-lavender: #e1e1fe; /* header background */
+  --color-lavender-tint: #efefff; /* cards, review box, story card */
+  --color-lavender-soft: #f3ebff; /* hero gradient start */
+  --color-lavender-mid: #e9eaff;
+  --color-accent: #fea58c; /* badges, stars */
+  --color-accent-deep: #f08a6a;
+
+  /* Neutrals */
+  --color-ink: #1e2021; /* body / product titles */
+  --color-heading: #4a4070; /* display headings */
+  --color-muted: #5b6562;
+  --color-subtle: #66627f; /* compare-at price, counts (≥4.5:1 on white) */
+  --color-border: #bbbbc7;
+  --color-border-light: #e3e2ef;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f7f6fc;
+  --color-danger: #c2412d;
+  --color-success: #2f7a4a;
+  --color-dark: #141414;
+
+  /* Typography */
+  --font-display:
+    'Outfit', 'Avenir Next', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-body:
+    'Inter', 'Helvetica Neue', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --text-xs: 0.75rem; /* 12 */
+  --text-sm: 0.875rem; /* 14 */
+  --text-base: 1rem; /* 16 */
+  --text-md: 1.125rem; /* 18 */
+  --text-lg: 1.375rem; /* 22 */
+  --text-xl: 1.75rem; /* 28 */
+  --text-2xl: 2.125rem; /* 34 */
+  --text-3xl: 2.5rem; /* 40 */
+  --tracking-body: 0.015em;
+  --tracking-wide: 0.08em;
+
+  /* Layout */
+  --container: 1400px;
+  --container-narrow: 1200px;
+  --container-text: 760px;
+  --gutter: 16px;
+  --announcement-height: 28px;
+  --header-height: 62px;
+  --aside-width: 440px;
+  --drawer-padding: 1.5rem;
+  --section-gap: 72px;
+
+  /* Shape */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(45, 36, 92, 0.06);
+  --shadow-md: 0 8px 24px rgba(45, 36, 92, 0.1);
+  --shadow-lg: 0 24px 60px rgba(45, 36, 92, 0.18);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 450ms;
+}
+
+@media (min-width: 48em) {
+  :root {
+    --gutter: 24px;
+    --section-gap: 96px;
+  }
+}
+
+@media (min-width: 64em) {
+  :root {
+    --header-height: 62px;
+    --gutter: 32px;
+  }
+}
