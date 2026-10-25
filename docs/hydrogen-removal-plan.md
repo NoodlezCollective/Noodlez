@@ -1699,6 +1699,9 @@ Gate: standard, full e2e.
 - The cache name changes from `hydrogen` to `storefront`.
 - Storefront GraphQL errors are logged redacted instead of as full GraphQLErrors (Phase 2).
 - The session cookie is appended instead of overwriting other Set-Cookie headers (Phase 2, D-10).
+- Server-side Storefront API calls no longer send Hydrogen's `user-agent`; a 2xx answer that is not GraphQL JSON becomes an errors-only result (`UNREADABLE_RESPONSE`, a 502 through the guard) instead of a silent `{}`; a 404 from the Storefront API proxy is returned as is instead of going through the 404 redirect lookup; the wrong-operation refusal text no longer carries the `h2:error` prefix (Phase 2).
+- From Phase 2 until Phase 4c enables it for configured analytics, server-side calls forward no cookie or visitor-token headers and copy no Set-Cookie headers back (Phase 2).
+- Discount codes are deduplicated before `cartCreate` as well as before `cartDiscountCodesUpdate` (Phase 2).
 - `cart_viewed` is no longer published (Phase 3).
 - The consent script loads only when analytics is configured.
 - The mock-shop console warning disappears and the e2e allowlist becomes empty (Phase 4c).
