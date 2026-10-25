@@ -1,7 +1,6 @@
 import type {Route} from './+types/sitemap.$type.$page[.xml]';
-import {getSitemap} from '@shopify/hydrogen';
 import {isSitemapPage, isSitemapType, sitemapPath} from '~/lib/seo';
-import type {HydrogenStorefront} from '~/lib/storefront/hydrogen-compat';
+import {getSitemap} from '~/lib/sitemap.server';
 
 export async function loader({
   request,
@@ -17,7 +16,7 @@ export async function loader({
   }
 
   const response = await getSitemap({
-    storefront: storefront as unknown as HydrogenStorefront,
+    storefront,
     request,
     params,
     // The storefront serves a single locale (see app/lib/context.ts i18n).

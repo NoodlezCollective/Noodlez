@@ -22,7 +22,7 @@ vi.mock('react-router', () => ({
     return mocks.handleRequest;
   },
 }));
-vi.mock('@shopify/hydrogen', () => ({
+vi.mock('~/lib/storefront-redirect.server', () => ({
   storefrontRedirect: mocks.storefrontRedirect,
 }));
 

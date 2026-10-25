@@ -3,7 +3,8 @@ import {useLoaderData, useLocation} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {useSelectedOptionsInUrl} from '~/lib/useSelectedOptionsInUrl';
 import {getSelectedProductOptions, useOptimisticVariant} from '~/lib/variants';
-import {Analytics, useNonce} from '@shopify/hydrogen';
+import {useNonce} from '~/lib/nonce';
+import {Analytics} from '@shopify/hydrogen';
 import {
   getProductOptions,
   getAdjacentAndFirstAvailableVariants,

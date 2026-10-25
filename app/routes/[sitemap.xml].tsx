@@ -1,14 +1,13 @@
 import type {Route} from './+types/[sitemap.xml]';
-import {getSitemapIndex} from '@shopify/hydrogen';
 import {SITEMAP_TYPES} from '~/lib/seo';
-import type {HydrogenStorefront} from '~/lib/storefront/hydrogen-compat';
+import {getSitemapIndex} from '~/lib/sitemap.server';
 
 export async function loader({
   request,
   context: {storefront},
 }: Route.LoaderArgs) {
   const response = await getSitemapIndex({
-    storefront: storefront as unknown as HydrogenStorefront,
+    storefront,
     request,
     // Hydrogen's default also lists metaobject sitemaps. The storefront has no
     // metaobject pages, so advertising them would list URLs that 404.

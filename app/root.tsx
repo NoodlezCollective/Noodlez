@@ -1,4 +1,8 @@
-import {Analytics, getShopAnalytics, useNonce} from '@shopify/hydrogen';
+import {
+  Analytics,
+  getShopAnalytics,
+  type CartReturn as HydrogenCartReturn,
+} from '@shopify/hydrogen';
 import {
   Outlet,
   useRouteError,
@@ -17,6 +21,7 @@ import {SITE_SETTINGS_QUERY, mapSiteSettings} from '~/lib/content/metaobjects';
 import {SHOPIFY_RESOURCES} from '~/lib/content/config';
 import {isMockStorefrontEnabled} from '~/lib/mock/flag';
 import type {HydrogenStorefront} from '~/lib/storefront/hydrogen-compat';
+import {useNonce} from '~/lib/nonce';
 import {DEFAULT_DESCRIPTION, DEFAULT_TITLE} from '~/lib/seo';
 import tokenStyles from '~/styles/tokens.css?url';
 import resetStyles from '~/styles/reset.css?url';
@@ -217,7 +222,9 @@ export default function App() {
 
   return (
     <Analytics.Provider
-      cart={data.cart}
+      // Hydrogen's provider is typed for its own cart; ours selects the same
+      // fields it reads. The cast goes with the provider in Phase 4c.
+      cart={data.cart as unknown as Promise<HydrogenCartReturn | null>}
       shop={data.shop}
       consent={data.consent}
     >

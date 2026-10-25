@@ -1,7 +1,6 @@
 import {createRequestHandler} from 'react-router';
-import {storefrontRedirect} from '@shopify/hydrogen';
 import {createAppRouterContext, type AppRouterContext} from '~/lib/context';
-import type {HydrogenStorefront} from '~/lib/storefront/hydrogen-compat';
+import {storefrontRedirect} from '~/lib/storefront-redirect.server';
 import {safeRedirectPath} from '~/lib/urls';
 
 /**
@@ -91,11 +90,11 @@ export function rejectMalformedRequest(request: Request): Response | null {
 }
 
 /**
- * Hydrogen's `storefrontRedirect` follows `?redirect=` / `?return_to=` on a 404
- * when the value looks like a local path, but its check accepts dot-segment
- * forms such as `/.//evil.example`, which it then re-serialises as
- * `//evil.example`: an open redirect. Resolve both parameters to a same-origin
- * path first and drop them when they are not one.
+ * `storefrontRedirect` follows `?redirect=` / `?return_to=` on a 404. Hydrogen's
+ * version accepted dot-segment forms such as `/.//evil.example` as local paths
+ * and re-serialised them as `//evil.example`: an open redirect. Resolve both
+ * parameters to a same-origin path first and drop them when they are not one
+ * (app/lib/storefront-redirect.server.ts checks its target again).
  */
 export function withSafeRedirectParams(request: Request): Request {
   const url = new URL(request.url);
@@ -185,7 +184,7 @@ async function respond(
     return storefrontRedirect({
       request: withSafeRedirectParams(request),
       response,
-      storefront: storefront as unknown as HydrogenStorefront,
+      storefront,
     });
   }
 
