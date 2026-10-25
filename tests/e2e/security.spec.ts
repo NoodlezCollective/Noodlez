@@ -690,6 +690,54 @@ test.describe('cart action input validation', () => {
   });
 });
 
+test.describe('analytics stays off in mock mode', () => {
+  // app/lib/analytics switches on only with PUBLIC_CHECKOUT_DOMAIN and
+  // PUBLIC_STOREFRONT_ID set and the mock off. The e2e environment has neither,
+  // so no consent script, no analytics request, no window.Shopify, no cookie
+  // readable by scripts and no storage may appear, on the first page or after
+  // a client-side navigation. The network stubs would answer such requests
+  // silently, so this is the only check that a regression cannot slip past.
+  test('loads no consent script, sends no event and sets no client-visible state', async ({
+    page,
+  }) => {
+    const thirdParty: string[] = [];
+    page.on('request', (request) => {
+      const url = request.url();
+      if (/shopifycloud|monorail-edge|consent-tracking-api/i.test(url)) {
+        thirdParty.push(url);
+      }
+    });
+
+    await gotoHydrated(page, '/');
+    await page
+      .getByRole('link', {name: PRODUCTS.cloudAlign.title})
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/products\/cloudalign-pillow/);
+    await expect(
+      page.getByRole('heading', {level: 1, name: PRODUCTS.cloudAlign.title}),
+    ).toBeVisible();
+
+    expect(thirdParty).toEqual([]);
+    expect(
+      await page.evaluate(() => ({
+        shopify: typeof (window as unknown as {Shopify?: unknown}).Shopify,
+        cookie: document.cookie,
+        local: localStorage.length,
+        session: sessionStorage.length,
+        consentScript: document.querySelectorAll('script[src*="consent"]')
+          .length,
+      })),
+    ).toEqual({
+      shopify: 'undefined',
+      cookie: '',
+      local: 0,
+      session: 0,
+      consentScript: 0,
+    });
+  });
+});
+
 test.describe('cookies', () => {
   test('the cart cookie is HttpOnly and SameSite=Lax, and Secure only over https', async ({
     page,
