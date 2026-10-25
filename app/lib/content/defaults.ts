@@ -22,11 +22,30 @@ const DEFAULT_TRUST_BADGES: TrustBadge[] = [
 ];
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
-  announcements: ['Up to 50% Off Sitewide', 'Save More When You Bundle'],
+  announcements: [
+    'Up to 50% Off Sitewide',
+    'Save More When You Bundle',
+    'Free Sleep Mask On Orders $120+',
+  ],
   trustBadges: DEFAULT_TRUST_BADGES,
   savingsNote: 'Savings based on comparable value.',
   savingsExplanation:
     'Compare-at prices reflect the comparable retail value of similar bedding sold at full price. Your savings are the difference between that value and the Mellow price.',
+  cartHeading: 'Your Sleep Stack',
+  freeGift: {
+    threshold: 120,
+    label: 'a free Silk Sleep Mask',
+    code: 'SLEEPMASK',
+  },
+  proofStats: [
+    {id: 'temperature', value: 95, label: 'sleep at their ideal temperature'},
+    {
+      id: 'recommend',
+      value: 97,
+      label: 'would recommend Mellow to family and friends',
+    },
+    {id: 'five-star', value: 99, label: 'have left a 5-star review'},
+  ],
 };
 
 export const DEFAULT_HOME_CONTENT: HomeContent = {

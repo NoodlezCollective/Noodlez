@@ -1,92 +1,81 @@
 /*
  * --------------------------------------------------
- * Noodlez design tokens – "Volume" edition
- * High-contrast, poster-type storefront theme. Deep ink surfaces,
- * an electric indigo brand hue and an acid-lime signal colour.
- * Legacy variable names from the first Mellow build are kept as
- * aliases so route stylesheets keep working.
+ * Mellow design tokens – "Melatonin & Sunset" palette
+ * Twilight Indigo for brand and action, Lavender Mist for breathing room,
+ * Sunset Peach for social proof and rewards, Midnight Slate for grounding.
+ * Geometry is pillow-soft: 40px pills on controls and badges.
  * --------------------------------------------------
  */
 :root {
   /* Brand */
-  --color-primary: #3a2fa6; /* buttons, links, logo, active nav */
-  --color-primary-hover: #2a2180;
-  --color-primary-deep: #1f1860; /* pressed state, deep bands */
-  --color-primary-soft: #8f84e8; /* icons and links on dark surfaces */
-  --color-accent: #d8ff4f; /* acid lime: badges, counts, highlights */
-  --color-accent-deep: #b9e22c;
-  --color-accent-on: #121020; /* text on accent */
-  --color-star: #d97d00; /* rating stars (3.4:1 on white) */
+  --color-primary: #4c4184; /* Twilight Indigo: headings, buttons, badges, links */
+  --color-primary-hover: #3d3470;
+  --color-primary-deep: #4d408d; /* announcement bar */
+  --color-primary-soft: #a39bd4; /* logo accent, trust icons */
+  --color-lavender: #e0e0ff; /* header background, pill fills */
+  --color-lavender-tint: #e8e6f4; /* Lavender Mist: section backgrounds, cards, cart upsell */
+  --color-lavender-soft: #f3f1fb; /* hero gradient start, quiet panels */
+  --color-lavender-mid: #e9eaff;
+  --color-accent: #ffa38b; /* Sunset Peach: stars, badges, cart banner */
+  --color-accent-deep: #f29a82; /* coral: cart-add pulse, hover on peach */
+  --color-accent-tint: #fff1ec; /* peach wash behind rewards and quotes */
+  --color-amber: #ffb749; /* free-gift threshold bar */
+  --color-midnight: #242833; /* Midnight Slate: contrast sections */
+  --color-night: #0a0428; /* deepest contrast, urgency text */
 
-  /* Ink and dark surfaces */
-  --color-ink: #121020; /* body text, dark surfaces */
-  --color-ink-800: #221f3a; /* raised dark surfaces, dark hover */
-  --color-heading: #121020; /* display headings */
-  --color-muted: #5b5873; /* secondary text (6.6:1 on white) */
-  --color-subtle: #6b6885; /* compare-at prices, counts (5:1 on white) */
-  --color-on-dark: #ffffff;
-  --color-on-dark-muted: #b8b5cc; /* secondary text on ink (9:1) */
-
-  /* Light surfaces */
+  /* Neutrals */
+  --color-ink: #242833; /* body / product titles (Midnight Slate) */
+  --color-heading: #4c4184; /* display headings in Twilight Indigo */
+  --color-muted: #5b6562;
+  --color-subtle: #66627f; /* compare-at price, counts (≥4.5:1 on white) */
+  --color-border: #bbbbc7;
+  --color-border-light: #e3e2ef;
   --color-surface: #ffffff;
-  --color-surface-alt: #f6f5fc;
-  --color-lavender: #e6e3fb; /* secondary button, newsletter band */
-  --color-lavender-tint: #f3f2fb; /* tinted cards and sections */
-  --color-lavender-soft: #ece9fa;
-  --color-lavender-mid: #dedbf5;
-
-  /* Lines */
-  --color-border: #2a2742; /* strong rules: inputs, chips, cards */
-  --color-border-light: #dcdaea; /* hairlines between rows */
-  --color-border-on-dark: rgba(255, 255, 255, 0.18);
-
-  /* Feedback */
+  --color-surface-alt: #f7f6fc;
   --color-danger: #c2412d;
-  --color-success: #1f7a45;
-  --color-dark: #121020;
+  --color-success: #27683f; /* 5.4:1 on lavender-tint, 6.7:1 on white */
+  --color-dark: #141414;
 
   /* Typography */
   --font-display:
-    'Bricolage Grotesque', 'Archivo', 'Helvetica Neue', Arial, sans-serif;
-  --font-body: 'DM Sans', 'Helvetica Neue', Arial, system-ui, sans-serif;
+    'Inter', 'Helvetica Neue', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-body:
+    'Inter', 'Helvetica Neue', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --text-xs: 0.75rem; /* 12 */
   --text-sm: 0.875rem; /* 14 */
   --text-base: 1rem; /* 16 */
   --text-md: 1.125rem; /* 18 */
   --text-lg: 1.375rem; /* 22 */
-  --text-xl: 2rem; /* 32 */
-  --text-2xl: 2.75rem; /* 44 */
-  --text-3xl: 3.5rem; /* 56 */
-  --text-display: clamp(2.75rem, 1.6rem + 4.6vw, 5.75rem); /* hero */
-  --tracking-body: 0;
-  --tracking-wide: 0.12em; /* uppercase labels */
-  --tracking-tight: -0.03em; /* display headings */
+  --text-xl: 1.75rem; /* 28 */
+  --text-2xl: 2.125rem; /* 34 */
+  --text-3xl: 2.5rem; /* 40 */
+  --tracking-body: 0.015em;
+  --tracking-wide: 0.08em;
 
   /* Layout */
-  --container: 1440px;
+  --container: 1400px;
   --container-narrow: 1200px;
   --container-text: 760px;
-  --gutter: 20px;
-  --announcement-height: 36px;
-  --header-height: 68px;
-  --aside-width: 460px;
+  --gutter: 16px;
+  --announcement-height: 28px;
+  --header-height: 62px;
+  --aside-width: 440px;
   --drawer-padding: 1.5rem;
-  --section-gap: 64px;
+  --section-gap: 72px;
 
-  /* Shape – square geometry, radii only to soften hairlines */
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-control: 4px; /* buttons, chips, inputs */
-  --radius-pill: 999px; /* counts and dots only */
+  /* Shape – pillow-soft */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-control: 40px; /* buttons, variant pills, badges, inputs */
+  --radius-pill: 999px;
 
-  /* Elevation – hard offset shadows instead of soft blur */
-  --shadow-sm: 0 1px 0 rgba(18, 16, 32, 0.12);
-  --shadow-md: 0 12px 32px rgba(18, 16, 32, 0.14);
-  --shadow-lg: 0 32px 64px rgba(18, 16, 32, 0.28);
-  --shadow-hard: 4px 4px 0 #121020;
-  --shadow-hard-sm: 2px 2px 0 #121020;
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(45, 36, 92, 0.06);
+  --shadow-md: 0 8px 24px rgba(45, 36, 92, 0.1);
+  --shadow-lg: 0 24px 60px rgba(45, 36, 92, 0.18);
+  --shadow-glow: 0 0 0 4.5px rgba(242, 154, 130, 0.45); /* cart-add pulse */
 
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -97,15 +86,14 @@
 
 @media (min-width: 48em) {
   :root {
-    --gutter: 32px;
-    --section-gap: 88px;
-    --header-height: 76px;
+    --gutter: 24px;
+    --section-gap: 96px;
   }
 }
 
 @media (min-width: 64em) {
   :root {
-    --gutter: 48px;
-    --section-gap: 112px;
+    --header-height: 62px;
+    --gutter: 32px;
   }
 }

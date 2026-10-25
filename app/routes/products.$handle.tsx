@@ -12,8 +12,11 @@ import {
 import type {ProductFragment} from 'storefrontapi.generated';
 import {ProductForm} from '~/components/ProductForm';
 import {ProductPrice} from '~/components/ProductPrice';
+import {FeaturedQuote} from '~/components/product/FeaturedQuote';
 import {ProductAccordions} from '~/components/product/ProductAccordions';
 import {ProductFeatures} from '~/components/product/ProductFeatures';
+import {ProofStrip} from '~/components/product/ProofStrip';
+import {VelocityBadge} from '~/components/product/VelocityBadge';
 import {
   ProductGallery,
   findGalleryIndex,
@@ -30,10 +33,13 @@ import {
   mapReviewMetaobjects,
   parseFeatures,
   parseInteger,
+  parsePackTiers,
   parseParagraphs,
   parseRating,
+  parseSoldRecently,
   parseSwatchGroups,
 } from '~/lib/content/metafields';
+import type {ProductAddon} from '~/lib/content/types';
 import {PRODUCT_CARD_FRAGMENT} from '~/lib/fragments';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {SITE_NAME} from '~/lib/seo';
@@ -155,6 +161,11 @@ export default function Product() {
   const materials = parseParagraphs(product.materials);
   const care = parseParagraphs(product.care);
   const swatchGroups = parseSwatchGroups(product.swatchGroups);
+  const soldRecently = parseSoldRecently(product.soldRecently);
+  const sizeGuide = product.sizeGuide?.value?.trim() || null;
+  const packTiers = parsePackTiers(product.packTiers);
+  const proof = parseFeatures(product.proof);
+  const addon = mapAddon(product);
   const reviews = mapReviewMetaobjects(
     (product.featuredReviews?.references?.nodes ?? []).filter(isReviewNode),
   );
@@ -202,6 +213,7 @@ export default function Product() {
 
         <div className="product-layout__info">
           <div className="product-info">
+            {reviews[0] ? <FeaturedQuote review={reviews[0]} /> : null}
             {rating !== null ? (
               <Stars
                 rating={rating}
@@ -223,14 +235,21 @@ export default function Product() {
                 explanation={siteSettings.savingsExplanation}
               />
             ) : null}
+            {soldRecently !== null ? (
+              <VelocityBadge count={soldRecently} />
+            ) : null}
             <ProductForm
               productOptions={productOptions}
               selectedVariant={selectedVariant}
               swatchGroups={swatchGroups}
+              sizeGuide={sizeGuide}
+              packTiers={packTiers}
+              addon={addon}
             >
               <ProductFeatures features={features} />
             </ProductForm>
             <TrustBadges badges={siteSettings.trustBadges} />
+            <ProofStrip items={proof} />
             <ProductAccordions
               descriptionHtml={descriptionHtml}
               materials={materials}
@@ -273,6 +292,33 @@ export default function Product() {
       />
     </div>
   );
+}
+
+/**
+ * The `mellow.addon` product reference as a buy-box offer. Nothing is offered
+ * when the reference is missing, is not a product or has no sellable variant.
+ */
+function mapAddon(product: ProductFragment): ProductAddon | null {
+  const ref = product.addon?.reference;
+  if (!ref || ref.__typename !== 'Product') return null;
+  const variant = ref.selectedOrFirstAvailableVariant;
+  if (!variant?.id) return null;
+  return {
+    handle: ref.handle,
+    title: ref.title,
+    variantId: variant.id,
+    availableForSale: Boolean(variant.availableForSale),
+    price: variant.price,
+    image: ref.featuredImage
+      ? {
+          url: ref.featuredImage.url,
+          altText: ref.featuredImage.altText ?? null,
+          width: ref.featuredImage.width,
+          height: ref.featuredImage.height,
+        }
+      : null,
+    note: product.addonNote?.value?.trim() || null,
+  };
 }
 
 type ReviewNode = {
@@ -538,6 +584,45 @@ const PRODUCT_FRAGMENT = `#graphql
     savingsNote: metafield(namespace: "mellow", key: "savings_note") {
       value
       type
+    }
+    soldRecently: metafield(namespace: "mellow", key: "sold_recently") {
+      value
+    }
+    sizeGuide: metafield(namespace: "mellow", key: "size_guide") {
+      value
+    }
+    packTiers: metafield(namespace: "mellow", key: "pack_tiers") {
+      value
+    }
+    proof: metafield(namespace: "mellow", key: "proof") {
+      value
+    }
+    addonNote: metafield(namespace: "mellow", key: "addon_note") {
+      value
+    }
+    addon: metafield(namespace: "mellow", key: "addon") {
+      reference {
+        __typename
+        ... on Product {
+          id
+          handle
+          title
+          featuredImage {
+            url
+            altText
+            width
+            height
+          }
+          selectedOrFirstAvailableVariant {
+            id
+            availableForSale
+            price {
+              amount
+              currencyCode
+            }
+          }
+        }
+      }
     }
     featuredReviews: metafield(namespace: "mellow", key: "featured_reviews") {
       value

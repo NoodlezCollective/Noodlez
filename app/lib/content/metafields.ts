@@ -1,6 +1,6 @@
 import {isFeatureIconKey, type FeatureIconKey} from '~/components/ui/Icons';
 import {isNonEmptyString, isRecord, isString} from '~/lib/guards';
-import type {ProductFeature, ProductReview} from './types';
+import type {PackTier, ProductFeature, ProductReview} from './types';
 
 export type MetafieldValue =
   {value?: string | null; type?: string | null} | null | undefined;
@@ -230,4 +230,33 @@ export function mapReviewMetaobjects(
       },
     ];
   });
+}
+
+/**
+ * `mellow.pack_tiers`: list of `quantity|Label|Note` entries, e.g.
+ * `2|Pair|Most popular`. Entries without a whole-number quantity of at least 1
+ * are skipped; duplicates keep the first. Returns at most 4 tiers, sorted.
+ */
+export function parsePackTiers(field: MetafieldValue): PackTier[] {
+  const seen = new Set<number>();
+  return parseStringList(field)
+    .flatMap((entry) => {
+      const [rawQuantity, rawLabel, ...rest] = entry.split('|');
+      const quantity = Number.parseInt(rawQuantity ?? '', 10);
+      if (!Number.isInteger(quantity) || quantity < 1 || seen.has(quantity)) {
+        return [];
+      }
+      seen.add(quantity);
+      const label = rawLabel?.trim() || `${quantity} pack`;
+      const note = rest.join('|').trim() || null;
+      return [{quantity, label, note}];
+    })
+    .sort((a, b) => a.quantity - b.quantity)
+    .slice(0, 4);
+}
+
+/** `mellow.sold_recently`: units sold in the last 7 days (a positive integer). */
+export function parseSoldRecently(field: MetafieldValue): number | null {
+  const value = parseInteger(field);
+  return value !== null && value > 0 ? value : null;
 }

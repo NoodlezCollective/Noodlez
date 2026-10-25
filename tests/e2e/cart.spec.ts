@@ -561,7 +561,7 @@ test.describe('cart drawer', {tag: '@mobile'}, () => {
     await seedCart(page, ONE_PILLOW);
     await gotoHydrated(page, '/collections/pillows');
     await cartLink(page, 1).click();
-    const cart = drawer(page, 'Your cart');
+    const cart = drawer(page, 'Your Sleep Stack');
     await expect(cart).toBeVisible();
     return cart;
   }
@@ -651,7 +651,7 @@ test.describe('cart drawer', {tag: '@mobile'}, () => {
   test('"Continue shopping" in the empty drawer closes it', async ({page}) => {
     await gotoHydrated(page, '/collections/pillows');
     await cartLink(page, 0).click();
-    const cart = drawer(page, 'Your cart');
+    const cart = drawer(page, 'Your Sleep Stack');
     await expect(
       cart.getByRole('heading', {name: 'Your cart is empty'}),
     ).toBeVisible();
@@ -677,7 +677,7 @@ test.describe('journey', () => {
         .getByRole('main')
         .getByRole('button', {name: 'Add to cart'})
         .click();
-      const cart = drawer(page, 'Your cart');
+      const cart = drawer(page, 'Your Sleep Stack');
       const line = lineFor(cart, cloudAlign.title);
       await expect(line).toHaveCount(1);
       await expect(increaseOf(line)).toBeEnabled();

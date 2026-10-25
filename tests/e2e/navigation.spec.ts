@@ -388,7 +388,7 @@ test.describe('cart link', () => {
       await popup.bringToFront();
       await expect(popup).toHaveURL('/cart', {timeout: 30_000});
       await popup.waitForLoadState('domcontentloaded');
-      await expect(drawer(page, 'Your cart')).toBeHidden();
+      await expect(drawer(page, 'Your Sleep Stack')).toBeHidden();
       await expect(page).toHaveURL('/');
       await popup.close();
     });
@@ -404,9 +404,17 @@ interface DrawerCase {
 
 const DRAWERS: readonly DrawerCase[] = [
   {
-    name: 'Your cart',
+    name: 'Your Sleep Stack',
     opener: cartLink,
-    stops: ['Close', 'Shop best sellers', 'Continue shopping'],
+    // The empty drawer also offers the three bestsellers.
+    stops: [
+      'Close',
+      'Shop best sellers',
+      'Continue shopping',
+      'CloudAlign Pillow',
+      'MarshMellow Comforter',
+      'CloudCool Cooling Comforter',
+    ],
   },
   {
     name: 'Search',

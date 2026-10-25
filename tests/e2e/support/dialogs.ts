@@ -6,7 +6,7 @@
  *
  *   const opener = page.getByRole('link', {name: 'Cart, 0 items'});
  *   await opener.click();
- *   const cart = drawer(page, 'Your cart');
+ *   const cart = drawer(page, 'Your Sleep Stack');
  *   await expectModalOpen(page, cart);
  *   await expectFocusTrapped(page, cart);
  *   await page.keyboard.press('Escape');
@@ -30,7 +30,7 @@
  */
 import {expect, type Locator, type Page} from '@playwright/test';
 
-export type DrawerName = 'Your cart' | 'Search' | 'Menu';
+export type DrawerName = 'Your Sleep Stack' | 'Search' | 'Menu';
 
 /**
  * `test.use()` options for specs that assert drawer focus: re-enables motion

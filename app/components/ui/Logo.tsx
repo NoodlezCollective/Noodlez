@@ -1,8 +1,7 @@
 import {Link} from 'react-router';
 
 /**
- * The "mellow" wordmark, set in the display face. The second "l" is tinted
- * in the accent colour.
+ * The "mellow" wordmark. The second "l" is tinted lavender as in the brand mark.
  * When the Shopify brand logo is configured it is rendered instead.
  */
 export function Logo({

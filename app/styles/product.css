@@ -65,8 +65,7 @@
 .gallery__viewport {
   position: relative;
   overflow: hidden;
-  border: 1.5px solid var(--color-ink);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-lavender-tint);
 }
 
@@ -172,8 +171,8 @@
   width: 64px;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  border: 1.5px solid var(--color-border-light);
-  border-radius: var(--radius-xs);
+  border: 2px solid transparent;
+  border-radius: 8px;
   background: var(--color-lavender-tint);
   transition: border-color var(--duration-fast) ease;
 }
@@ -189,7 +188,7 @@
 }
 
 .gallery__thumb.is-active {
-  border-color: var(--color-ink);
+  border-color: #3b3a44;
 }
 
 @media (min-width: 64em) {
@@ -212,11 +211,10 @@
 }
 
 .product-info__title {
-  font-size: clamp(2rem, 1.4rem + 2vw, 3rem);
-  font-weight: 800;
-  line-height: 0.98;
-  letter-spacing: var(--tracking-tight);
-  text-transform: uppercase;
+  font-size: clamp(1.85rem, 1.4rem + 1.4vw, 2.25rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
   color: var(--color-heading);
 }
 
@@ -245,7 +243,7 @@
 .savings-note__toggle {
   font-size: inherit;
   letter-spacing: inherit;
-  color: var(--color-muted);
+  color: #5f5a7c;
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color var(--duration-fast) ease;
@@ -299,7 +297,7 @@
 
 .product-option__prefix,
 .product-option__group-label {
-  color: var(--color-muted);
+  color: #5f5a7c;
 }
 
 .product-option__group {
@@ -394,7 +392,7 @@
   min-height: 40px;
   padding: 0 1.15rem;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-pill);
   background: var(--color-surface);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -467,7 +465,7 @@
   height: 42px;
   overflow: hidden;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-pill);
   background: var(--color-surface);
 }
 
@@ -554,8 +552,7 @@
 /* ---------- Reviews ---------- */
 .reviews {
   padding: 1.6rem 1.75rem 1.35rem;
-  border: 1.5px solid var(--color-ink);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-lavender-tint);
 }
 
@@ -657,7 +654,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--color-lavender-mid);
+  background: #c9c5e6;
   transition:
     background-color var(--duration-fast) ease,
     transform var(--duration-fast) ease;
@@ -706,4 +703,338 @@
 .reviews__date {
   color: var(--color-muted);
   font-size: var(--text-sm);
+}
+
+/* ---------- Conversion mechanics (see docs/shopify-setup.md, section 4) ---------- */
+
+/* Peer quote above the title */
+.featured-quote {
+  position: relative;
+  margin: 0 0 0.9rem;
+  padding: 0.9rem 1.1rem 0.9rem 2.6rem;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-tint);
+}
+
+.featured-quote__icon {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  color: var(--color-accent-deep);
+}
+
+.featured-quote__text {
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--color-ink);
+}
+
+.featured-quote__author {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.featured-quote__verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+  color: var(--color-success);
+}
+
+.featured-quote__verified::before {
+  content: '✓';
+  font-size: 0.8em;
+}
+
+/* Velocity badge */
+.velocity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+  padding: 0.35rem 0.9rem 0.35rem 0.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-lavender-tint);
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+
+.velocity strong {
+  color: var(--color-heading);
+}
+
+.velocity__pulse {
+  position: relative;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent-deep);
+}
+
+.velocity__pulse::before,
+.velocity__pulse::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-accent-deep);
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+
+.velocity__pulse::after {
+  animation-delay: 0.9s;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .velocity__pulse::before,
+  .velocity__pulse::after {
+    animation: none;
+    opacity: 0.35;
+    transform: scale(1.4);
+  }
+}
+
+/* Size rule under the pills */
+.product-option__guide {
+  margin-top: 0.5rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+/* Pack tiers */
+.pack-tiers {
+  margin-top: 1.25rem;
+}
+
+.pack-tiers__legend {
+  margin-bottom: 0.6rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.pack-tiers__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pack-tier {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 1.1rem 0.85rem 0.9rem;
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+
+.pack-tier:hover {
+  border-color: var(--color-primary-soft);
+}
+
+.pack-tier.is-selected {
+  border-color: var(--color-primary);
+  background: var(--color-lavender-soft);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.pack-tier__input {
+  appearance: none;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  transition: border-color var(--duration-fast) ease;
+}
+
+.pack-tier.is-selected .pack-tier__input {
+  border-color: var(--color-primary);
+  border-width: 6px;
+}
+
+.pack-tier__input:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.pack-tier__body {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.pack-tier__label {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.pack-tier__note {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.pack-tier__price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  font-family: var(--font-display);
+}
+
+.pack-tier__total {
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+.pack-tier__compare {
+  font-size: var(--text-xs);
+  color: var(--color-subtle);
+}
+
+/* Add-on offer */
+.addon {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px dashed var(--color-primary-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease;
+}
+
+.addon:hover {
+  border-color: var(--color-primary);
+}
+
+.addon.is-selected {
+  border-style: solid;
+  border-color: var(--color-primary);
+  background: var(--color-lavender-soft);
+}
+
+.addon__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.addon__check {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-primary);
+  border-radius: 50%;
+  color: var(--color-primary);
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.addon.is-selected .addon__check {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.addon__input:focus-visible + .addon__check {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.addon__image {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--color-lavender-tint);
+}
+
+.addon__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.addon__title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.addon__price {
+  color: var(--color-primary);
+}
+
+.addon__note {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+/* Proof chips */
+.proof-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.proof-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem 0.4rem 0.7rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-lavender-tint);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.proof-chip svg {
+  color: var(--color-accent-deep);
 }

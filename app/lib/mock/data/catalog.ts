@@ -108,6 +108,42 @@ export const PRODUCT_SEEDS: ProductSeed[] = [
         value: list(['gid://shopify/Metaobject/review-1', 'gid://shopify/Metaobject/review-2']),
         references: ['gid://shopify/Metaobject/review-1', 'gid://shopify/Metaobject/review-2'],
       },
+      {namespace: 'mellow', key: 'sold_recently', type: 'number_integer', value: '2184'},
+      {
+        namespace: 'mellow',
+        key: 'size_guide',
+        type: 'single_line_text_field',
+        value: 'Back & side sleepers: Standard · Broad shoulders or a king bed: King',
+      },
+      {
+        namespace: 'mellow',
+        key: 'pack_tiers',
+        type: 'list.single_line_text_field',
+        value: list(['1|Single', '2|Pair|Most popular – one each', '4|Family pack|Every bed in the house']),
+      },
+      {
+        namespace: 'mellow',
+        key: 'proof',
+        type: 'list.single_line_text_field',
+        value: list([
+          'shield|Recommended by our chiropractic partners',
+          'leaf|OEKO-TEX® certified, hypoallergenic cover',
+          'sparkle|Voted softest pillow of 2025',
+        ]),
+      },
+      {
+        namespace: 'mellow',
+        key: 'addon',
+        type: 'product_reference',
+        value: 'gid://shopify/Product/1011',
+        references: ['gid://shopify/Product/1011'],
+      },
+      {
+        namespace: 'mellow',
+        key: 'addon_note',
+        type: 'single_line_text_field',
+        value: 'Blocks light for deeper sleep. Ships in the same box.',
+      },
     ],
     createdAt: CREATED,
     updatedAt: NOW,
@@ -139,6 +175,13 @@ export const PRODUCT_SEEDS: ProductSeed[] = [
     metafields: [
       {namespace: 'reviews', key: 'rating', type: 'rating', value: rating(4.9)},
       {namespace: 'reviews', key: 'rating_count', type: 'number_integer', value: '15744'},
+      {namespace: 'mellow', key: 'sold_recently', type: 'number_integer', value: '940'},
+      {
+        namespace: 'mellow',
+        key: 'proof',
+        type: 'list.single_line_text_field',
+        value: list(['leaf|OEKO-TEX® certified fabric', 'sparkle|Voted softest comforter of 2025', 'wash|Stays lofty wash after wash']),
+      },
       {namespace: 'mellow', key: 'badge', type: 'single_line_text_field', value: 'Bestseller'},
       {
         namespace: 'mellow',
@@ -191,6 +234,13 @@ export const PRODUCT_SEEDS: ProductSeed[] = [
     metafields: [
       {namespace: 'reviews', key: 'rating', type: 'rating', value: rating(4.8)},
       {namespace: 'reviews', key: 'rating_count', type: 'number_integer', value: '4030'},
+      {namespace: 'mellow', key: 'sold_recently', type: 'number_integer', value: '612'},
+      {
+        namespace: 'mellow',
+        key: 'proof',
+        type: 'list.single_line_text_field',
+        value: list(['snowflake|Dual-sided: cool side and plush side', 'leaf|OEKO-TEX® certified fabric']),
+      },
       {
         namespace: 'mellow',
         key: 'features',
@@ -257,6 +307,13 @@ export const PRODUCT_SEEDS: ProductSeed[] = [
     metafields: [
       {namespace: 'reviews', key: 'rating', type: 'rating', value: rating(4.8)},
       {namespace: 'reviews', key: 'rating_count', type: 'number_integer', value: '365'},
+      {namespace: 'mellow', key: 'sold_recently', type: 'number_integer', value: '318'},
+      {
+        namespace: 'mellow',
+        key: 'pack_tiers',
+        type: 'list.single_line_text_field',
+        value: list(['1|Single', '2|Pair|Most popular', '3|Trio|Couch, bed and car']),
+      },
       {namespace: 'mellow', key: 'badge', type: 'single_line_text_field', value: 'New'},
       {
         namespace: 'mellow',

@@ -608,7 +608,7 @@ test.describe('add to cart', () => {
 
       await addToCart(page).click();
 
-      const cart = drawer(page, 'Your cart');
+      const cart = drawer(page, 'Your Sleep Stack');
       await expectModalOpen(page, cart);
       const line = pillowLine(cart);
       await expect(line).toHaveCount(1);
@@ -635,7 +635,7 @@ test.describe('add to cart', () => {
   test('adding the same variant again merges into one line', async ({page}) => {
     await gotoHydrated(page, productPath(cloudAlign));
     await addToCart(page).click();
-    const cart = drawer(page, 'Your cart');
+    const cart = drawer(page, 'Your Sleep Stack');
     await expectModalOpen(page, cart);
     await page.keyboard.press('Escape');
     await expect(cart).toBeHidden();
@@ -662,7 +662,7 @@ test.describe('add to cart', () => {
     await quantityInput(page).fill('4');
     await addToCart(page).click();
 
-    const cart = drawer(page, 'Your cart');
+    const cart = drawer(page, 'Your Sleep Stack');
     await expect(cart).toBeVisible();
     await expect(cart.getByRole('group', {name: 'Quantity'})).toContainText(
       '4',
@@ -677,7 +677,7 @@ test.describe('add to cart', () => {
 
     await addToCart(page).click();
 
-    const cart = drawer(page, 'Your cart');
+    const cart = drawer(page, 'Your Sleep Stack');
     await expect(cart).toBeVisible();
     await expect(cart).toContainText('Size: One Size');
     await expect(cart).toContainText(silkSleepMask.variants[0].price);
@@ -698,11 +698,11 @@ test.describe('add to cart', () => {
       main(page).getByRole('button', {name: 'Adding…'}),
     ).toBeDisabled();
     await expect(addStatus(page)).toHaveText('Adding…');
-    await expect(drawer(page, 'Your cart')).toBeHidden();
+    await expect(drawer(page, 'Your Sleep Stack')).toBeHidden();
 
     cartAction.release();
 
-    await expect(drawer(page, 'Your cart')).toBeVisible();
+    await expect(drawer(page, 'Your Sleep Stack')).toBeVisible();
     await expect(addStatus(page)).toHaveText('Added to cart.');
   });
 
@@ -734,7 +734,7 @@ test.describe('add to cart', () => {
       COPY.cartInvalidRequest,
     );
     await expect(addStatus(page)).toHaveText('Could not add to cart.');
-    await expect(drawer(page, 'Your cart')).toBeHidden();
+    await expect(drawer(page, 'Your Sleep Stack')).toBeHidden();
     await expect(addToCart(page)).toBeEnabled();
     await expect(cartLink(page, 0)).toBeVisible();
   });

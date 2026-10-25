@@ -1,6 +1,13 @@
-import {useEffect, useId, useRef, useState} from 'react';
-import type {CartApiQueryFragment} from 'storefrontapi.generated';
+import {Suspense, useEffect, useId, useRef, useState} from 'react';
+import {Await, Link, useRouteLoaderData} from 'react-router';
+import {Image} from '@shopify/hydrogen-react';
+import type {
+  CartApiQueryFragment,
+  ProductCardFragment,
+} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
+import {Price} from '~/components/ui/Price';
+import type {RootLoader} from '~/root';
 import {CartLineItem, type CartLine} from '~/components/CartLineItem';
 import {Button} from '~/components/ui/Button';
 import {useOptimisticCart} from '~/lib/cart/useOptimisticCart';
@@ -134,9 +141,14 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
 
 function CartEmpty({layout}: {layout: CartLayout}) {
   const {close} = useAside();
+  const root = useRouteLoaderData<RootLoader>('root');
+  // The recovery list waits for the client: a server-rendered Suspense
+  // boundary inside the (hidden) drawer would be updated before it hydrates.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   return (
     <div className="cart__empty">
-      <div className="empty-state">
+      <div className="empty-state empty-state--cart">
         {/* Focus lands here when the last line is removed. */}
         <h2 className="empty-state__title" tabIndex={-1}>
           Your cart is empty
@@ -160,6 +172,76 @@ function CartEmpty({layout}: {layout: CartLayout}) {
           )}
         </div>
       </div>
+      {mounted && root?.bestSellers ? (
+        <Suspense fallback={null}>
+          <Await resolve={root.bestSellers} errorElement={null}>
+            {(data) => (
+              <CartRecovery
+                products={data?.products.nodes ?? []}
+                onNavigate={layout === 'aside' ? close : undefined}
+              />
+            )}
+          </Await>
+        </Suspense>
+      ) : null}
     </div>
+  );
+}
+
+/**
+ * Bestsellers under the empty state, so a shopper who opens the cart before
+ * adding anything meets soft-styled recommendations instead of a dead end.
+ */
+function CartRecovery({
+  products,
+  onNavigate,
+}: {
+  products: ProductCardFragment[];
+  onNavigate?: () => void;
+}) {
+  if (!products.length) return null;
+  return (
+    <section className="cart-recovery" aria-labelledby="cart-recovery-heading">
+      <h3 id="cart-recovery-heading" className="cart-recovery__title">
+        Sleepers start here
+      </h3>
+      <ul className="cart-recovery__list">
+        {products.slice(0, 3).map((product) => (
+          <li key={product.id}>
+            <div className="cart-recovery__item">
+              {product.featuredImage ? (
+                <Image
+                  className="cart-recovery__image"
+                  data={product.featuredImage}
+                  alt=""
+                  aspectRatio="1/1"
+                  sizes="72px"
+                  width={72}
+                  loading="lazy"
+                />
+              ) : (
+                <span className="cart-recovery__image" aria-hidden="true" />
+              )}
+              <span className="cart-recovery__body">
+                {/* The link is stretched over the whole row (cart.css). */}
+                <Link
+                  className="cart-recovery__name"
+                  to={`/products/${product.handle}`}
+                  prefetch="intent"
+                  onClick={onNavigate}
+                >
+                  {product.title}
+                </Link>
+                <Price
+                  size="sm"
+                  price={product.priceRange.minVariantPrice}
+                  compareAtPrice={product.compareAtPriceRange?.minVariantPrice}
+                />
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
