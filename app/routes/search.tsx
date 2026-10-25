@@ -17,6 +17,7 @@ import {
   parseSearchLimit,
   searchUnavailable,
 } from '~/lib/search';
+import {describeErrors} from '~/lib/storefront-errors';
 import type {
   RegularSearchQuery,
   PredictiveSearchQuery,
@@ -52,7 +53,8 @@ export async function loader({request, context}: Route.LoaderArgs) {
       ? await predictiveSearch({request, context})
       : await regularSearch({request, context});
   } catch (error) {
-    // The real cause (often a raw GraphQL message) stays in the server log;
+    // The cause stays in the server log (GraphQL errors only as their count
+    // and codes outside development: their messages echo the search term);
     // the shopper gets a generic message and a 503.
     console.error(`[search] ${type} search failed`, error);
     return data(searchUnavailable(type, readTerm(url)), {status: 503});
@@ -292,9 +294,7 @@ async function regularSearch({
     });
 
   if (errors?.length) {
-    throw new Error(
-      `Shopify API errors: ${errors.map(({message}: {message: string}) => message).join(', ')}`,
-    );
+    throw new Error(`Shopify API errors: ${describeErrors(errors)}`);
   }
 
   // Products are paginated, so count them from the connection's totalCount
@@ -468,9 +468,7 @@ async function predictiveSearch({
     });
 
   if (errors) {
-    throw new Error(
-      `Shopify API errors: ${errors.map(({message}: {message: string}) => message).join(', ')}`,
-    );
+    throw new Error(`Shopify API errors: ${describeErrors(errors)}`);
   }
 
   if (!items) {

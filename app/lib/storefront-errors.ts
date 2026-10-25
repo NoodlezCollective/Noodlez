@@ -1,4 +1,5 @@
 import type {Storefront} from '~/lib/storefront/client.server';
+import {getOperationName} from '~/lib/storefront/graphql';
 
 /** Status returned when the Storefront API answers with errors and no data. */
 export const STOREFRONT_API_ERROR_STATUS = 502;
@@ -20,28 +21,33 @@ export function isErrorsOnlyResult(
   return Object.values(data).every((value) => value == null);
 }
 
+/** The client's operation name; `'anonymous'` for a non-string document too. */
 function describeOperation(document: unknown): string {
-  if (typeof document !== 'string') return 'anonymous';
-  return (
-    /\b(?:query|mutation)\s+([A-Za-z0-9_]+)/.exec(document)?.[1] ?? 'anonymous'
-  );
+  return getOperationName(typeof document === 'string' ? document : '');
 }
 
+/** What development logs show for an entry that has no message. */
+const UNKNOWN_ERROR_MESSAGE = 'unknown error';
+
 /**
- * Error messages echo variable values (`Variable "$handle" got invalid value
- * …`), which can include buyer identity, so outside development only the
- * count and the error codes are logged.
+ * A log-safe summary of a GraphQL `errors` list: the count and the error
+ * codes, plus the messages in development builds only. Messages echo variable
+ * values (`Variable "$term" got invalid value …`), which can hold buyer
+ * identity or search terms. Malformed entries (`errors: [null]`) count as
+ * errors without a code or message instead of throwing.
  */
-function describeErrors(errors: GraphQLErrorLike[]): string {
-  if (import.meta.env.DEV) {
-    return errors
-      .map((error) => String(error?.message ?? 'unknown error'))
-      .join('; ');
-  }
+export function describeErrors(
+  errors: ReadonlyArray<GraphQLErrorLike | null | undefined>,
+): string {
   const codes = errors
     .map((error) => error?.extensions?.code)
     .filter((code): code is string => typeof code === 'string');
-  return `${errors.length} error(s)${codes.length ? ` [${codes.join(', ')}]` : ''}`;
+  const summary = `${errors.length} error(s)${codes.length > 0 ? ` [${codes.join(', ')}]` : ''}`;
+  if (!import.meta.env.DEV || errors.length === 0) return summary;
+  const messages = errors.map((error) =>
+    String(error?.message ?? UNKNOWN_ERROR_MESSAGE),
+  );
+  return `${summary}: ${messages.join('; ')}`;
 }
 
 type Operation = (document: string, options?: unknown) => Promise<unknown>;
@@ -55,8 +61,9 @@ type Operation = (document: string, options?: unknown) => Promise<unknown>;
  * resolves to an object whose data fields are all `undefined`. Loaders read
  * that as "not found" (a bogus 404 for collections and products) or crash on it
  * (`header.shop` in the layout). Rejecting once, here, gives every caller the
- * same honest failure. Only the operation name and (outside development) the
- * error codes are logged; variables and messages can hold personal data.
+ * same honest failure. Only the operation name and `describeErrors`' summary
+ * are logged: variables never, messages only in development, because both can
+ * hold personal data.
  */
 export function guardStorefrontErrors(storefront: Storefront): void {
   const target = storefront as unknown as {query: Operation; mutate: Operation};

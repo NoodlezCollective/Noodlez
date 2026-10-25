@@ -154,6 +154,44 @@ describe('Storefront API errors', () => {
   });
 });
 
+describe('Storefront cache', () => {
+  const OPERATION = 'query Shop { shop { name } }';
+
+  it.each([
+    [
+      'caches.open rejects',
+      {
+        open: async () => {
+          throw new Error('Cache API unavailable');
+        },
+      },
+      'Cache API unavailable',
+    ],
+    ['the Cache API is missing', undefined, 'open'],
+  ])(
+    'serves requests without the cache when %s, and logs that once',
+    async (_name, cachesStub, logged) => {
+      // Arrange
+      vi.stubGlobal('caches', cachesStub);
+      const fetchMock = stubStorefrontApi({data: {shop: {name: 'Mellow'}}});
+
+      // Act
+      const context = await createContext();
+      const first = await context.storefront.query(OPERATION);
+      const second = await context.storefront.query(OPERATION);
+
+      // Assert: both queries reach the API, as with the cache bypassed.
+      expect(first).toEqual({shop: {name: 'Mellow'}});
+      expect(second).toEqual({shop: {name: 'Mellow'}});
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(console.error).toHaveBeenCalledTimes(1);
+      expect(String(vi.mocked(console.error).mock.calls[0][0])).toContain(
+        logged,
+      );
+    },
+  );
+});
+
 describe('development mock', () => {
   const MOCK_ENV = {...ENV, MOCK_STOREFRONT: 'true'} as unknown as Env;
 
@@ -177,6 +215,24 @@ describe('development mock', () => {
 
     expect(thrown).toBeInstanceOf(Response);
     expect((thrown as Response).status).toBe(502);
+  });
+
+  it('logs the operation name the way the client reads it', async () => {
+    const context = await createContext('http://localhost:3000/', MOCK_ENV);
+
+    await rejection(
+      context.storefront.query(
+        '# query Fake { shop { name } }\nquery Bad { thisFieldDoesNotExist }',
+      ),
+    );
+
+    const logged = vi
+      .mocked(console.error)
+      .mock.calls.map(([message]) => String(message));
+    expect(logged).toContainEqual(
+      expect.stringMatching(/^\[mock-storefront\] Bad: /),
+    );
+    expect(logged.join('\n')).not.toContain('Fake');
   });
 
   it('guards cart mutations too', async () => {

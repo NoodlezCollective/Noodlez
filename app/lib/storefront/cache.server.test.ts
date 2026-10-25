@@ -7,7 +7,6 @@ import {
   CacheNone,
   CacheShort,
   createCacheKey,
-  generateCacheControlHeader,
   isCacheable,
   withCache,
   type CacheStrategy,
@@ -114,28 +113,14 @@ const EXPIRABLE = [
 describe('cache strategies', () => {
   it('CacheNone stores nothing', () => {
     expect(CacheNone()).toEqual({mode: 'no-store'});
-    expect(generateCacheControlHeader(CacheNone())).toBe('no-store');
   });
 
   it.each([
-    [
-      CacheShort,
-      {mode: 'public', maxAge: 1, staleWhileRevalidate: 9},
-      'public, max-age=1, stale-while-revalidate=9',
-    ],
-    [
-      CacheLong,
-      {mode: 'public', maxAge: 3600, staleWhileRevalidate: 82800},
-      'public, max-age=3600, stale-while-revalidate=82800',
-    ],
-    [
-      CacheDefault,
-      {mode: 'public', maxAge: 1, staleWhileRevalidate: 86399},
-      'public, max-age=1, stale-while-revalidate=86399',
-    ],
-  ] as const)("%o keeps Hydrogen's timings", (strategy, values, header) => {
+    [CacheShort, {mode: 'public', maxAge: 1, staleWhileRevalidate: 9}],
+    [CacheLong, {mode: 'public', maxAge: 3600, staleWhileRevalidate: 82800}],
+    [CacheDefault, {mode: 'public', maxAge: 1, staleWhileRevalidate: 86399}],
+  ] as const)("%o keeps Hydrogen's timings", (strategy, values) => {
     expect(strategy()).toEqual(values);
-    expect(generateCacheControlHeader(strategy())).toBe(header);
   });
 
   it.each(EXPIRABLE)('%s applies overrides', (_name, strategy) => {
@@ -170,40 +155,6 @@ describe('cache strategies', () => {
     };
 
     expect(CacheCustom(custom)).toEqual(custom);
-  });
-
-  it('generateCacheControlHeader writes every directive in the order given', () => {
-    expect(
-      generateCacheControlHeader({
-        mode: 'public',
-        maxAge: 10,
-        staleWhileRevalidate: 20,
-        sMaxAge: 30,
-        staleIfError: 40,
-      }),
-    ).toBe(
-      'public, max-age=10, stale-while-revalidate=20, s-maxage=30, stale-if-error=40',
-    );
-    expect(generateCacheControlHeader({maxAge: 5, mode: 'private'})).toBe(
-      'max-age=5, private',
-    );
-  });
-
-  it('generateCacheControlHeader skips unset values and unknown keys', () => {
-    const withUnknown = {
-      mode: 'public',
-      colour: 'red',
-    } as unknown as CacheStrategy;
-
-    expect(generateCacheControlHeader({})).toBe('');
-    expect(
-      generateCacheControlHeader({
-        mode: 'public',
-        maxAge: undefined,
-        staleWhileRevalidate: 9,
-      }),
-    ).toBe('public, stale-while-revalidate=9');
-    expect(generateCacheControlHeader(withUnknown)).toBe('public');
   });
 });
 
@@ -411,6 +362,69 @@ describe('withCache', () => {
     expect(test.pending).toHaveLength(1);
     await test.flush();
     expect(failing).toHaveBeenCalledTimes(2);
+  });
+
+  it('replaces a revalidation lock that never settles once it is older than 35 s', async () => {
+    // Arrange: an entry that stays stale for a day, and a revalidation that
+    // never settles (a hung upstream, or the waitUntil budget ran out).
+    const test = await primed(5, CacheDefault());
+    await test.run(() => new Promise<Body>(() => {}));
+    const stuck = test.pending.splice(0);
+    expect(stuck).toHaveLength(1);
+    const fetcher = vi.fn(async () => ({value: 'v2'}));
+
+    // Act + Assert: for 35 s the stuck lock still holds...
+    test.advance(35);
+    expect((await test.run(fetcher)).status).toBe('STALE');
+    expect(test.pending).toHaveLength(0);
+
+    // ...then the next stale read replaces it and revalidates.
+    test.advance(1);
+    expect(await test.run(fetcher)).toEqual({
+      result: {value: 'v1'},
+      status: 'STALE',
+    });
+    expect(test.pending).toHaveLength(1);
+    await test.flush();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(await test.run(fetcher)).toEqual({
+      result: {value: 'v2'},
+      status: 'HIT',
+    });
+  });
+
+  it('keeps the newer lock when a replaced revalidation settles late', async () => {
+    // Arrange: a stuck revalidation, replaced after the expiry by a second one.
+    const test = await primed(5, CacheDefault());
+    let failLate!: (error: Error) => void;
+    await test.run(
+      () =>
+        new Promise<Body>((_resolve, reject) => {
+          failLate = reject;
+        }),
+    );
+    const late = test.pending.splice(0);
+    test.advance(36);
+    let finishSecond!: (body: Body) => void;
+    await test.run(
+      () =>
+        new Promise<Body>((resolve) => {
+          finishSecond = resolve;
+        }),
+    );
+    const second = test.pending.splice(0);
+
+    // Act: the replaced revalidation fails long after its lock expired.
+    failLate(new Error('timed out'));
+    await Promise.all(late);
+
+    // Assert: the second revalidation still holds the lock.
+    const third = vi.fn(async () => ({value: 'v3'}));
+    expect((await test.run(third)).status).toBe('STALE');
+    expect(test.pending).toHaveLength(0);
+    expect(third).not.toHaveBeenCalled();
+    finishSecond({value: 'v2'});
+    await Promise.all(second);
   });
 
   it.each([

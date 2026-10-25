@@ -65,7 +65,7 @@ export async function createAppRouterContext(
 
   const waitUntil = executionContext.waitUntil.bind(executionContext);
   const [cache, session] = await Promise.all([
-    caches.open(STOREFRONT_CACHE_NAME),
+    openStorefrontCache(),
     AppSession.init(request, [env.SESSION_SECRET]),
   ]);
 
@@ -118,10 +118,27 @@ export async function createAppRouterContext(
   return Object.assign(new RouterContextProvider(), services);
 }
 
+/**
+ * The Cache API cache, or undefined when it cannot be opened: queries then
+ * bypass it (`withCache` treats a missing cache as BYPASS) instead of the
+ * failure taking every request down. Logged once for the request.
+ */
+async function openStorefrontCache(): Promise<Cache | undefined> {
+  try {
+    return await caches.open(STOREFRONT_CACHE_NAME);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error(
+      `[storefront-cache] Could not open the "${STOREFRONT_CACHE_NAME}" cache, so queries bypass it: ${reason}`,
+    );
+    return undefined;
+  }
+}
+
 function createStorefront(
   request: Request,
   env: Env,
-  cache: Cache,
+  cache: Cache | undefined,
   waitUntil: WaitUntil,
 ): Storefront {
   return createStorefrontClient({

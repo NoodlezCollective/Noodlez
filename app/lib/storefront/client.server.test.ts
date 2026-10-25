@@ -7,6 +7,8 @@ import {
   it,
   vi,
 } from 'vitest';
+import {CART_COOKIE_NAME} from '~/lib/cart/cookie';
+import {AppSession} from '~/lib/session';
 import {guardStorefrontErrors} from '~/lib/storefront-errors';
 import {
   CacheCustom,
@@ -16,6 +18,7 @@ import {
   createCacheKey,
 } from './cache.server';
 import {
+  STOREFRONT_API_TIMEOUT_MS,
   STOREFRONT_API_VERSION,
   StorefrontApiHttpError,
   createStorefrontClient,
@@ -504,6 +507,36 @@ describe('results', () => {
     );
   });
 
+  it('logs a null entry in errors as an error without a code, instead of failing the request', async () => {
+    vi.stubEnv('DEV', false);
+    stubFetch({data: {shop: {name: 'Mellow'}}, errors: [null]});
+    const {storefront} = createClient();
+
+    const result = await storefront.query(SHOP_QUERY);
+
+    expect(result).toEqual({shop: {name: 'Mellow'}, errors: [null]});
+    expect(consoleError).toHaveBeenCalledWith(
+      '[storefront] Shop returned partial data: 1 error(s)',
+    );
+  });
+
+  it('describes a null entry as an unknown error in development', async () => {
+    stubFetch({
+      data: {shop: {name: 'Mellow'}},
+      errors: [
+        null,
+        {message: 'menu failed', extensions: {code: 'INTERNAL_SERVER_ERROR'}},
+      ],
+    });
+    const {storefront} = createClient();
+
+    await storefront.query(SHOP_QUERY);
+
+    expect(consoleError).toHaveBeenCalledWith(
+      '[storefront] Shop returned partial data: 2 error(s) [INTERNAL_SERVER_ERROR]: unknown error; menu failed',
+    );
+  });
+
   it('returns errors without data as {errors} and leaves logging to guardStorefrontErrors', async () => {
     const errors = [{message: 'Throttled', extensions: {code: 'THROTTLED'}}];
     stubFetch({errors});
@@ -575,6 +608,74 @@ describe('results', () => {
   });
 });
 
+describe('responses with an escaped "__proto__" key', () => {
+  it('are stripped as well, so copies of the data stay unpolluted', async () => {
+    stubFetch(
+      String.raw`{"data":{"shop":{"name":"Mellow","\u005f_proto__":{"polluted":true}}}}`,
+    );
+    const {storefront} = createClient();
+
+    const {shop} = await storefront.query(SHOP_QUERY);
+
+    expect(Object.hasOwn(shop, '__proto__')).toBe(false);
+    expect(
+      (Object.assign({}, shop) as {polluted?: boolean}).polluted,
+    ).toBeUndefined();
+  });
+});
+
+describe('timeouts', () => {
+  it('gives every Storefront API call its own 25 s timeout signal', async () => {
+    // Arrange
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+    const fetchMock = stubFetch();
+    const {storefront} = createClient();
+
+    // Act: a query, a mutation and a proxied request.
+    await storefront.query(SHOP_QUERY);
+    await storefront.mutate(CART_MUTATION);
+    await storefront.forward(
+      new Request(`${ORIGIN}/api/2026-04/graphql.json`, {
+        method: 'POST',
+        body: PROXY_BODY,
+      }),
+    );
+
+    // Assert
+    expect(STOREFRONT_API_TIMEOUT_MS).toBe(25_000);
+    expect(timeout).toHaveBeenCalledTimes(3);
+    expect(timeout).toHaveBeenCalledWith(STOREFRONT_API_TIMEOUT_MS);
+    for (const call of [0, 1, 2]) {
+      expect(fetchMock.mock.calls[call][1]?.signal).toBe(
+        timeout.mock.results[call].value,
+      );
+    }
+  });
+
+  it('gives a stale-while-revalidate refresh a timeout signal too', async () => {
+    // Arrange: a stale CacheShort entry.
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 9, 24, 12));
+    const memory = createMemoryCache();
+    const fetchMock = stubFetch();
+    const client = createClient({cache: memory.cache});
+    await client.storefront.query(SHOP_QUERY, {cache: CacheShort()});
+    await client.flush();
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 9, 24, 12, 0, 5));
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+
+    // Act
+    await client.storefront.query(SHOP_QUERY, {cache: CacheShort()});
+    await client.flush();
+
+    // Assert
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(timeout).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[1][1]?.signal).toBe(
+      timeout.mock.results[0].value,
+    );
+  });
+});
+
 describe('fetch', () => {
   it('is looked up on globalThis at call time', async () => {
     const {storefront} = createClient();
@@ -639,7 +740,7 @@ describe('caching', () => {
       PRIVATE_TOKEN,
     ],
   ])(
-    'keys entries on the API URL, %s and the body',
+    'keys entries on the format marker, the API URL, %s and the body',
     async (_name, overrides, token) => {
       const memory = createMemoryCache();
       const fetchMock = stubFetch();
@@ -649,6 +750,7 @@ describe('caching', () => {
       await client.flush();
 
       const key = await createCacheKey(ORIGIN, [
+        'v1',
         API_URL,
         token,
         sent(fetchMock).rawBody,
@@ -656,6 +758,76 @@ describe('caching', () => {
       expect([...memory.entries.keys()]).toEqual([key.url]);
     },
   );
+
+  it('bypasses the cache for a query that sets its own headers, which can make the answer buyer-specific', async () => {
+    // Arrange
+    const memory = createMemoryCache();
+    const fetchMock = stubFetch();
+    const digest = vi.spyOn(crypto.subtle, 'digest');
+    const client = createClient({cache: memory.cache});
+
+    // Act: the same document for two buyers.
+    await client.storefront.query(SHOP_QUERY, {
+      headers: {'X-Buyer-Scope': 'buyer-a'},
+    });
+    await client.flush();
+    await client.storefront.query(SHOP_QUERY, {
+      headers: [['X-Buyer-Scope', 'buyer-b']],
+    });
+    await client.flush();
+
+    // Assert: both reach the API and nothing is read, stored or hashed.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(memory.match).not.toHaveBeenCalled();
+    expect(memory.put).not.toHaveBeenCalled();
+    expect(digest).not.toHaveBeenCalled();
+  });
+
+  it('keeps caching a query whose headers option is empty', async () => {
+    const memory = createMemoryCache();
+    const fetchMock = stubFetch();
+    const client = createClient({cache: memory.cache});
+
+    await client.storefront.query(SHOP_QUERY, {headers: {}});
+    await client.flush();
+    await client.storefront.query(SHOP_QUERY, {headers: new Headers()});
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    [
+      'a CacheNone query',
+      {},
+      (storefront: Storefront) =>
+        storefront.query(SHOP_QUERY, {cache: CacheNone()}),
+    ],
+    [
+      'a private query',
+      {},
+      (storefront: Storefront) =>
+        storefront.query(SHOP_QUERY, {cache: CacheShort({mode: 'private'})}),
+    ],
+    [
+      'a mutation',
+      {},
+      (storefront: Storefront) => storefront.mutate(CART_MUTATION),
+    ],
+    [
+      'a client without a cache',
+      {cache: undefined},
+      (storefront: Storefront) => storefront.query(SHOP_QUERY),
+    ],
+  ])('computes no cache key for %s', async (_name, overrides, call) => {
+    const memory = createMemoryCache();
+    stubFetch();
+    const digest = vi.spyOn(crypto.subtle, 'digest');
+    const {storefront} = createClient({cache: memory.cache, ...overrides});
+
+    await call(storefront);
+
+    expect(digest).not.toHaveBeenCalled();
+  });
 
   it('stores different variables separately', async () => {
     const memory = createMemoryCache();
@@ -972,11 +1144,112 @@ describe('forward', () => {
       request: createRequest({'cf-ray': RAY_ID}),
     });
 
-    await storefront.forward(new Request(`${ORIGIN}/api/2026-04/graphql.json`));
+    await storefront.forward(
+      new Request(`${ORIGIN}/api/2026-04/graphql.json`, {
+        method: 'POST',
+        body: PROXY_BODY,
+      }),
+    );
 
     const {headers} = sent(fetchMock);
     expect(headers.has('x-forwarded-for')).toBe(false);
     expect(headers.has('x-shopify-client-ip')).toBe(false);
-    expect(sent(fetchMock).method).toBe('GET');
+    expect(sent(fetchMock).method).toBe('POST');
+  });
+
+  it.each(['GET', 'HEAD', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])(
+    'answers %s with 405 and Allow: POST, without calling the Storefront API',
+    async (method) => {
+      const fetchMock = stubFetch();
+      const {storefront} = createClient();
+
+      const response = await storefront.forward(
+        new Request(`${ORIGIN}/api/2026-04/graphql.json`, {method}),
+      );
+
+      expect(response.status).toBe(405);
+      expect(response.headers.get('Allow')).toBe('POST');
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it('never follows a redirect, so cookies and tokens are not replayed to its target', async () => {
+    const fetchMock = stubFetch('', {
+      status: 302,
+      headers: {location: 'https://elsewhere.example/graphql'},
+    });
+    const {storefront} = createClient();
+
+    const response = await storefront.forward(proxyRequest());
+
+    expect(fetchMock.mock.calls[0][1]?.redirect).toBe('manual');
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(
+      'https://elsewhere.example/graphql',
+    );
+  });
+
+  it("strips the session and cart cookies the app sets and forwards Shopify's", async () => {
+    // Arrange: the cookies exactly as the app writes them.
+    const session = await AppSession.init(new Request(ORIGIN), ['secret']);
+    session.set('customerAccount', 'signed-in');
+    const [sessionPair] = (await session.commit()).split(';');
+    const fetchMock = stubFetch();
+    const {storefront} = createClient();
+
+    // Act
+    await storefront.forward(
+      proxyRequest('/api/2026-04/graphql.json', {
+        cookie: `${sessionPair}; _shopify_y=y1; ${CART_COOKIE_NAME}=c1-abc; _shopify_s=s1; _shopify_analytics=a1; _shopify_marketing=m1`,
+      }),
+    );
+
+    // Assert
+    expect(sessionPair).toMatch(/^session=/);
+    expect(sent(fetchMock).headers.get('cookie')).toBe(
+      '_shopify_y=y1; _shopify_s=s1; _shopify_analytics=a1; _shopify_marketing=m1',
+    );
+  });
+
+  it('matches cookie names exactly, as the app reads them, so lookalikes are kept', async () => {
+    const fetchMock = stubFetch();
+    const {storefront} = createClient();
+
+    await storefront.forward(
+      proxyRequest('/api/2026-04/graphql.json', {
+        cookie:
+          'cart_currency=EUR;session_id=1; session =x;Cart=c2; cart = c1-abc',
+      }),
+    );
+
+    expect(sent(fetchMock).headers.get('cookie')).toBe(
+      'cart_currency=EUR; session_id=1; Cart=c2',
+    );
+  });
+
+  it('drops empty pairs and compares a pair without "=" by its whole text', async () => {
+    const fetchMock = stubFetch();
+    const {storefront} = createClient();
+
+    await storefront.forward(
+      proxyRequest('/api/2026-04/graphql.json', {
+        cookie: 'flag;; session; _shopify_y=y1; cart',
+      }),
+    );
+
+    expect(sent(fetchMock).headers.get('cookie')).toBe('flag; _shopify_y=y1');
+  });
+
+  it('sends no cookie header when only our cookies were sent', async () => {
+    const fetchMock = stubFetch();
+    const {storefront} = createClient();
+
+    await storefront.forward(
+      proxyRequest('/api/2026-04/graphql.json', {
+        cookie: 'session=signed-session; cart=c1-abc',
+      }),
+    );
+
+    expect(sent(fetchMock).headers.has('cookie')).toBe(false);
   });
 });

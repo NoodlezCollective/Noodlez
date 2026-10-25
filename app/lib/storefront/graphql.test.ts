@@ -199,6 +199,40 @@ describe('parseJson', () => {
     expect(copy.polluted).toBeUndefined();
   });
 
+  it.each([
+    [
+      'one escaped character',
+      String.raw`{"\u005f_proto__":{"polluted":true},"a":1}`,
+    ],
+    [
+      'every character escaped',
+      String.raw`{"\u005f\u005f\u0070\u0072\u006f\u0074\u006f\u005f\u005f":{"polluted":true},"a":1}`,
+    ],
+  ])(
+    'drops a "__proto__" key written with Unicode escapes (%s)',
+    (_name, raw) => {
+      // The text never spells the key out; JSON.parse decodes it.
+      expect(raw).not.toContain('__proto__');
+
+      const parsed = parseJson<Record<string, unknown>>(raw);
+
+      expect(parsed).toEqual({a: 1});
+      expect(Object.hasOwn(parsed, '__proto__')).toBe(false);
+      expect(
+        (Object.assign({}, parsed) as {polluted?: boolean}).polluted,
+      ).toBeUndefined();
+    },
+  );
+
+  it('drops escaped "__proto__" keys in nested objects', () => {
+    const parsed = parseJson<{nested: Record<string, unknown>}>(
+      String.raw`{"nested":{"b":2,"\u005f_proto__":{"polluted":true}}}`,
+    );
+
+    expect(parsed).toEqual({nested: {b: 2}});
+    expect(Object.hasOwn(parsed.nested, '__proto__')).toBe(false);
+  });
+
   it('keeps "__proto__" when it is only a value', () => {
     expect(parseJson('{"note":"__proto__"}')).toEqual({note: '__proto__'});
   });

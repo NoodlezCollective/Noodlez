@@ -29,23 +29,39 @@ const handleRequest = createRequestHandler(
   import.meta.env.MODE,
 );
 
+/** A header no response carries, set and removed again by the probe below. */
+const MUTABILITY_PROBE_HEADER = 'x-mellow-mutability-probe';
+
 /**
- * Runs `update` on the response, or on a mutable copy when its headers are
- * immutable: a response passed straight through from `fetch()` (or built
- * with `Response.redirect()`) cannot be changed in place.
+ * False when the response's headers are immutable: a response passed
+ * straight through from `fetch()` (or built with `Response.redirect()`)
+ * throws on any change.
+ */
+function hasMutableHeaders(response: Response): boolean {
+  try {
+    response.headers.append(MUTABILITY_PROBE_HEADER, '1');
+    response.headers.delete(MUTABILITY_PROBE_HEADER);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Runs `update` exactly once: on the response itself, or on a mutable copy
+ * when its headers are immutable. Mutability is probed first, so an error
+ * from `update` propagates instead of being retried on a copy that already
+ * carries the steps that ran before it.
  */
 function withMutableHeaders(
   response: Response,
   update: (response: Response) => void,
 ): Response {
-  try {
-    update(response);
-    return response;
-  } catch {
-    const copy = new Response(response.body, response);
-    update(copy);
-    return copy;
-  }
+  const target = hasMutableHeaders(response)
+    ? response
+    : new Response(response.body, response);
+  update(target);
+  return target;
 }
 
 /**

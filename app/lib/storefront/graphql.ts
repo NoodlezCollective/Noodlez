@@ -44,10 +44,11 @@ export function getOperationName(document: string): string {
 /**
  * `JSON.parse` that drops every `__proto__` key, so copying the result with
  * `Object.assign` or a deep merge cannot swap in an attacker's prototype.
- * Throws a `SyntaxError` on invalid JSON.
+ * The reviver always runs: a key written with Unicode escapes
+ * (`"\u005f_proto__"`) only becomes `__proto__` while parsing, so screening
+ * the raw text for it is not enough. Throws a `SyntaxError` on invalid JSON.
  */
 export function parseJson<T = unknown>(text: string): T {
-  if (!text.includes(PROTO_KEY)) return JSON.parse(text) as T;
   return JSON.parse(text, dropProtoKey) as T;
 }
 

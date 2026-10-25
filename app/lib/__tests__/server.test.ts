@@ -53,18 +53,22 @@ function fetchPath(path: string, init?: RequestInit) {
 const SEGMENTS = (count: number) =>
   '/' + Array.from({length: count}, () => 'a').join('/');
 
-/**
- * What server.ts reads from the router context. `isStorefrontApiUrl` is the
- * real client's, so the proxy cases below exercise the real path rule.
- */
-function createFakeContext() {
-  const {isStorefrontApiUrl} = createStorefrontClient({
+function createRealStorefront() {
+  return createStorefrontClient({
     storeDomain: 'mellow-test.myshopify.com',
     publicStorefrontToken: 'public-token-placeholder',
     i18n: {language: 'EN', country: 'US'},
     request: new Request(`${ORIGIN}/`),
     waitUntil: () => {},
   });
+}
+
+/**
+ * What server.ts reads from the router context. `isStorefrontApiUrl` is the
+ * real client's, so the proxy cases below exercise the real path rule.
+ */
+function createFakeContext() {
+  const {isStorefrontApiUrl} = createRealStorefront();
   return {
     session: {
       isPending: false,
@@ -95,6 +99,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
@@ -332,6 +337,24 @@ describe('server fetch handler: Storefront API proxy', () => {
     },
   );
 
+  it('answers other methods with the real proxy: 405, Allow: POST and the security headers', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    context.storefront.forward.mockImplementationOnce(
+      createRealStorefront().forward,
+    );
+
+    const response = await fetchPath('/api/2026-04/graphql.json');
+
+    expect(response.status).toBe(405);
+    expect(response.headers.get('Allow')).toBe('POST');
+    expect(Object.fromEntries(response.headers)).toMatchObject(
+      SECURITY_HEADERS,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mocks.handleRequest).not.toHaveBeenCalled();
+  });
+
   it.each([
     '/api/2026-04/graphql.jsonx',
     // Hydrogen also proxied its MCP endpoint; that proxy is not ported.
@@ -399,6 +422,42 @@ describe('server fetch handler: session cookie, subrequest headers, Server-Timin
       context.storefront.setCollectedSubrequestHeaders,
     ).toHaveBeenCalledWith(routeResponse);
     expect(response.headers.getSetCookie()).toEqual(['_shopify_y=abc; Path=/']);
+  });
+
+  it('applies the header updates once: a step that throws is not retried on a copy', async () => {
+    // Arrange: the session cookie is appended, then the next step throws
+    // (once), as a failing Phase 4c header collector would.
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    context.session.isPending = true;
+    const failure = new Error('collector failed');
+    context.storefront.setCollectedSubrequestHeaders.mockImplementationOnce(
+      () => {
+        throw failure;
+      },
+    );
+
+    // Act
+    const response = await fetchPath('/');
+
+    // Assert: the plain 500, not a response carrying the cookie twice.
+    expect(
+      context.storefront.setCollectedSubrequestHeaders,
+    ).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(500);
+    expect(response.headers.getSetCookie()).toEqual([]);
+    expect(consoleError).toHaveBeenCalledWith(failure);
+  });
+
+  it('leaves no trace of its mutability check on the response', async () => {
+    const response = await fetchPath('/');
+
+    expect([...response.headers.keys()]).toEqual([
+      'content-type',
+      'referrer-policy',
+      'x-content-type-options',
+    ]);
   });
 
   it.each<Record<string, string>>([

@@ -9,6 +9,21 @@ const GENERIC_MESSAGE = 'Search is unavailable right now. Please try again.';
 const INTERNAL_ERROR =
   'Variable "$limit" got invalid value NaN; Int cannot represent non-integer value: NaN [request-id 9f3c]';
 
+/** An API error whose message echoes what the shopper typed. */
+const SHOPPER_INPUT_ERROR = {
+  message: 'Variable $term got invalid value shopper@example.com',
+  extensions: {code: 'BAD_USER_INPUT'},
+};
+
+/** Everything written to console.error, errors with their stack. */
+function loggedText(): string {
+  return vi
+    .mocked(console.error)
+    .mock.calls.flat()
+    .map((arg) => (arg instanceof Error ? String(arg.stack) : String(arg)))
+    .join('\n');
+}
+
 const productNode = (id: number) => ({
   __typename: 'Product',
   id: `gid://shopify/Product/${id}`,
@@ -68,6 +83,7 @@ describe('/search loader', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -199,6 +215,34 @@ describe('/search loader', () => {
         expect(console.error).toHaveBeenCalled();
       });
 
+      it('logs only the count and codes of GraphQL errors outside development', async () => {
+        // Arrange: the API echoes the shopper's input in its message.
+        vi.stubEnv('DEV', false);
+        query.mockResolvedValue({
+          ...regularData({products: 2}),
+          errors: [SHOPPER_INPUT_ERROR],
+        });
+
+        // Act
+        const result = await load('?q=shopper@example.com');
+
+        // Assert
+        expect(result).toMatchObject({init: {status: 503}});
+        expect(loggedText()).toContain('1 error(s) [BAD_USER_INPUT]');
+        expect(loggedText()).not.toContain('got invalid value');
+      });
+
+      it('adds the messages to the log in development', async () => {
+        query.mockResolvedValue({
+          ...regularData({products: 2}),
+          errors: [SHOPPER_INPUT_ERROR],
+        });
+
+        await load('?q=pillow');
+
+        expect(loggedText()).toContain(SHOPPER_INPUT_ERROR.message);
+      });
+
       it('keeps the term so the form can be retried', async () => {
         query.mockRejectedValue(new Error('boom'));
 
@@ -315,6 +359,20 @@ describe('/search loader', () => {
           data: {error: GENERIC_MESSAGE, result: null},
         });
         expect(JSON.stringify(result)).not.toContain('Variable');
+      });
+
+      it('logs only the count and codes of GraphQL errors outside development', async () => {
+        vi.stubEnv('DEV', false);
+        query.mockResolvedValue({
+          predictiveSearch: predictiveData(),
+          errors: [SHOPPER_INPUT_ERROR],
+        });
+
+        const result = await load('?q=shopper@example.com&predictive=1');
+
+        expect(result).toMatchObject({init: {status: 503}});
+        expect(loggedText()).toContain('1 error(s) [BAD_USER_INPUT]');
+        expect(loggedText()).not.toContain('got invalid value');
       });
 
       it('treats a missing predictiveSearch payload the same way', async () => {

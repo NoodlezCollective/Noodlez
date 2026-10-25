@@ -8,7 +8,8 @@ import {
   SHOPIFY_UNIQUE_TOKEN_HEADER,
   SHOPIFY_VISIT_TOKEN_HEADER,
 } from '@shopify/hydrogen-react';
-import {isErrorsOnlyResult} from '~/lib/storefront-errors';
+import {CART_COOKIE_NAME} from '~/lib/cart/cookie';
+import {describeErrors, isErrorsOnlyResult} from '~/lib/storefront-errors';
 import {
   CacheCustom,
   CacheDefault,
@@ -16,6 +17,7 @@ import {
   CacheNone,
   CacheShort,
   createCacheKey,
+  isCacheable,
   withCache,
   type CacheStrategy,
 } from './cache.server';
@@ -46,6 +48,12 @@ declare global {
 }
 
 export const STOREFRONT_API_VERSION = '2026-04';
+
+/**
+ * Every Storefront API call is aborted after this long, so a hung upstream
+ * cannot hold a request, or a background revalidation and its lock, open.
+ */
+export const STOREFRONT_API_TIMEOUT_MS = 25_000;
 
 type Common = {
   headers?: HeadersInit;
@@ -153,6 +161,27 @@ const LOCALE_DECLARATIONS = {country: /\$country\b/, language: /\$language\b/};
 const UNREADABLE_RESPONSE_MESSAGE =
   'The Storefront API returned an unreadable response';
 const UNREADABLE_RESPONSE_CODE = 'UNREADABLE_RESPONSE';
+/**
+ * The first part of every cache key. Bump it when the key parts or the stored
+ * body change shape, so entries written by an older build are never read.
+ */
+const CACHE_KEY_FORMAT = 'v1';
+const COOKIE_HEADER = 'cookie';
+/** The only method the proxy relays; Shopify's scripts send nothing else. */
+const PROXY_METHOD = 'POST';
+const METHOD_NOT_ALLOWED_STATUS = 405;
+/** The name app/lib/session.ts gives the session cookie. */
+const SESSION_COOKIE_NAME = 'session';
+/**
+ * Our own cookies, which the proxy never passes on: the signed session and
+ * the cart id. Shopify's cookies (`_shopify_y`, `_shopify_s`,
+ * `_shopify_analytics`, `_shopify_marketing`, …) are forwarded. Any new
+ * first-party cookie belongs in this list.
+ */
+const OWN_COOKIE_NAMES: ReadonlySet<string> = new Set([
+  SESSION_COOKIE_NAME,
+  CART_COOKIE_NAME,
+]);
 
 /** Browser headers the proxy passes on (Hydrogen's allowlist). */
 const FORWARDED_REQUEST_HEADERS = [
@@ -163,7 +192,7 @@ const FORWARDED_REQUEST_HEADERS = [
   'access-control-request-method',
   'content-type',
   'content-length',
-  'cookie',
+  COOKIE_HEADER,
   'origin',
   'referer',
   'user-agent',
@@ -298,21 +327,23 @@ async function runOperation(
 ): Promise<OperationResult> {
   const minified = minifyQuery(document);
   assertOperationKind(kind, minified);
+  const callHeaders = new Headers(options.headers);
   const request: OperationRequest = {
     operationName: getOperationName(minified),
     url: context.helpers.getStorefrontApiUrl({
       storefrontApiVersion: options.storefrontApiVersion,
     }),
-    headers: mergeHeaders(context.defaultHeaders, options.headers),
+    headers: mergeHeaders(context.defaultHeaders, callHeaders),
     body: JSON.stringify({
       query: minified,
       variables: withLocaleVariables(minified, context.i18n, options.variables),
     }),
   };
+  const strategy = options.cache ?? CacheDefault();
   const body =
-    kind === 'mutation'
-      ? await postOperation(request)
-      : await queryThroughCache(context, request, options.cache);
+    kind === 'query' && usesCache(context, strategy, callHeaders)
+      ? await queryThroughCache(context, request, strategy)
+      : await postOperation(request);
   return toOperationResult(body, request.operationName);
 }
 
@@ -339,19 +370,39 @@ function withLocaleVariables(
 
 function mergeHeaders(
   defaults: Readonly<Record<string, string>>,
-  overrides?: HeadersInit,
+  overrides: Headers,
 ): Headers {
   const headers = new Headers(defaults);
-  new Headers(overrides).forEach((value, name) => headers.set(name, value));
+  overrides.forEach((value, name) => headers.set(name, value));
   return headers;
 }
 
+/**
+ * Whether a query is read from and stored in the cache, decided before any
+ * key is hashed. Per-call headers are not part of the key and can make an
+ * answer buyer-specific (a buyer IP, a customer token), so a query that sets
+ * any bypasses the cache, as `no-store` and `private` strategies do.
+ */
+function usesCache(
+  context: ClientContext,
+  strategy: CacheStrategy,
+  callHeaders: Headers,
+): boolean {
+  return (
+    context.cache !== undefined &&
+    isCacheable(strategy) &&
+    callHeaders.keys().next().done === true
+  );
+}
+
+/** Key parts: the format marker, then URL, token and body (never headers). */
 async function queryThroughCache(
   context: ClientContext,
   request: OperationRequest,
-  strategy: CacheStrategy = CacheDefault(),
+  strategy: CacheStrategy,
 ): Promise<GraphQLBody> {
   const key = await createCacheKey(context.origin, [
+    CACHE_KEY_FORMAT,
     request.url,
     context.accessToken,
     request.body,
@@ -372,6 +423,7 @@ async function postOperation(request: OperationRequest): Promise<GraphQLBody> {
     method: 'POST',
     headers: request.headers,
     body: request.body,
+    signal: AbortSignal.timeout(STOREFRONT_API_TIMEOUT_MS),
   });
   if (!response.ok) {
     const requestId = response.headers.get(REQUEST_ID_RESPONSE_HEADER);
@@ -427,8 +479,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /**
  * `{...data, errors}`, with `errors` only when there are some. Partial data
- * is logged here (redacted); errors-only results are left to
- * guardStorefrontErrors, which turns them into a 502.
+ * is logged here, redacted by `describeErrors` (count and codes; messages only
+ * in development); errors-only results are left to guardStorefrontErrors,
+ * which turns them into a 502.
  */
 function toOperationResult(
   body: GraphQLBody,
@@ -445,35 +498,26 @@ function toOperationResult(
   return result;
 }
 
-/**
- * Error messages can echo variables (buyer identity), so they are only
- * logged in development; the count and codes are always safe.
- */
-function describeErrors(errors: StorefrontApiError[]): string {
-  const codes = errors
-    .map((error) => error.extensions?.code)
-    .filter((code): code is string => typeof code === 'string');
-  const summary = `${errors.length} error(s)${codes.length > 0 ? ` [${codes.join(', ')}]` : ''}`;
-  if (!import.meta.env.DEV) return summary;
-  return `${summary}: ${errors.map((error) => error.message).join('; ')}`;
-}
-
 function isStorefrontApiUrl(request: Request): boolean {
   return STOREFRONT_API_PATH_RE.test(new URL(request.url).pathname);
 }
 
 /**
- * Hydrogen's same-origin proxy: only allowlisted browser headers plus our IP,
- * storefront id and request group id. The browser supplies its own (public)
- * token; no server token is ever added. The body is streamed through.
+ * Hydrogen's same-origin proxy: only allowlisted browser headers (without our
+ * own cookies) plus our IP, storefront id and request group id. The browser
+ * supplies its own (public) token; no server token is ever added. Only POST is
+ * relayed, its body streamed through; a redirect goes back to the browser
+ * instead of being followed here with the buyer's cookies and token.
  */
 async function forwardToStorefrontApi(
   request: Request,
   context: ClientContext,
 ): Promise<Response> {
+  if (request.method !== PROXY_METHOD) return methodNotAllowed();
+
   const headers = new Headers();
   copyHeaders(headers, FORWARDED_REQUEST_HEADERS, (name) =>
-    request.headers.get(name),
+    readForwardedHeader(request, name),
   );
   copyHeaders(
     headers,
@@ -487,11 +531,49 @@ async function forwardToStorefrontApi(
   )?.[1];
   const upstream = await globalThis.fetch(
     context.helpers.getStorefrontApiUrl({storefrontApiVersion}),
-    {method: request.method, headers, body: request.body},
+    {
+      method: request.method,
+      headers,
+      body: request.body,
+      redirect: 'manual',
+      signal: AbortSignal.timeout(STOREFRONT_API_TIMEOUT_MS),
+    },
   );
   const response = new Response(upstream.body, upstream);
   response.headers.delete(SERVER_TIMING_HEADER);
   return response;
+}
+
+function methodNotAllowed(): Response {
+  return new Response('Method Not Allowed', {
+    status: METHOD_NOT_ALLOWED_STATUS,
+    headers: {Allow: PROXY_METHOD},
+  });
+}
+
+function readForwardedHeader(request: Request, name: string): string | null {
+  const value = request.headers.get(name);
+  return name === COOKIE_HEADER ? withoutOwnCookies(value) : value;
+}
+
+/**
+ * The Cookie header without our own cookies, or null when nothing is left.
+ * Names match exactly once trimmed, the way the app reads its cookies, so a
+ * lookalike such as Shopify's `cart_currency` is kept.
+ */
+function withoutOwnCookies(cookieHeader: string | null): string | null {
+  if (!cookieHeader) return null;
+  const kept = cookieHeader
+    .split(';')
+    .map((pair) => pair.trim())
+    .filter((pair) => pair !== '' && !OWN_COOKIE_NAMES.has(cookieName(pair)));
+  return kept.length > 0 ? kept.join('; ') : null;
+}
+
+/** The text before `=`, or the whole pair when it has none. */
+function cookieName(pair: string): string {
+  const separator = pair.indexOf('=');
+  return (separator === -1 ? pair : pair.slice(0, separator)).trim();
 }
 
 function copyHeaders(

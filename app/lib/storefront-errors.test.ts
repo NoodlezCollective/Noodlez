@@ -2,11 +2,74 @@ import type {Storefront} from '~/lib/storefront/client.server';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {
   STOREFRONT_API_ERROR_STATUS,
+  describeErrors,
   guardStorefrontErrors,
   isErrorsOnlyResult,
 } from './storefront-errors';
 
 const ERRORS = [{message: 'Throttled'}, {message: 'Internal error'}];
+
+describe('describeErrors', () => {
+  /** Messages echo variables, here a shopper's search term. */
+  const API_ERRORS = [
+    {
+      message: 'Variable $term got invalid value shopper@example.com',
+      extensions: {code: 'BAD_USER_INPUT'},
+    },
+    {message: 'Throttled', extensions: {code: 'THROTTLED'}},
+  ];
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('gives only the count and the codes outside development', () => {
+    vi.stubEnv('DEV', false);
+
+    const description = describeErrors(API_ERRORS);
+
+    expect(description).toBe('2 error(s) [BAD_USER_INPUT, THROTTLED]');
+    expect(description).not.toContain('shopper@example.com');
+  });
+
+  it('adds the messages in development', () => {
+    expect(describeErrors(API_ERRORS)).toBe(
+      '2 error(s) [BAD_USER_INPUT, THROTTLED]: Variable $term got invalid value shopper@example.com; Throttled',
+    );
+  });
+
+  it('leaves out the brackets when no entry has a code', () => {
+    vi.stubEnv('DEV', false);
+
+    expect(describeErrors(ERRORS)).toBe('2 error(s)');
+  });
+
+  it.each([
+    ['outside development', false, '4 error(s)'],
+    [
+      'in development',
+      true,
+      '4 error(s): unknown error; unknown error; unknown error; unknown error',
+    ],
+  ])(
+    'counts null, missing and malformed entries without throwing (%s)',
+    (_name, dev, expected) => {
+      vi.stubEnv('DEV', dev);
+      const malformed = [
+        null,
+        undefined,
+        {extensions: {code: 42}},
+        {extensions: null},
+      ] as unknown as Parameters<typeof describeErrors>[0];
+
+      expect(describeErrors(malformed)).toBe(expected);
+    },
+  );
+
+  it('describes an empty list as no errors', () => {
+    expect(describeErrors([])).toBe('0 error(s)');
+  });
+});
 
 describe('isErrorsOnlyResult', () => {
   it('is true when errors are the only key', () => {
@@ -127,6 +190,32 @@ describe('guardStorefrontErrors', () => {
     await rejection(api.query('{ shop { name } }'));
 
     expect(String(consoleError.mock.calls[0][0])).toContain('anonymous');
+  });
+
+  it('reads the operation name the way the client does, ignoring commented-out names', async () => {
+    const {storefront, api} = createFakeStorefront({errors: ERRORS});
+    guardStorefrontErrors(storefront);
+
+    await rejection(
+      api.query(
+        '#graphql\n  # query Fake { a }\n  query Real { shop { name } }',
+      ),
+    );
+
+    const logged = String(consoleError.mock.calls[0][0]);
+    expect(logged).toContain('[storefront] Real failed');
+    expect(logged).not.toContain('Fake');
+  });
+
+  it('logs "anonymous" when the document is not a string', async () => {
+    const {storefront, api} = createFakeStorefront({errors: ERRORS});
+    guardStorefrontErrors(storefront);
+
+    await rejection(api.query(undefined as unknown as string));
+
+    expect(String(consoleError.mock.calls[0][0])).toContain(
+      '[storefront] anonymous failed',
+    );
   });
 
   it('returns partial data with errors unchanged', async () => {

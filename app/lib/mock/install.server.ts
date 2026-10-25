@@ -1,5 +1,6 @@
 import {graphql} from 'graphql';
 import type {Storefront} from '~/lib/storefront/client.server';
+import {getOperationName} from '~/lib/storefront/graphql';
 import {getCatalog} from './graph.server';
 import {createRootValue} from './root.server';
 import {getMockSchema} from './schema.server';
@@ -29,11 +30,8 @@ export function installMockStorefront(
       variableValues: options?.variables,
     });
     if (result.errors?.length) {
-      const operation =
-        /\b(?:query|mutation)\s+([A-Za-z0-9_]+)/.exec(source)?.[1] ??
-        'anonymous';
       console.error(
-        `[mock-storefront] ${operation}: ${result.errors.map((error) => error.message).join('; ')}`,
+        `[mock-storefront] ${getOperationName(source)}: ${result.errors.map((error) => error.message).join('; ')}`,
       );
       // Same shape as the live API and Hydrogen's `formatAPIResult`: the
       // errors next to whatever data resolved (none at all when validation or

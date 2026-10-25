@@ -3,7 +3,7 @@ import {parseJson} from './graphql';
 /**
  * Cache layer for Storefront API queries on the Workers Cache API, ported from
  * Hydrogen 2026.4.7's strategies and sub-request cache (`CacheShort` & co.,
- * `generateCacheControlHeader`, `runWithCache`).
+ * `runWithCache`).
  *
  * Entries live under a synthetic GET key and store only the JSON result plus
  * our timing headers, so nothing from the Storefront API response (Set-Cookie,
@@ -46,13 +46,6 @@ const SHORT_TIMING = {maxAge: 1, staleWhileRevalidate: 9} as const;
 const LONG_TIMING = {maxAge: 3600, staleWhileRevalidate: 82800} as const;
 const DEFAULT_TIMING = {maxAge: 1, staleWhileRevalidate: 86399} as const;
 
-const DIRECTIVES: Readonly<Record<string, string>> = {
-  maxAge: 'max-age',
-  staleWhileRevalidate: 'stale-while-revalidate',
-  sMaxAge: 's-maxage',
-  staleIfError: 'stale-if-error',
-};
-
 const KEY_PATH = '/__storefront-cache/';
 const PUT_DATE_HEADER = 'x-storefront-cache-put-date';
 const MAX_AGE_HEADER = 'x-storefront-cache-max-age';
@@ -60,8 +53,19 @@ const MAX_AGE_DIRECTIVE_RE = /\bmax-age=([\d.]+)/;
 const MS_PER_SECOND = 1000;
 const LOG_PREFIX = '[storefront-cache]';
 
-/** Per-isolate lock: at most one revalidation per key at a time. */
-const revalidating = new Set<string>();
+/**
+ * No revalidation can still be running after this long: the client aborts
+ * Storefront API calls after 25 s and Workers ends `waitUntil` work 30 s after
+ * the response. An older lock was left by one that never settled.
+ */
+const REVALIDATION_LOCK_TTL_MS = 35 * MS_PER_SECOND;
+
+/**
+ * Per-isolate lock: at most one revalidation per key at a time. Each key maps
+ * to the time its revalidation started, so a lock that is never released
+ * expires and is replaced.
+ */
+const revalidating = new Map<string, number>();
 
 export function CacheNone(): CacheStrategy {
   return {mode: NO_STORE};
@@ -86,18 +90,6 @@ export function CacheDefault(
 
 export function CacheCustom(strategy: CacheStrategy): CacheStrategy {
   return {...strategy};
-}
-
-/** `{mode: 'public', maxAge: 1}` becomes `"public, max-age=1"`, keys in order. */
-export function generateCacheControlHeader(strategy: CacheStrategy): string {
-  return Object.entries(strategy)
-    .flatMap(([key, value]) => {
-      if (value === undefined) return [];
-      if (key === 'mode') return [String(value)];
-      const directive = DIRECTIVES[key];
-      return directive ? [`${directive}=${value}`] : [];
-    })
-    .join(', ');
 }
 
 /** False for `no-store`, `private` and strategies that would keep nothing. */
@@ -260,10 +252,21 @@ function revalidateOnce<T>(
   options: RevalidationOptions<T>,
 ): void {
   const lock = options.key.url;
-  if (revalidating.has(lock)) return;
-  revalidating.add(lock);
+  const startedAt = options.now();
+  const heldSince = revalidating.get(lock);
+  if (
+    heldSince !== undefined &&
+    startedAt - heldSince <= REVALIDATION_LOCK_TTL_MS
+  ) {
+    return;
+  }
+  revalidating.set(lock, startedAt);
   options.waitUntil(
-    revalidate(fetcher, options).finally(() => revalidating.delete(lock)),
+    revalidate(fetcher, options).finally(() => {
+      // After an expiry the key is locked by a newer revalidation, whose
+      // start time is at least the expiry later; leave that lock alone.
+      if (revalidating.get(lock) === startedAt) revalidating.delete(lock);
+    }),
   );
 }
 
