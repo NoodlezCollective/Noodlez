@@ -303,13 +303,13 @@ export function CacheShort(o?: ExpirableCacheOverrides): CacheStrategy; // publi
 export function CacheLong(o?: ExpirableCacheOverrides): CacheStrategy; // public, 3600, 82800
 export function CacheDefault(o?: ExpirableCacheOverrides): CacheStrategy; // public, 1, 86399 (queries without a hint)
 export function CacheCustom(s: CacheStrategy): CacheStrategy;
-export function generateCacheControlHeader(s: CacheStrategy): string; // "public, max-age=1, stale-while-revalidate=9"
 export function isCacheable(s: CacheStrategy): boolean; // false for no-store and private
 export function createCacheKey(
   origin: string,
   parts: readonly string[],
 ): Promise<Request>;
-//   GET `${origin}/__storefront-cache/${sha256hex(parts.join('\n'))}`, parts = [apiUrl, accessToken, body]
+//   GET `${origin}/__storefront-cache/${sha256hex(parts.join('\n'))}`, parts = ['v1', apiUrl, accessToken, body];
+//   not computed at all for CacheNone, private, mutations or a client without a cache
 export type CacheStatus = 'BYPASS' | 'MISS' | 'HIT' | 'STALE';
 export interface WithCacheOptions<T> {
   cache: Cache | undefined;
@@ -423,11 +423,11 @@ Client behaviour (ported from h:1838-2219):
 - **Logging GraphQL errors:**
   - Partial-data errors are logged redacted (count and codes; messages only in DEV).
   - Errors-only results are left to `guardStorefrontErrors`.
-- **Caching:** queries use `withCache` with `options.cache ?? CacheDefault()` and `shouldCacheResult: body => !body.errors`. Mutations always bypass.
+- **Caching:** queries use `withCache` with `options.cache ?? CacheDefault()` and `shouldCacheResult: body => !body.errors`. Mutations always bypass, and so does any call that passes its own `headers` (a buyer-scoped answer never lands in the shared cache). Every upstream fetch carries `AbortSignal.timeout(STOREFRONT_API_TIMEOUT_MS)` (25 s), and the stale-while-revalidate lock expires after 35 s so a hung revalidation cannot pin a key.
 - **`forward()` (Hydrogen parity):**
   - Forwards only the allowlisted request headers: accept, accept-encoding, accept-language, access-control-request-headers, access-control-request-method, content-type, content-length, cookie, origin, referer, user-agent, Shopify-Storefront-Consent-Management, X-Shopify-Storefront-Access-Token, X-Shopify-UniqueToken, X-Shopify-VisitToken (hydrogen-react's `SHOPIFY_UNIQUE_TOKEN_HEADER` and `SHOPIFY_VISIT_TOKEN_HEADER`).
   - Adds our IP, storefront id and group-id headers and `x-forwarded-for`.
-  - Never adds a server token.
+  - Never adds a server token. Relays POST only (anything else is a 405 with `Allow: POST`), fetches upstream with `redirect: 'manual'`, and strips our own `session` and `cart` cookies from the forwarded `cookie` header.
   - Takes the API version from the path, streams the body, and deletes `server-timing` from the response.
 - **`trackingEnabled` (4c):**
   - Forward the request `cookie`.
@@ -1702,6 +1702,7 @@ Gate: standard, full e2e.
 - Server-side Storefront API calls no longer send Hydrogen's `user-agent`; a 2xx answer that is not GraphQL JSON becomes an errors-only result (`UNREADABLE_RESPONSE`, a 502 through the guard) instead of a silent `{}`; a 404 from the Storefront API proxy is returned as is instead of going through the 404 redirect lookup; the wrong-operation refusal text no longer carries the `h2:error` prefix (Phase 2).
 - From Phase 2 until Phase 4c enables it for configured analytics, server-side calls forward no cookie or visitor-token headers and copy no Set-Cookie headers back (Phase 2).
 - Discount codes are deduplicated before `cartCreate` as well as before `cartDiscountCodesUpdate` (Phase 2).
+- Hardening after the Phase 2 review: the Storefront API proxy answers 405 to non-POST requests, does not follow upstream redirects and forwards no `session`/`cart` cookie; a failed `caches.open` bypasses the cache for that request instead of a 500; upstream fetches time out after 25 s; `errors: [null]` entries are tolerated; `__proto__` keys are dropped even when Unicode-escaped; `app/routes/search.tsx` logs error counts and codes instead of messages outside development.
 - `cart_viewed` is no longer published (Phase 3).
 - Cart service details (Phase 3): `updateBuyerIdentity` no longer writes `companyLocationId` into the session through `setBuyer` (B2B only, no caller); `cart.get()` returns null for a `{cart: null, errors}` answer (unreachable in production, the errors guard answers 502 first); mutation results always carry `cart` (null without a payload) where Hydrogen omitted the key; `getFormInput` ignores an `inputs` value that is not an object; hand-crafted line shapes that Hydrogen forwarded to the API are rejected by the cart action with 400.
 - CSP (Phase 4a): `generateNonce` fails closed without Web Crypto instead of falling back to `Math.random`; a nonce that is not a valid CSP base64 value is rejected; the dev-only `ws://*.tryhydrogen.dev:*` source is gone.
