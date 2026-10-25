@@ -1,7 +1,9 @@
 # Removing Hydrogen from the Mellow storefront: architecture
 
-Status: **accepted** (2026-10-24; decisions recorded in section 5). Produced by the ECC `architect` agent from a
-read-only analysis of the codebase; nothing described here is implemented yet.
+Status: **implemented** (2026-10-25; accepted 2026-10-24, decisions recorded in section 5). Phases 0 to 7 are
+committed (`624bb22` to `d2e2faa`). Phase 7 (React Router 7.18.4, the path-segment guard removed) landed in `d2e2faa`.
+Hydrogen is no longer installed (`f9274d6`), so the source citations below point to the packages as they were before
+that commit. Produced by the ECC `architect` agent from a read-only analysis of the codebase.
 Owner decision taken: Shopify Hydrogen (`@shopify/hydrogen`, the Hydrogen CLI
 and Vite plugin, MiniOxygen, Oxygen hosting) is removed; the storefront stays
 on React Router 7 framework mode and keeps its routes, loaders/actions,
@@ -14,6 +16,17 @@ Source citations: "hr:N" is line N of
 `node_modules/@shopify/hydrogen/node_modules/@shopify/hydrogen-react/dist/types/index.d.ts`
 (hydrogen-react 2026.4.4); "h:N" is line N of
 `node_modules/@shopify/hydrogen/dist/development/index.js`.
+
+## Outcome (2026-10-25)
+
+Hydrogen is removed. The storefront follows the decisions in this document, with the deviations recorded in the plan's
+"Intended behaviour changes" (copied into `docs/implementation-report.md`, section 13.5). The deviations that matter most
+are: no Hydrogen `user-agent`, `powered-by` header or `/api/mcp` proxy; the Storefront API proxy answers 405 to non-POST
+requests and follows no redirects; the cache is named `storefront`, and its keys start with the format marker `v1`;
+customer accounts are deferred (ADR-D2) behind the 503 sign-in page; analytics run only when `PUBLIC_CHECKOUT_DOMAIN`
+and `PUBLIC_STOREFRONT_ID` are set and the mock is off, and a private token in `PUBLIC_STOREFRONT_API_TOKEN` switches
+them off; the dev-only GraphiQL and subrequest-profiler routes and the `cart_viewed` event are gone; `POST /cart` bodies
+over 64 KiB get 413; React Router is 7.18.4 and the path-segment guard is removed (Phase 7, committed as `d2e2faa`).
 
 ## 0. Facts that shape the design
 

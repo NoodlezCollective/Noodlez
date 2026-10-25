@@ -1,33 +1,41 @@
 # Connecting the Mellow storefront to Shopify
 
-The storefront is a Shopify Hydrogen app (React Router 7). Commerce data
-(products, variants, pricing, collections, cart, checkout, customer accounts)
-comes from the Storefront API and the Customer Account API through Hydrogen's
-built-in clients. Editorial content (hero, press logos, videos, reviews, FAQ,
-About page) is modelled as Shopify metaobjects and metafields so merchants can
-edit it in Shopify admin. Everything below has a documented fallback so the
-site renders before configuration is complete.
+The storefront is a React Router 7 app on Cloudflare Workers. Shopify Hydrogen
+has been removed (see docs/implementation-report.md, section 13). Commerce data
+(products, variants, pricing, collections, cart and checkout) comes from the
+Storefront API through the storefront's own client in `app/lib/storefront`.
+Customer accounts are deferred. Editorial content (hero, press logos, videos,
+reviews, FAQ, About page) is modelled as Shopify metaobjects and metafields so
+merchants can edit it in Shopify admin. Everything below has a documented
+fallback so the site renders before configuration is complete.
 
 ## 1. Environment variables
 
-Copy `.dev.vars.example` to `.dev.vars` (gitignored) and fill it from the
-Hydrogen sales channel's storefront settings in the Shopify admin. In
-production, set the same variables on the Worker (`npx wrangler secret put
-<NAME>` for secrets):
+Development: copy `.dev.vars.example` to `.dev.vars` (gitignored) and fill it in.
+Wrangler and the Vite dev server read `.dev.vars` as the Worker's variables. A
+`.env` file is not read. The values come from the storefront settings of the
+Hydrogen sales channel in the Shopify admin (Shopify admin > Sales channels >
+Hydrogen > Storefront settings, as `.dev.vars.example` says).
 
-| Variable                                                                              | Purpose                                                                                                           |
-| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `SESSION_SECRET`                                                                      | Signs the session cookie (cart id, customer tokens).                                                              |
-| `PUBLIC_STORE_DOMAIN`                                                                 | `your-store.myshopify.com`.                                                                                       |
-| `PUBLIC_STOREFRONT_API_TOKEN`                                                         | Public Storefront API token (Hydrogen channel). In mock mode, a 32-character placeholder (see section 10).        |
-| `PUBLIC_STOREFRONT_ID`                                                                | Hydrogen storefront id (analytics).                                                                               |
-| `PUBLIC_CHECKOUT_DOMAIN`                                                              | Checkout domain (analytics / consent).                                                                            |
-| `PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID`, `PUBLIC_CUSTOMER_ACCOUNT_API_URL`, `SHOP_ID` | Customer Account API (new customer accounts). Required for `/account`.                                            |
-| `MOCK_STOREFRONT`                                                                     | Development only. `true` serves the demo catalog from `app/lib/mock` instead of Shopify. Never set in production. |
-| `NEWSLETTER_WEBHOOK_URL`                                                              | Optional endpoint that receives newsletter signups as JSON.                                                       |
+Production: set the same variables on the Worker, with `npx wrangler secret put
+<NAME>` for each secret, or as plain dashboard variables (`keep_vars` keeps those
+across deploys).
 
-Private tokens never reach the browser: only `PUBLIC_*` variables are exposed,
-and all Storefront API calls run in the Hydrogen server context.
+| Variable                                                                              | Purpose                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SESSION_SECRET`                                                                      | Required. The secret that signs the session cookie. Use a long random value.                                                                                                            |
+| `PUBLIC_STORE_DOMAIN`                                                                 | Required. `your-store.myshopify.com`.                                                                                                                                                   |
+| `PUBLIC_STOREFRONT_API_TOKEN`                                                         | Required. The public Storefront API token of the sales channel. A private (`shpat_`) token here switches analytics off and logs an error. In mock mode, any placeholder (section 10).   |
+| `PRIVATE_STOREFRONT_API_TOKEN`                                                        | Optional, recommended for production. A private token for the Worker's own Storefront API calls, which then send the buyer's IP. Never sent to browsers or to the Storefront API proxy. |
+| `PUBLIC_STOREFRONT_ID`                                                                | Storefront id of the sales channel. Analytics need it together with `PUBLIC_CHECKOUT_DOMAIN` (section 8).                                                                               |
+| `PUBLIC_CHECKOUT_DOMAIN`                                                              | Checkout domain of the sales channel. Analytics need it together with `PUBLIC_STOREFRONT_ID` (section 8).                                                                               |
+| `PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID`, `PUBLIC_CUSTOMER_ACCOUNT_API_URL`, `SHOP_ID` | Customer Account API settings. Nothing uses them for sign-in yet, because customer accounts are deferred (section 7).                                                                   |
+| `MOCK_STOREFRONT`                                                                     | Development only. `true` serves the demo catalog from `app/lib/mock` instead of Shopify. Production builds never load the mock. Remove the variable once the store is linked.           |
+| `NEWSLETTER_WEBHOOK_URL`                                                              | Optional endpoint that receives newsletter signups as JSON.                                                                                                                             |
+
+The browser never receives a private token. The public token reaches the browser
+only in the analytics consent configuration, and only while analytics are on. The
+Storefront API proxy adds the public token on the server.
 
 ## 2. Navigation menus (Online Store → Navigation)
 
@@ -103,18 +111,34 @@ access checkbox) or the queries return nothing and the fallbacks are used.
 
 ## 7. Customer accounts
 
-`/account` uses Hydrogen's Customer Account API integration (OAuth login on
-Shopify, order history, profile, addresses). It requires the variables in
-section 1; until then the account entry points show a "not configured" page.
+Customer accounts are deferred (`docs/hydrogen-removal-architecture.md`, ADR-D2).
+Every call that needs a signed-in customer ends on the 503 sign-in page, which
+says that accounts are not available yet. `/account` redirects to the sign-in
+page, and `/account/login` shows the 503 page. The Customer Account API variables
+in section 1 change nothing for shoppers today. `POST /account/logout` clears the
+storefront session and redirects to `/`. `GET /account/authorize` redirects to
+`/account/login`. Porting Hydrogen's OAuth client (ADR-D1) is a separate decision.
 
 ## 8. Checkout, cart and analytics
 
-The cart is Shopify's cart (Storefront API cart mutations through Hydrogen's
-`context.cart`). Checkout uses the `checkoutUrl` returned by Shopify. Shopify
-analytics come from Hydrogen's `Analytics.Provider` once
-`PUBLIC_CHECKOUT_DOMAIN` and `PUBLIC_STOREFRONT_API_TOKEN` are set. The
-storefront turns Hydrogen's privacy banner off (`withPrivacyBanner: false` in
-`app/root.tsx`).
+The cart is Shopify's cart. The storefront's cart service (`app/lib/cart`) changes
+it with Storefront API mutations and reads it on the server. The cart id lives in
+the `cart` cookie (`HttpOnly`, `SameSite=Lax`, `Secure` over https). The app never
+writes it to `localStorage`. Checkout uses the `checkoutUrl` that Shopify returns.
+
+Analytics run only when `PUBLIC_CHECKOUT_DOMAIN` and `PUBLIC_STOREFRONT_ID` are
+both set and the development mock is off. Then the storefront loads Shopify's
+consent script (consent-tracking-api v0.2, from cdn.shopify.com, with the CSP
+nonce), reads the shop with a server query, and sends `PAGE_VIEW_2`,
+`PRODUCT_VIEW`, `COLLECTION_VIEW`, `SEARCH_VIEW` and `ADD_TO_CART` events. Until
+then it sends no events, loads no consent script and forwards no tracking cookies.
+A private (`shpat_`) token in `PUBLIC_STOREFRONT_API_TOKEN` switches analytics off
+and logs an `[analytics]` error. Analytics have not been verified against a live
+store.
+
+The storefront renders no privacy or cookie banner, as before the removal
+(Hydrogen's banner was turned off). Confirm the consent setup with the owner
+before analytics go live.
 
 ## 9. Newsletter
 
@@ -131,15 +155,15 @@ rejected with status 413.
 ## 10. Local development without a store
 
 Set `MOCK_STOREFRONT=true` in `.dev.vars` and run `npm run dev`. The storefront
-serves the Mellow demo catalog (products, collections, metaobjects, cart)
-from `app/lib/mock`. A badge in the corner of every page indicates mock mode.
+serves the Mellow demo catalog (products, collections, metaobjects, cart) from
+`app/lib/mock`. The mock exists in development only: production builds never load
+it. A badge in the corner of every page indicates mock mode.
 
-- `PUBLIC_STOREFRONT_API_TOKEN` must be a 32-character placeholder that does not
-  start with `shpat_`, for example `mockmockmockmockmockmockmockmock`. Hydrogen
-  logs a console error otherwise.
-- `.dev.vars.e2e` is a committed mock-mode environment, used by
-  `npm run dev:e2e` and the Playwright suite on port 3100 (Wrangler loads it
-  instead of `.dev.vars` when `CLOUDFLARE_ENV=e2e`).
+- `PUBLIC_STOREFRONT_API_TOKEN` can be any placeholder, for example
+  `mockmockmockmockmockmockmockmock`. Nothing checks its length.
+- `.dev.vars.e2e` is a committed mock-mode environment with placeholders only.
+  Wrangler loads it instead of `.dev.vars` when `CLOUDFLARE_ENV=e2e`, which
+  `npm run dev:e2e` and the Playwright suite (port 3100) set.
 - Checkout is not available in mock mode: `/dev/mock-checkout` explains that a
   real store is needed.
 - Cart permalinks accept mock variant ids, for example
@@ -147,7 +171,9 @@ from `app/lib/mock`. A badge in the corner of every page indicates mock mode.
 - The demo catalog has 13 products. Three of them (Silk Sleep Mask, Linen Sheet
   Set and Weighted Blanket) appear only under Shop All, which therefore has a
   second page: 12 products, then one more after "Load more".
-- A Storefront API query that fails with GraphQL errors and no data returns a
-  502, as it does on a live store.
+- A Storefront API query that fails with GraphQL errors and no data returns a 502,
+  as it does on a live store.
+- Customer accounts are deferred in every mode: `/account` ends on the 503 sign-in
+  page.
 
 See `app/lib/mock/README.md`.

@@ -1,5 +1,7 @@
 # Implementation Plan: Removing Shopify Hydrogen from the Mellow storefront
 
+Status: **implemented** (2026-10-25, commits 624bb22 to d2e2faa; the outcome, gates and review results are in docs/implementation-report.md section 13). The plan below is kept as written, with the behaviour deltas found during implementation added to "Intended behaviour changes".
+
 Repository root: /home/user/Noodlez (branch claude/relaxed-archimedes-qm7h5e). Architecture source: docs/hydrogen-removal-architecture.md (ADR-A..H, owner decisions in section 5). All paths below are absolute. Everything here comes from reading the files, the e2e specs and the installed Hydrogen 2026.4.7 / React Router 7.16.0 sources in node_modules. I did not run any commands. Anything that needs a command to confirm is listed under "Unverified assumptions".
 
 ## Overview

@@ -160,7 +160,7 @@ test.describe('console guard', () => {
     expect(BASELINE_ALLOWLIST).toEqual([]);
     await withGuard(browser, baseURL, async (guard, page) => {
       await page.evaluate((warning) => {
-        console.warn(warning); // Hydrogen's mock-shop warning, allowed until Phase 4c
+        console.warn(warning); // Hydrogen's former mock-shop warning: no longer allowed
         console.warn('any other warning');
       }, MOCK_SHOP_WARNING_BEFORE_4C);
 
