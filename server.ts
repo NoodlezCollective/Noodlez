@@ -4,17 +4,6 @@ import {storefrontRedirect} from '~/lib/storefront-redirect.server';
 import {safeRedirectPath} from '~/lib/urls';
 
 /**
- * Real routes have at most four path segments (`/blogs/:blog/:article` splits
- * into four entries, counting the empty one before the leading slash).
- * react-router 7.16 route matching costs CPU in proportion to the number of
- * segments (GHSA-chx6-hx7r-mcp5, fixed in 7.18): a 3,000-segment URL burns
- * about 1.2 s of CPU per request without authentication. Anything this deep
- * cannot be a storefront URL, so it is rejected before any work is done.
- * Remove once react-router is upgraded to 7.18 or later.
- */
-const MAX_PATH_SEGMENTS = 16;
-
-/**
  * Tells Shopify's consent script on document responses that the same-origin
  * Storefront API proxy exists (Hydrogen's `_sfapi_proxy` marker).
  */
@@ -67,8 +56,8 @@ function withMutableHeaders(
 /**
  * Headers every response should carry. Document responses get them in
  * app/entry.server.tsx; this fills the gaps for resource routes (robots,
- * sitemaps), `*.data` requests, redirects, early 404s and the Storefront API
- * proxy. Values a route already set are kept.
+ * sitemaps), `*.data` requests, redirects, the malformed-request answers and
+ * the Storefront API proxy. Values a route already set are kept.
  */
 export function ensureSecurityHeaders(response: Response): Response {
   return withMutableHeaders(response, ({headers}) => {
@@ -160,20 +149,16 @@ async function finishResponse(
 }
 
 /**
- * The deep-path guard and the malformed-request rules run before any work;
- * then the router context is built and the request goes either to the
- * Storefront API proxy or to React Router, whose 404s get a Storefront
- * redirect lookup. Security headers are added by the caller.
+ * The malformed-request rules run before any work; then the router context is
+ * built and the request goes either to the Storefront API proxy or to React
+ * Router, whose 404s get a Storefront redirect lookup. Security headers are
+ * added by the caller.
  */
 async function respond(
   request: Request,
   env: Env,
   executionContext: ExecutionContext,
 ): Promise<Response> {
-  if (new URL(request.url).pathname.split('/').length > MAX_PATH_SEGMENTS) {
-    return new Response('Not found', {status: 404});
-  }
-
   const rejected = rejectMalformedRequest(request);
   if (rejected) return rejected;
 

@@ -103,52 +103,35 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('server fetch handler: deep paths (react-router 7.16 route matching, GHSA-chx6-hx7r-mcp5)', () => {
-  it('answers 404 immediately for a 3,000-segment path, without any further work', async () => {
-    const response = await fetchPath(SEGMENTS(3000));
+describe('server fetch handler: deep paths', () => {
+  // React Router 7.18 fixed the route-matching cost behind GHSA-chx6-hx7r-mcp5,
+  // so server.ts no longer turns deep paths away before routing.
+  it('hands a 3,000-segment path to React Router (no early 404)', async () => {
+    const path = SEGMENTS(3000);
 
-    expect(response.status).toBe(404);
-    expect(await response.text()).toBe('Not found');
-    expect(mocks.createAppRouterContext).not.toHaveBeenCalled();
-    expect(mocks.handleRequest).not.toHaveBeenCalled();
-    expect(mocks.storefrontRedirect).not.toHaveBeenCalled();
-  });
+    const response = await fetchPath(path);
 
-  it('allows 15 segments and rejects 16', async () => {
-    // `split('/')` counts the empty entry before the leading slash: 15 segments -> 16 entries.
-    expect((await fetchPath(SEGMENTS(15))).status).toBe(200);
-    expect((await fetchPath(SEGMENTS(16))).status).toBe(404);
-  });
-
-  it('handles every real route shape normally', async () => {
-    const paths = [
-      '/',
-      '/products/cloudalign-pillow',
-      '/collections/all',
-      '/blogs/journal/sleep-better',
-      '/account/orders/abc',
-      '/sitemap/articles/1.xml',
-      '/policies/privacy-policy',
-    ];
-
-    const statuses = [];
-    for (const path of paths) statuses.push((await fetchPath(path)).status);
-
-    expect(statuses).toEqual(paths.map(() => 200));
-    expect(mocks.handleRequest).toHaveBeenCalledTimes(paths.length);
-  });
-
-  it('counts only literal slashes, so encoded slashes stay in one segment', async () => {
-    const response = await fetchPath('/' + 'a%2F'.repeat(100) + 'a');
+    expect(mocks.handleRequest).toHaveBeenCalledTimes(1);
+    const [request, handedContext] = mocks.handleRequest.mock.calls[0];
+    expect(new URL(request.url).pathname).toBe(path);
+    expect(handedContext).toBe(context);
     expect(response.status).toBe(200);
+    expect(await response.text()).toBe('ok');
   });
 });
 
 describe('server fetch handler: security headers on every response', () => {
   const EXPECTED = SECURITY_HEADERS;
 
-  it('adds them to the early 404', async () => {
+  it('adds them to a deep-path 404 that has no Storefront redirect', async () => {
+    mocks.handleRequest.mockImplementation(
+      async () => new Response('Not Found', {status: 404}),
+    );
+
     const response = await fetchPath(SEGMENTS(40));
+
+    expect(mocks.handleRequest).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(404);
     expect(Object.fromEntries(response.headers)).toMatchObject(EXPECTED);
   });
 

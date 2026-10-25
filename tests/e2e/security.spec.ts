@@ -205,7 +205,11 @@ test.describe('security headers', () => {
     {name: 'discount redirect', path: '/discount/MELLOW10'},
     {name: 'newsletter loader redirect', path: '/newsletter'},
     {name: 'newsletter action error', method: 'POST', path: '/newsletter.data'},
-    {name: 'early 404 for a very long path', path: LONG_PATH},
+    {
+      name: 'designed 404 for a very long path',
+      path: LONG_PATH,
+      document: true,
+    },
   ];
 
   for (const {name, method = 'GET', path, document} of CASES) {
@@ -848,19 +852,24 @@ test.describe('input validation', () => {
     expect(setCookies(response).some((c) => c.startsWith('cart='))).toBe(true);
   });
 
-  test('a path with far too many segments is rejected before routing', async ({
+  test('a path with far too many segments gets the designed 404', async ({
     request,
   }) => {
+    // React Router 7.18 routes deep paths like any other unknown path: the
+    // `$` splat route answers, with the security headers.
     const deep = `/${Array.from({length: 40}, (_, index) => `s${index}`).join('/')}`;
-    for (const path of [deep, `${deep}.data`]) {
-      const response = await request.get(path);
-      expect(response.status(), path).toBe(404);
-      expect(response.headers()['content-type']).toContain('text/plain');
-      expect(await response.text()).toBe('Not found');
+    const documentResponse = await request.get(deep);
+    const dataResponse = await request.get(`${deep}.data`);
+
+    expect(documentResponse.status()).toBe(404);
+    expect(documentResponse.headers()['content-type']).toContain('text/html');
+    expect(dataResponse.status(), `${deep}.data`).toBe(404);
+    for (const response of [documentResponse, dataResponse]) {
+      expect(response.headers()['x-content-type-options']).toBe(NOSNIFF);
+      expect(response.headers()['referrer-policy']).toBe(REFERRER_POLICY);
     }
 
-    // Real routes are at most four segments deep and are unaffected: an
-    // unknown path of that depth gets the designed HTML 404.
+    // Unknown paths as deep as real routes get the same designed HTML 404.
     for (const path of ['/a/b/c/d', '/blogs/news/some-article']) {
       const response = await request.get(path);
       expect(response.status(), path).toBe(404);

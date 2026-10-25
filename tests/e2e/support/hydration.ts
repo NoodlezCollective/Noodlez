@@ -6,8 +6,8 @@
  * into a controlled input can be wiped by hydration, and a state update that
  * lands while a deferred `<Suspense>` boundary is still dehydrated throws
  * "This Suspense boundary received an update before it finished hydrating".
- * Use `gotoHydrated()` instead of `page.goto()` for every app document that
- * renders React (the plain-text 404 for very deep paths does not):
+ * Use `gotoHydrated()` instead of `page.goto()` for every app document (all of
+ * them render React, including the designed 404 for very deep paths):
  *
  *   await gotoHydrated(page, '/products/cloudalign-pillow');
  *   await page.getByRole('button', {name: 'King'}).click();

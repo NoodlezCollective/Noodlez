@@ -17,6 +17,7 @@ import {
   expectPageChrome,
   expectSingleH1,
 } from './support/layout';
+import {namedMeta} from './support/seo';
 import type {Page} from '@playwright/test';
 
 interface SmokeRoute {
@@ -167,20 +168,23 @@ test.describe('routes', {tag: '@smoke'}, () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('a path with far too many segments is a plain 404', async ({
+  test('a path with far too many segments gets the designed 404', async ({
     page,
     consoleGuard,
   }) => {
-    // server.ts rejects such URLs before routing, so there is no app shell:
-    // no h1, no landmarks, no hydration. Just the bare 404 and its headers.
+    // React Router 7.18 routes deep paths like any other unknown path, so the
+    // `$` splat route answers with the designed, hydrated 404 page.
     const path = `/${Array.from({length: 40}, (_, index) => `s${index}`).join('/')}`;
     consoleGuard.allowHttpStatus(404, '/s0/s1/');
 
-    const response = await page.goto(path);
+    const response = await gotoHydrated(page, path);
 
     expect(response?.status()).toBe(404);
-    expect(response?.headers()['content-type']).toContain('text/plain');
+    expect(response?.headers()['content-type']).toContain('text/html');
     expect(response?.headers()['x-content-type-options']).toBe('nosniff');
-    await expect(page.locator('body')).toHaveText('Not found');
+    expect(await namedMeta(page, 'robots'), 'meta robots').toBe('noindex');
+    await expectPageChrome(page);
+    await expectSingleH1(page, COPY.notFoundH1);
+    await expectNoHorizontalOverflow(page);
   });
 });

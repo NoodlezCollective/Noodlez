@@ -189,7 +189,12 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <link rel="stylesheet" href={accountStyles}></link>
         <link rel="stylesheet" href={contentStyles}></link>
         <Meta />
-        <Links />
+        {/* React Router 7.18 gives <Links> the server nonce from its context,
+            which the client cannot reproduce: Chromium hides a <link>'s nonce
+            from the DOM, so hydration would see "" against the real value and
+            warn. Stylesheets are same-origin (style-src 'self'), so they need
+            no nonce; an empty one renders identically on both sides. */}
+        <Links nonce="" />
       </head>
       <body>
         {children}
