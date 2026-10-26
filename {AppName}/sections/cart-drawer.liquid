@@ -1,3 +1,4 @@
+{%- assign brand_token = '{AppName}' -%}
 {%- comment -%}
   Cart drawer (app/components/PageLayout.tsx CartAside + Aside.tsx) holding
   CartMain layout="aside" (app/components/CartMain.tsx). assets/theme.js
@@ -16,7 +17,7 @@
   <button class="close-outside" aria-label="Close" tabindex="-1" data-drawer-close></button>
   <aside class="drawer drawer--cart">
     <header class="drawer__header">
-      <h3 id="cart-drawer-title" class="drawer__title">{{ settings.cart_heading | replace: '{AppName}', settings.brand_name }}</h3>
+      <h3 id="cart-drawer-title" class="drawer__title">{{ settings.cart_heading | replace: brand_token, settings.brand_name }}</h3>
       <button class="icon-btn drawer__close" aria-label="Close" data-drawer-close>{% render 'icon', name: 'close' %}</button>
     </header>
     <div class="drawer__body" data-cart-render="cart-drawer">

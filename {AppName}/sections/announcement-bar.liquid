@@ -1,3 +1,4 @@
+{%- assign brand_token = '{AppName}' -%}
 {%- comment -%}
   Scrolling announcement strip (app/components/AnnouncementBar.tsx).
   The messages are repeated so each half of the loop is wider than any
@@ -22,7 +23,7 @@
   {%- capture items -%}
     {%- for block in section.blocks -%}
       {%- if block.settings.text != blank -%}
-        <span class="announcement-bar__item" {{ block.shopify_attributes }}>{{ block.settings.text | replace: '{AppName}', settings.brand_name }}</span>
+        <span class="announcement-bar__item" {{ block.shopify_attributes }}>{{ block.settings.text | replace: brand_token, settings.brand_name }}</span>
       {%- endif -%}
     {%- endfor -%}
   {%- endcapture -%}

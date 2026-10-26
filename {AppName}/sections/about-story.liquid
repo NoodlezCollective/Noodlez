@@ -1,3 +1,4 @@
+{%- assign brand_token = '{AppName}' -%}
 {%- comment -%}
   About page story card with the two photos (app/routes/pages.about.tsx,
   DEFAULT_ABOUT_CONTENT.story / imageLeft / imageBottom).
@@ -20,10 +21,10 @@
       </div>
     {%- endif -%}
     <div class="about-story__card">
-      <h2 id="about-story-heading">{{ section.settings.heading | replace: '{AppName}', settings.brand_name }}</h2>
+      <h2 id="about-story-heading">{{ section.settings.heading | replace: brand_token, settings.brand_name }}</h2>
       <p>
-        {{- section.settings.body | replace: '{AppName}', settings.brand_name -}}
-        {%- if section.settings.highlight != blank %} <span class="about-story__highlight">{{ section.settings.highlight | replace: '{AppName}', settings.brand_name }}</span>{% endif -%}
+        {{- section.settings.body | replace: brand_token, settings.brand_name -}}
+        {%- if section.settings.highlight != blank %} <span class="about-story__highlight">{{ section.settings.highlight | replace: brand_token, settings.brand_name }}</span>{% endif -%}
       </p>
     </div>
     {%- if image_bottom != blank or section.settings.show_placeholders -%}

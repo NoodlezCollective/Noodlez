@@ -1,3 +1,4 @@
+{%- assign brand_token = '{AppName}' -%}
 {%- comment -%}
   Policy index list (app/routes/policies._index.tsx). Each block links to the
   Page that holds the policy (template page.policy); until that page exists the
@@ -19,9 +20,9 @@
         <li {{ block.shopify_attributes }}>
           <a class="policy-card" href="{{ url }}">
             <span class="policy-card__body">
-              <span class="policy-card__title">{{ title | replace: '{AppName}', settings.brand_name }}</span>
+              <span class="policy-card__title">{{ title | replace: brand_token, settings.brand_name }}</span>
               {%- if block.settings.description != blank -%}
-                <span class="policy-card__description">{{ block.settings.description | replace: '{AppName}', settings.brand_name }}</span>
+                <span class="policy-card__description">{{ block.settings.description | replace: brand_token, settings.brand_name }}</span>
               {%- endif -%}
             </span>
             {%- render 'icon', name: 'arrow-right', size: 20, class: 'policy-card__arrow' -%}

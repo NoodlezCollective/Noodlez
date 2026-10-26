@@ -1,3 +1,4 @@
+{%- assign brand_token = '{AppName}' -%}
 {%- comment -%}
   Deep indigo footer (app/components/Footer.tsx): social-proof call to action
   card, the "footer" link list's child lists as ruled columns (a list titled
@@ -31,9 +32,9 @@
     <div class="footer-cta">
       <div class="footer-cta__body">
         {%- render 'stars', rating: 5, label: settings.rating_label, size: 'sm' -%}
-        <p class="footer-cta__heading">{{ settings.footer_cta_heading | replace: '{AppName}', brand }}</p>
+        <p class="footer-cta__heading">{{ settings.footer_cta_heading | replace: brand_token, brand }}</p>
       </div>
-      <a class="btn btn--light btn--md" href="{{ cta_url }}"><span class="btn__label">{{ settings.footer_cta_label | replace: '{AppName}', brand }}</span></a>
+      <a class="btn btn--light btn--md" href="{{ cta_url }}"><span class="btn__label">{{ settings.footer_cta_label | replace: brand_token, brand }}</span></a>
     </div>
 
     <div class="site-footer__columns">
@@ -127,7 +128,7 @@
     <p class="site-footer__watermark" aria-hidden="true" style="--watermark-chars:{{ watermark_chars }}">{{ brand }}</p>
 
     <div class="site-footer__bottom">
-      <p>{{ settings.copyright | replace: '{AppName}', brand }}</p>
+      <p>{{ settings.copyright | replace: brand_token, brand }}</p>
     </div>
   </div>
 </footer>

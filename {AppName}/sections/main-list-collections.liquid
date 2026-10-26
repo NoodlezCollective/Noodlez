@@ -1,11 +1,12 @@
+{%- assign brand_token = '{AppName}' -%}
 {%- comment -%}
   Collections index (app/routes/collections._index.tsx + CollectionCard.tsx).
 {%- endcomment -%}
 <div class="collections-page container" data-section-id="{{ section.id }}">
   <header class="page-header page-header--center collections-header">
     {%- if section.settings.eyebrow != blank -%}<p class="eyebrow page-header__eyebrow">{{ section.settings.eyebrow }}</p>{%- endif -%}
-    <h1>{{ section.settings.title | replace: '{AppName}', settings.brand_name }}</h1>
-    {%- if section.settings.description != blank -%}<p class="page-header__description">{{ section.settings.description | replace: '{AppName}', settings.brand_name }}</p>{%- endif -%}
+    <h1>{{ section.settings.title | replace: brand_token, settings.brand_name }}</h1>
+    {%- if section.settings.description != blank -%}<p class="page-header__description">{{ section.settings.description | replace: brand_token, settings.brand_name }}</p>{%- endif -%}
     {%- if section.settings.cta_label != blank -%}
       <div class="collections-header__actions">
         <a class="btn btn--outline btn--md" href="{{ routes.all_products_collection_url }}"><span class="btn__label">{{ section.settings.cta_label }}</span></a>

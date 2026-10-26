@@ -1,3 +1,4 @@
+{%- assign brand_token = '{AppName}' -%}
 {%- comment -%}
   Shopify page body (when the about page has one) followed by the closing
   call-to-action band (app/routes/pages.about.tsx, DEFAULT_ABOUT_CONTENT.closing).
@@ -15,9 +16,9 @@
 <section class="section section--tight" aria-labelledby="about-cta-heading">
   <div class="container">
     <div class="cta-band">
-      <h2 id="about-cta-heading">{{ section.settings.heading | replace: '{AppName}', settings.brand_name }}</h2>
+      <h2 id="about-cta-heading">{{ section.settings.heading | replace: brand_token, settings.brand_name }}</h2>
       {%- if section.settings.body != blank -%}
-        <p>{{ section.settings.body | replace: '{AppName}', settings.brand_name }}</p>
+        <p>{{ section.settings.body | replace: brand_token, settings.brand_name }}</p>
       {%- endif -%}
       {%- if section.settings.cta_label != blank -%}
         <a class="btn btn--light btn--lg" href="{{ cta_url }}"><span class="btn__label">{{ section.settings.cta_label }}</span></a>

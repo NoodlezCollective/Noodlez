@@ -1,3 +1,4 @@
+{%- assign brand_token = '{AppName}' -%}
 {%- comment -%}
   "What we stand for" value cards (app/routes/pages.about.tsx,
   DEFAULT_ABOUT_CONTENT.values).
@@ -6,14 +7,14 @@
 <section class="section section--tight" aria-labelledby="about-values-heading">
   <div class="container">
     <div class="section-heading section-heading--center">
-      <h2 id="about-values-heading" class="section-heading__title">{{ section.settings.heading | replace: '{AppName}', settings.brand_name }}</h2>
+      <h2 id="about-values-heading" class="section-heading__title">{{ section.settings.heading | replace: brand_token, settings.brand_name }}</h2>
     </div>
     <ul class="values-grid">
       {%- for block in section.blocks -%}
         <li class="value-card" {{ block.shopify_attributes }}>
           <span class="value-card__icon">{%- render 'icon', name: block.settings.icon, size: 22, feature: true -%}</span>
-          <h3 class="value-card__title">{{ block.settings.title | replace: '{AppName}', settings.brand_name }}</h3>
-          <p class="text-muted">{{ block.settings.body | replace: '{AppName}', settings.brand_name }}</p>
+          <h3 class="value-card__title">{{ block.settings.title | replace: brand_token, settings.brand_name }}</h3>
+          <p class="text-muted">{{ block.settings.body | replace: brand_token, settings.brand_name }}</p>
         </li>
       {%- endfor -%}
     </ul>

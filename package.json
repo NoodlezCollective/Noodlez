@@ -24,7 +24,8 @@
     "store:check": "node scripts/check-store.mjs",
     "theme:check": "cd '{AppName}' && npx -y @shopify/cli@3.93.2 theme check",
     "theme:preview": "node scripts/theme-preview/server.mjs",
-    "theme:package": "cd '{AppName}' && npx -y @shopify/cli@3.93.2 theme package"
+    "theme:package": "cd '{AppName}' && npx -y @shopify/cli@3.93.2 theme package",
+    "theme:liquid-check": "ruby scripts/theme-preview/liquid-check.rb"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {

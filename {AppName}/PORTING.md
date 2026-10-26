@@ -42,8 +42,13 @@ is `app/styles/*.css` concatenated in the order `root.tsx` loads them) and the
    - `meta-tags`, `css-variables` (layout only)
 4. **Brand placeholder.** Copy that contains `{AppName}` stays literal in
    section defaults and is rendered through
-   `{{ text | replace: '{AppName}', settings.brand_name }}`. Wordmark and
-   watermark use `settings.brand_name`, never `shop.name`.
+   `{{ text | replace: brand_token, settings.brand_name }}` after
+   `{%- assign brand_token = '{AppName}' -%}` at the top of the file. Never
+   write `'{AppName}'` inside `{{ … }}`: Shopify's tokenizer ends an output
+   tag at the first `}`, so the upload fails with "Liquid templates that can't
+   be parsed" (theme check does not catch it; `scripts/theme-preview/liquid-check.rb`
+   does). Inside `{% %}` tags the literal is fine. Wordmark and watermark use
+   `settings.brand_name`, never `shop.name`.
 5. **URLs** come from `routes.*` (`routes.cart_url`, `routes.search_url`,
    `routes.all_products_collection_url`, `routes.root_url`, `collection.url`,
    `product.url`, `page.url`). Never hardcode `/cart` or `/search`. Policy
@@ -93,10 +98,10 @@ defaults keyed by `page.handle` in `sections/policy-hero.liquid`.
 
 ## File ownership
 
-| Task | Files |
-| --- | --- |
-| header/footer/drawers | `sections/announcement-bar, header, footer, cart-drawer, search-drawer, mobile-menu`, `sections/*-group.json`, `snippets/cart-line.liquid`, `snippets/cart-summary.liquid` (+ gift bar), `snippets/cart-empty.liquid`, `assets/theme.js` |
-| home | `sections/hero, press-bar, featured-products, story, ugc-grid, lifestyle-gallery, stat-rings, testimonials, faq, newsletter`, `templates/index.json`, `assets/home.js` |
-| product | `sections/main-product, product-reviews, recommended-products`, `snippets/product-*.liquid`, `templates/product.json`, `assets/product.js` |
-| collection/search | `sections/main-collection, collection-banner, main-list-collections, main-search`, `snippets/filter-*.liquid`, `templates/collection.json, list-collections.json, search.json`, `assets/collection.js`, predictive results markup inside the search drawer via `snippets/predictive-results.liquid` |
-| cart/content | `sections/main-cart, main-page, policy-hero, policies-index, about-*, main-404, main-blog, main-article, main-password, customers`, `templates/cart.json, page.json, page.about.json, page.policy.json, page.policies.json, 404.json, blog.json, article.json, password.json, gift_card.liquid, customers/*.json` |
+| Task                  | Files                                                                                                                                                                                                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| header/footer/drawers | `sections/announcement-bar, header, footer, cart-drawer, search-drawer, mobile-menu`, `sections/*-group.json`, `snippets/cart-line.liquid`, `snippets/cart-summary.liquid` (+ gift bar), `snippets/cart-empty.liquid`, `assets/theme.js`                                                                          |
+| home                  | `sections/hero, press-bar, featured-products, story, ugc-grid, lifestyle-gallery, stat-rings, testimonials, faq, newsletter`, `templates/index.json`, `assets/home.js`                                                                                                                                            |
+| product               | `sections/main-product, product-reviews, recommended-products`, `snippets/product-*.liquid`, `templates/product.json`, `assets/product.js`                                                                                                                                                                        |
+| collection/search     | `sections/main-collection, collection-banner, main-list-collections, main-search`, `snippets/filter-*.liquid`, `templates/collection.json, list-collections.json, search.json`, `assets/collection.js`, predictive results markup inside the search drawer via `snippets/predictive-results.liquid`               |
+| cart/content          | `sections/main-cart, main-page, policy-hero, policies-index, about-*, main-404, main-blog, main-article, main-password, customers`, `templates/cart.json, page.json, page.about.json, page.policy.json, page.policies.json, 404.json, blog.json, article.json, password.json, gift_card.liquid, customers/*.json` |

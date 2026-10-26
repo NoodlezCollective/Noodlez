@@ -1,3 +1,4 @@
+{%- assign brand_token = '{AppName}' -%}
 {%- comment -%}
   About page hero (app/routes/pages.about.tsx, DEFAULT_ABOUT_CONTENT.hero).
 {%- endcomment -%}
@@ -19,7 +20,7 @@
         {%- endfor -%}
       </h1>
       {%- if section.settings.subheading != blank -%}
-        <p class="about-hero__sub">{{ section.settings.subheading | replace: '{AppName}', settings.brand_name }}</p>
+        <p class="about-hero__sub">{{ section.settings.subheading | replace: brand_token, settings.brand_name }}</p>
       {%- endif -%}
       {%- if section.settings.cta_label != blank -%}
         <a class="btn btn--primary btn--md" href="{{ cta_url }}"><span class="btn__label">{{ section.settings.cta_label }}</span></a>

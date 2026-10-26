@@ -1,3 +1,4 @@
+{%- assign brand_token = '{AppName}' -%}
 {%- comment -%}
   Order summary (app/components/CartSummary.tsx): free-gift progress bar,
   totals, discount / gift card panels, checkout and trust badges.
@@ -136,7 +137,7 @@
         {%- assign badge_icon = 'check' -%}
         {%- assign badge_label = badge_parts[0] | strip -%}
       {%- endif -%}
-      <li>{% render 'icon', name: badge_icon, size: 18, feature: true %}{{ badge_label | replace: '{AppName}', brand }}</li>
+      <li>{% render 'icon', name: badge_icon, size: 18, feature: true %}{{ badge_label | replace: brand_token, brand }}</li>
     {%- endfor -%}
   </ul>
 </aside>
