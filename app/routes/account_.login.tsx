@@ -6,7 +6,7 @@ import {
 } from '~/components/account/AccountUnavailable';
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: 'Sign in | Mellow'}, {name: 'robots', content: 'noindex'}];
+  return [{title: 'Sign in | {AppName}'}, {name: 'robots', content: 'noindex'}];
 };
 
 export async function loader({request, context}: Route.LoaderArgs) {

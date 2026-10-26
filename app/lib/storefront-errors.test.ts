@@ -82,9 +82,9 @@ describe('isErrorsOnlyResult', () => {
   });
 
   it('is false for partial data, which callers can still use', () => {
-    expect(isErrorsOnlyResult({shop: {name: 'Mellow'}, errors: ERRORS})).toBe(
-      false,
-    );
+    expect(
+      isErrorsOnlyResult({shop: {name: '{AppName}'}, errors: ERRORS}),
+    ).toBe(false);
     expect(
       isErrorsOnlyResult({menu: null, shop: {id: '1'}, errors: ERRORS}),
     ).toBe(false);
@@ -220,7 +220,7 @@ describe('guardStorefrontErrors', () => {
 
   it('returns partial data with errors unchanged', async () => {
     // Arrange
-    const partial = {shop: {name: 'Mellow'}, menu: null, errors: ERRORS};
+    const partial = {shop: {name: '{AppName}'}, menu: null, errors: ERRORS};
     const {storefront, api} = createFakeStorefront(partial);
     guardStorefrontErrors(storefront);
 

@@ -14,7 +14,7 @@ import {STOREFRONT_API_ERROR_STATUS} from '~/lib/storefront-errors';
 import {safeRedirectPath} from '~/lib/urls';
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: 'Cart | Mellow'}, {name: 'robots', content: 'noindex'}];
+  return [{title: 'Cart | {AppName}'}, {name: 'robots', content: 'noindex'}];
 };
 
 export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
@@ -248,7 +248,7 @@ export default function Cart() {
   return (
     <div className="container cart-page">
       <header className="page-header cart-page__header">
-        <p className="eyebrow page-header__eyebrow">Mellow</p>
+        <p className="eyebrow page-header__eyebrow">{'{AppName}'}</p>
         <h1>
           Your cart
           {count > 0 ? (

@@ -104,12 +104,12 @@ const HEAD_ROWS: readonly HeadRow[] = [
   noindex('/this-page-does-not-exist', TITLES.pageNotFound, 404),
   noindex('/products/does-not-exist', TITLES.productNotFound, 404),
   noindex('/collections/does-not-exist', TITLES.collectionNotFound, 404),
-  noindex('/pages/does-not-exist', 'Page not found | Mellow', 404),
-  noindex('/policies/does-not-exist', 'Policy not found | Mellow', 404),
+  noindex('/pages/does-not-exist', 'Page not found | {AppName}', 404),
+  noindex('/policies/does-not-exist', 'Policy not found | {AppName}', 404),
   // The mock has no subscription policy (the real API may).
-  noindex('/policies/subscription-policy', 'Policy not found | Mellow', 404),
-  noindex('/blogs/news', 'Blog not found | Mellow', 404),
-  noindex('/blogs/news/does-not-exist', 'Article not found | Mellow', 404),
+  noindex('/policies/subscription-policy', 'Policy not found | {AppName}', 404),
+  noindex('/blogs/news', 'Blog not found | {AppName}', 404),
+  noindex('/blogs/news/does-not-exist', 'Article not found | {AppName}', 404),
 ];
 
 test.describe('server-rendered head', () => {
@@ -140,7 +140,7 @@ test.describe('server-rendered head', () => {
       expect(await namedMeta(page, 'robots'), 'meta robots').toBe(row.robots);
 
       // The site name comes from the document shell: every page has it, once.
-      expect(await ogContent(page, 'site_name')).toBe('Mellow');
+      expect(await ogContent(page, 'site_name')).toBe('{AppName}');
       expect(await countMeta(page, 'head meta[property="og:site_name"]')).toBe(
         1,
       );
@@ -230,7 +230,7 @@ test.describe('product JSON-LD', () => {
       name: product.title,
       url: `${origin}${productPath(product)}`,
       sku: variant.sku,
-      brand: {'@type': 'Brand', name: 'Mellow'},
+      brand: {'@type': 'Brand', name: '{AppName}'},
       offers: {
         '@type': 'Offer',
         url: `${origin}${productPath(product)}`,

@@ -1,25 +1,31 @@
 /*
  * --------------------------------------------------
- * Mellow design tokens
- * Palette sampled from the reference screenshots.
+ * Mellow design tokens – "Melatonin & Sunset" palette
+ * Twilight Indigo for brand and action, Lavender Mist for breathing room,
+ * Sunset Peach for social proof and rewards, Midnight Slate for grounding.
+ * Geometry is pillow-soft: 40px pills on controls and badges.
  * --------------------------------------------------
  */
 :root {
   /* Brand */
-  --color-primary: #4c4184; /* buttons, logo, press bar, play button */
+  --color-primary: #4c4184; /* Twilight Indigo: headings, buttons, badges, links */
   --color-primary-hover: #3d3470;
   --color-primary-deep: #4d408d; /* announcement bar */
   --color-primary-soft: #a39bd4; /* logo accent, trust icons */
-  --color-lavender: #e1e1fe; /* header background */
-  --color-lavender-tint: #efefff; /* cards, review box, story card */
-  --color-lavender-soft: #f3ebff; /* hero gradient start */
+  --color-lavender: #e0e0ff; /* header background, pill fills */
+  --color-lavender-tint: #e8e6f4; /* Lavender Mist: section backgrounds, cards, cart upsell */
+  --color-lavender-soft: #f3f1fb; /* hero gradient start, quiet panels */
   --color-lavender-mid: #e9eaff;
-  --color-accent: #fea58c; /* badges, stars */
-  --color-accent-deep: #f08a6a;
+  --color-accent: #ffa38b; /* Sunset Peach: stars, badges, cart banner */
+  --color-accent-deep: #f29a82; /* coral: cart-add pulse, hover on peach */
+  --color-accent-tint: #fff1ec; /* peach wash behind rewards and quotes */
+  --color-amber: #ffb749; /* free-gift threshold bar */
+  --color-midnight: #242833; /* Midnight Slate: contrast sections */
+  --color-night: #0a0428; /* deepest contrast, urgency text */
 
   /* Neutrals */
-  --color-ink: #1e2021; /* body / product titles */
-  --color-heading: #4a4070; /* display headings */
+  --color-ink: #242833; /* body / product titles (Midnight Slate) */
+  --color-heading: #4c4184; /* display headings in Twilight Indigo */
   --color-muted: #5b6562;
   --color-subtle: #66627f; /* compare-at price, counts (≥4.5:1 on white) */
   --color-border: #bbbbc7;
@@ -27,12 +33,12 @@
   --color-surface: #ffffff;
   --color-surface-alt: #f7f6fc;
   --color-danger: #c2412d;
-  --color-success: #2f7a4a;
+  --color-success: #27683f; /* 5.4:1 on lavender-tint, 6.7:1 on white */
   --color-dark: #141414;
 
   /* Typography */
   --font-display:
-    'Outfit', 'Avenir Next', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    'Inter', 'Helvetica Neue', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-body:
     'Inter', 'Helvetica Neue', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --text-xs: 0.75rem; /* 12 */
@@ -57,17 +63,19 @@
   --drawer-padding: 1.5rem;
   --section-gap: 72px;
 
-  /* Shape */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  /* Shape – pillow-soft */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-control: 40px; /* buttons, variant pills, badges, inputs */
   --radius-pill: 999px;
 
   /* Elevation */
   --shadow-sm: 0 1px 2px rgba(45, 36, 92, 0.06);
   --shadow-md: 0 8px 24px rgba(45, 36, 92, 0.1);
   --shadow-lg: 0 24px 60px rgba(45, 36, 92, 0.18);
+  --shadow-glow: 0 0 0 4.5px rgba(242, 154, 130, 0.45); /* cart-add pulse */
 
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

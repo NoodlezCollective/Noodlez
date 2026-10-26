@@ -306,7 +306,7 @@ describe('/search meta', () => {
   it('puts the term in the title and keeps search pages out of the index', () => {
     const tags = metaFor({type: 'regular', term: 'cool pillow'});
 
-    expect(tags[0].title).toBe('Search results for “cool pillow” | Mellow');
+    expect(tags[0].title).toBe('Search results for “cool pillow” | {AppName}');
     expect(tags).toContainEqual({name: 'robots', content: 'noindex'});
   });
 
@@ -315,6 +315,6 @@ describe('/search meta', () => {
     ['for a predictive response', {type: 'predictive', term: 'pillow'}],
     ['without data', undefined],
   ])('uses the plain title %s', (_label, data) => {
-    expect(metaFor(data)[0].title).toBe('Search | Mellow');
+    expect(metaFor(data)[0].title).toBe('Search | {AppName}');
   });
 });

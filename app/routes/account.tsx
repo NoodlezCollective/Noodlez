@@ -15,7 +15,7 @@ export function shouldRevalidate() {
 }
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: 'My account | Mellow'}];
+  return [{title: 'My account | {AppName}'}];
 };
 
 export async function loader({context}: Route.LoaderArgs) {

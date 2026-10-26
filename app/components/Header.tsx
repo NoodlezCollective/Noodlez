@@ -1,4 +1,4 @@
-import {Suspense} from 'react';
+import {Suspense, useEffect, useRef, useState} from 'react';
 import {Await, NavLink, useAsyncValue} from 'react-router';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
@@ -229,8 +229,29 @@ function SearchToggle() {
   );
 }
 
+/**
+ * Flashes the count bubble from indigo to coral with a soft glow for 2.4s
+ * whenever the count grows: an immediate visual reward for adding to cart.
+ */
+function useCartPulse(count: number) {
+  const previous = useRef(count);
+  const [pulsing, setPulsing] = useState(false);
+  useEffect(() => {
+    if (count > previous.current) {
+      setPulsing(true);
+      const timer = window.setTimeout(() => setPulsing(false), 2400);
+      previous.current = count;
+      return () => window.clearTimeout(timer);
+    }
+    previous.current = count;
+    return undefined;
+  }, [count]);
+  return pulsing;
+}
+
 function CartBadge({count}: {count: number}) {
   const {open} = useAside();
+  const pulsing = useCartPulse(count);
 
   return (
     <a
@@ -256,7 +277,10 @@ function CartBadge({count}: {count: number}) {
     >
       <CartIcon />
       {count > 0 ? (
-        <span className="cart-toggle__count" aria-hidden="true">
+        <span
+          className={`cart-toggle__count ${pulsing ? 'is-pulsing' : ''}`.trim()}
+          aria-hidden="true"
+        >
           {count}
         </span>
       ) : null}

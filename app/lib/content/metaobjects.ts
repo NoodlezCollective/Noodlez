@@ -23,11 +23,13 @@ import type {
   AboutContent,
   AboutValue,
   FaqItem,
+  FreeGiftOffer,
   HomeContent,
   ImageContent,
   LifestyleImage,
   LinkContent,
   PressLogo,
+  ProofStat,
   SiteSettings,
   Testimonial,
   TrustBadge,
@@ -412,6 +414,30 @@ export function mapSiteSettings(
       return [{icon: icon ?? rotated?.icon ?? 'shield', label: text}];
     },
   );
+  const giftThreshold = fieldNumber(record, 'free_gift_threshold');
+  const giftLabel = fieldText(record, 'free_gift_label');
+  // A threshold of 0 (or below) switches the offer off; no field keeps the default.
+  const freeGift: FreeGiftOffer | null =
+    giftThreshold === null
+      ? defaults.freeGift
+      : giftThreshold > 0
+        ? {
+            threshold: giftThreshold,
+            label: giftLabel ?? defaults.freeGift?.label ?? 'a free gift',
+            code: fieldText(record, 'free_gift_code'),
+          }
+        : null;
+  const proofStats: ProofStat[] = fieldList(record, 'proof_stats').flatMap(
+    (entry, index) => {
+      const [rawValue, ...rest] = entry.split('|');
+      const value = Number(rawValue?.replace('%', '').trim());
+      const label = rest.join('|').trim();
+      if (!Number.isFinite(value) || value < 0 || value > 100 || !label) {
+        return [];
+      }
+      return [{id: `stat-${index}`, value: Math.round(value), label}];
+    },
+  );
   return {
     announcements: announcements.length
       ? announcements
@@ -420,6 +446,17 @@ export function mapSiteSettings(
     savingsNote: fieldText(record, 'savings_note') ?? defaults.savingsNote,
     savingsExplanation:
       fieldText(record, 'savings_explanation') ?? defaults.savingsExplanation,
+    cartHeading: fieldText(record, 'cart_heading') ?? defaults.cartHeading,
+    ratingLabel: fieldText(record, 'rating_label') ?? defaults.ratingLabel,
+    footerCta: {
+      heading:
+        fieldText(record, 'footer_cta_heading') ?? defaults.footerCta.heading,
+      label: fieldText(record, 'footer_cta_label') ?? defaults.footerCta.label,
+      url: fieldText(record, 'footer_cta_url') ?? defaults.footerCta.url,
+    },
+    copyright: fieldText(record, 'copyright') ?? defaults.copyright,
+    freeGift,
+    proofStats: proofStats.length ? proofStats : defaults.proofStats,
   };
 }
 

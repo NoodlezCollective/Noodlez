@@ -64,7 +64,7 @@ type FetchArgs = [input: RequestInfo | URL, init?: RequestInit];
 
 /** Makes the Storefront API answer every call with `body` (HTTP 200 unless set). */
 function stubFetch(
-  body: unknown = {data: {shop: {name: 'Mellow'}}},
+  body: unknown = {data: {shop: {name: '{AppName}'}}},
   init: ResponseInit = {},
 ) {
   const fetchMock = vi.fn(
@@ -472,7 +472,7 @@ describe('HTTP errors', () => {
 
 describe('results', () => {
   const PARTIAL = {
-    data: {shop: {name: 'Mellow'}, menu: null},
+    data: {shop: {name: '{AppName}'}, menu: null},
     errors: [
       {
         message: 'Menu for shopper@example.com failed',
@@ -485,12 +485,12 @@ describe('results', () => {
     'query Header { shop { name } menu(handle: "main") { id } }';
 
   it('returns the data fields, without an errors key', async () => {
-    stubFetch({data: {shop: {name: 'Mellow'}}});
+    stubFetch({data: {shop: {name: '{AppName}'}}});
     const {storefront} = createClient();
 
     const result = await storefront.query(SHOP_QUERY);
 
-    expect(result).toEqual({shop: {name: 'Mellow'}});
+    expect(result).toEqual({shop: {name: '{AppName}'}});
     expect(Object.keys(result)).toEqual(['shop']);
     expect(consoleError).not.toHaveBeenCalled();
   });
@@ -526,7 +526,7 @@ describe('results', () => {
   it('logs errors without codes as a plain count', async () => {
     vi.stubEnv('DEV', false);
     stubFetch({
-      data: {shop: {name: 'Mellow'}},
+      data: {shop: {name: '{AppName}'}},
       errors: [{message: 'a'}, {message: 'b'}],
     });
     const {storefront} = createClient();
@@ -540,12 +540,12 @@ describe('results', () => {
 
   it('logs a null entry in errors as an error without a code, instead of failing the request', async () => {
     vi.stubEnv('DEV', false);
-    stubFetch({data: {shop: {name: 'Mellow'}}, errors: [null]});
+    stubFetch({data: {shop: {name: '{AppName}'}}, errors: [null]});
     const {storefront} = createClient();
 
     const result = await storefront.query(SHOP_QUERY);
 
-    expect(result).toEqual({shop: {name: 'Mellow'}, errors: [null]});
+    expect(result).toEqual({shop: {name: '{AppName}'}, errors: [null]});
     expect(consoleError).toHaveBeenCalledWith(
       '[storefront] Shop returned partial data: 1 error(s)',
     );
@@ -553,7 +553,7 @@ describe('results', () => {
 
   it('describes a null entry as an unknown error in development', async () => {
     stubFetch({
-      data: {shop: {name: 'Mellow'}},
+      data: {shop: {name: '{AppName}'}},
       errors: [
         null,
         {message: 'menu failed', extensions: {code: 'INTERNAL_SERVER_ERROR'}},
@@ -596,7 +596,7 @@ describe('results', () => {
   });
 
   it('drops an empty errors list', async () => {
-    stubFetch({data: {shop: {name: 'Mellow'}}, errors: []});
+    stubFetch({data: {shop: {name: '{AppName}'}}, errors: []});
     const {storefront} = createClient();
 
     expect(Object.keys(await storefront.query(SHOP_QUERY))).toEqual(['shop']);
@@ -626,7 +626,7 @@ describe('results', () => {
 
   it('strips __proto__ keys from responses', async () => {
     stubFetch(
-      '{"data":{"shop":{"name":"Mellow","__proto__":{"polluted":true}}}}',
+      '{"data":{"shop":{"name":"{AppName}","__proto__":{"polluted":true}}}}',
     );
     const {storefront} = createClient();
 
@@ -642,7 +642,7 @@ describe('results', () => {
 describe('responses with an escaped "__proto__" key', () => {
   it('are stripped as well, so copies of the data stay unpolluted', async () => {
     stubFetch(
-      String.raw`{"data":{"shop":{"name":"Mellow","\u005f_proto__":{"polluted":true}}}}`,
+      String.raw`{"data":{"shop":{"name":"{AppName}","\u005f_proto__":{"polluted":true}}}}`,
     );
     const {storefront} = createClient();
 
@@ -731,7 +731,7 @@ describe('caching', () => {
     const repeat = await client.storefront.query(SHOP_QUERY);
 
     // Assert
-    expect(repeat).toEqual({shop: {name: 'Mellow'}});
+    expect(repeat).toEqual({shop: {name: '{AppName}'}});
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [entry] = memory.entries.values();
     expect(entry.headers['cache-control']).toBe('public, max-age=86400');
@@ -908,7 +908,7 @@ describe('caching', () => {
   it('never caches results with errors', async () => {
     const memory = createMemoryCache();
     stubFetch({
-      data: {shop: {name: 'Mellow'}},
+      data: {shop: {name: '{AppName}'}},
       errors: [{message: 'menu failed'}],
     });
     const client = createClient({cache: memory.cache});
@@ -922,7 +922,7 @@ describe('caching', () => {
   it('stores only the GraphQL body, never Storefront API headers such as Set-Cookie', async () => {
     const memory = createMemoryCache();
     stubFetch(
-      {data: {shop: {name: 'Mellow'}}},
+      {data: {shop: {name: '{AppName}'}}},
       {
         headers: {
           'content-type': 'application/json',
@@ -937,7 +937,7 @@ describe('caching', () => {
     await client.flush();
 
     const [entry] = memory.entries.values();
-    expect(JSON.parse(entry.body)).toEqual({data: {shop: {name: 'Mellow'}}});
+    expect(JSON.parse(entry.body)).toEqual({data: {shop: {name: '{AppName}'}}});
     expect(Object.keys(entry.headers)).not.toContain('set-cookie');
     expect(Object.keys(entry.headers)).not.toContain('server-timing');
   });
@@ -966,7 +966,7 @@ describe('client shape', () => {
       );
     }
     const {query} = storefront;
-    expect(await query(SHOP_QUERY)).toEqual({shop: {name: 'Mellow'}});
+    expect(await query(SHOP_QUERY)).toEqual({shop: {name: '{AppName}'}});
   });
 
   it('works under guardStorefrontErrors, which reassigns query and mutate', async () => {
@@ -1014,7 +1014,7 @@ describe('types', () => {
     // @ts-expect-error The generated variables are required.
     await storefront.query(TYPED_QUERY);
 
-    expect(result).toEqual({shop: {name: 'Mellow'}});
+    expect(result).toEqual({shop: {name: '{AppName}'}});
     expectTypeOf(result.shop.name).toEqualTypeOf<string>();
     expectTypeOf(result.errors).toEqualTypeOf<StorefrontErrors['errors']>();
   });
@@ -1342,7 +1342,7 @@ describe('tracking (D-9: only with analytics on)', () => {
     const fetchMock = vi.fn(async (..._args: FetchArgs) => {
       const setCookies = answers[Math.min(calls, answers.length - 1)] ?? [];
       calls += 1;
-      return new Response(JSON.stringify({data: {shop: {name: 'Mellow'}}}), {
+      return new Response(JSON.stringify({data: {shop: {name: '{AppName}'}}}), {
         status: 200,
         headers: [
           ['content-type', 'application/json'],
@@ -1578,7 +1578,7 @@ describe('tracking (D-9: only with analytics on)', () => {
     const answer = await visitorB.storefront.query(SHOP_QUERY);
 
     // Assert: one upstream call, stored under the key it has without tracking.
-    expect(answer).toEqual({shop: {name: 'Mellow'}});
+    expect(answer).toEqual({shop: {name: '{AppName}'}});
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const key = await createCacheKey(ORIGIN, [
       'v1',
@@ -1627,7 +1627,7 @@ describe('tracking (D-9: only with analytics on)', () => {
         }),
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({data: {shop: {name: 'Mellow'}}}), {
+        new Response(JSON.stringify({data: {shop: {name: '{AppName}'}}}), {
           headers: [['set-cookie', '_shopify_s=later; Path=/']],
         }),
       );
@@ -1747,7 +1747,7 @@ describe('tracking (D-9: only with analytics on)', () => {
     visitorB.storefront.setCollectedSubrequestHeaders(pageB);
 
     // Assert
-    expect(answer).toEqual({shop: {name: 'Mellow'}});
+    expect(answer).toEqual({shop: {name: '{AppName}'}});
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(pageA.headers.getSetCookie()).toEqual(['_shopify_y=for-a; Path=/']);
     expect(pageB.headers.getSetCookie()).toEqual([]);

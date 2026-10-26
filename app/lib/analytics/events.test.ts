@@ -55,7 +55,7 @@ function browserAt(
     path,
     search: '',
     referrer: 'https://search.example/',
-    title: `Mellow ${path}`,
+    title: `{AppName} ${path}`,
     userAgent: 'Mozilla/5.0 (unit test)',
     navigationType: 'navigate',
     navigationApi: 'PerformanceNavigationTiming',
@@ -97,7 +97,7 @@ const PRODUCT: AnalyticsProduct = {
   id: 'gid://shopify/Product/1',
   title: 'CloudAlign Pillow',
   price: '49.0',
-  vendor: 'Mellow',
+  vendor: '{AppName}',
   variantId: 'gid://shopify/ProductVariant/11',
   variantTitle: 'Queen',
   quantity: 1,
@@ -109,7 +109,7 @@ const FORMATTED_PRODUCT = {
   variantGid: 'gid://shopify/ProductVariant/11',
   name: 'CloudAlign Pillow',
   variantName: 'Queen',
-  brand: 'Mellow',
+  brand: '{AppName}',
   price: '49.0',
   quantity: 1,
 };
@@ -132,7 +132,7 @@ function cartLine(
       product: {
         id: `gid://shopify/Product/${key}`,
         title: `Pillow ${key}`,
-        vendor: 'Mellow',
+        vendor: '{AppName}',
       },
       ...merchandise,
     },
@@ -383,7 +383,7 @@ describe('buildAddToCart', () => {
           variantGid: 'gid://shopify/ProductVariant/a',
           name: 'Pillow a',
           variantName: 'Queen',
-          brand: 'Mellow',
+          brand: '{AppName}',
           price: '49.0',
           // Hydrogen reports the line's quantity, not the difference.
           quantity: 2,
@@ -398,7 +398,7 @@ describe('buildAddToCart', () => {
       product: {
         id: 'gid://shopify/Product/a',
         title: 'Pillow a',
-        vendor: 'Mellow',
+        vendor: '{AppName}',
         productType: 'Pillows',
       },
     });
@@ -425,10 +425,16 @@ describe('buildAddToCart', () => {
   });
 
   it.each([
-    ['product id', {product: {id: '', title: 'Pillow a', vendor: 'Mellow'}}],
+    ['product id', {product: {id: '', title: 'Pillow a', vendor: '{AppName}'}}],
     [
       'product title',
-      {product: {id: 'gid://shopify/Product/a', title: '', vendor: 'Mellow'}},
+      {
+        product: {
+          id: 'gid://shopify/Product/a',
+          title: '',
+          vendor: '{AppName}',
+        },
+      },
     ],
     ['price', {price: {amount: ''}}],
     ['variant id', {id: ''}],
@@ -701,7 +707,7 @@ describe('createAnalyticsTracker', () => {
         expect(payload).toMatchObject({
           url: 'https://mellow.example/collections/pillows',
           path: '/collections/pillows',
-          title: 'Mellow /collections/pillows',
+          title: '{AppName} /collections/pillows',
           uniqueToken: 'unique-token-2',
           visitToken: 'visit-token-2',
         });

@@ -1,9 +1,14 @@
 import {Suspense} from 'react';
-import {Await, Link, NavLink} from 'react-router';
+import {Await, NavLink} from 'react-router';
 import type {FooterQuery, HeaderQuery} from 'storefrontapi.generated';
-import {Logo} from '~/components/ui/Logo';
-import {FeatureIcon} from '~/components/ui/Icons';
-import {NewsletterForm} from '~/components/NewsletterForm';
+import {Button} from '~/components/ui/Button';
+import {
+  ArrowRightIcon,
+  FacebookIcon,
+  InstagramIcon,
+  TikTokIcon,
+} from '~/components/ui/Icons';
+import {Stars} from '~/components/ui/Stars';
 import type {SiteSettings} from '~/lib/content/types';
 import {
   FALLBACK_FOOTER_MENU,
@@ -19,6 +24,11 @@ interface FooterProps {
   siteSettings: SiteSettings;
 }
 
+/**
+ * Deep indigo footer: a social-proof call to action card, the footer menu's
+ * groups as ruled columns (a group titled "Social" renders as icons), the
+ * wordmark as a giant watermark and the copyright line.
+ */
 export function Footer({
   footer: footerPromise,
   header,
@@ -54,6 +64,14 @@ export function Footer({
   );
 }
 
+function SocialIcon({title}: {title: string}) {
+  const key = title.toLowerCase();
+  if (key.includes('instagram')) return <InstagramIcon size={20} />;
+  if (key.includes('facebook')) return <FacebookIcon size={20} />;
+  if (key.includes('tiktok')) return <TikTokIcon size={20} />;
+  return <ArrowRightIcon size={20} />;
+}
+
 function FooterContent({
   menu,
   header,
@@ -81,92 +99,88 @@ function FooterContent({
           }))
       : [{id: 'links', title: 'Explore', items: menu.items}];
 
-  const policyLinks = menu.items
-    .flatMap((item) => [item, ...(item.items ?? [])])
-    .filter((item) => item.type === 'SHOP_POLICY' && item.url);
-
-  const year = new Date().getFullYear();
+  const {footerCta, ratingLabel, copyright} = siteSettings;
 
   return (
     <>
-      <div className="site-footer__top">
-        <div className="site-footer__brand">
-          <Logo
-            logoUrl={header.shop.brand?.logo?.image?.url}
-            shopName={header.shop.name}
-          />
-          <p className="site-footer__tagline">
-            {header.shop.description ||
-              'Pillows that align. Comforters that adapt. Smarter sleep essentials, designed for every night.'}
-          </p>
-          <ul className="site-footer__trust" aria-label="Guarantees">
-            {siteSettings.trustBadges.map((badge) => (
-              <li key={badge.label}>
-                <FeatureIcon icon={badge.icon} size={18} />
-                {badge.label}
-              </li>
-            ))}
-          </ul>
+      <div className="footer-cta">
+        <div className="footer-cta__body">
+          <Stars rating={5} label={ratingLabel} size="sm" />
+          <p className="footer-cta__heading">{footerCta.heading}</p>
         </div>
-
-        {groups.slice(0, 3).map((group) => (
-          <nav key={group.id} aria-labelledby={`footer-${group.id}`}>
-            <h2 className="site-footer__heading" id={`footer-${group.id}`}>
-              {group.title}
-            </h2>
-            <ul className="site-footer__links">
-              {group.items.map((item) => {
-                if (!item.url) return null;
-                const url = toUrl(item.url);
-                return (
-                  <li key={item.id}>
-                    {isExternalUrl(url) ? (
-                      <a href={url} rel="noopener noreferrer" target="_blank">
-                        {item.title}
-                      </a>
-                    ) : (
-                      <NavLink prefetch="intent" to={url}>
-                        {item.title}
-                      </NavLink>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        ))}
-
-        <div className="site-footer__newsletter">
-          <h2 className="site-footer__heading" id="footer-newsletter">
-            Sleep Smarter. Save More.
-          </h2>
-          <p className="site-footer__tagline" style={{marginBottom: '1rem'}}>
-            Early access to launches, bundle savings and sleep tips.
-          </p>
-          <NewsletterForm id="footer" source="footer" />
-        </div>
+        <Button to={footerCta.url} variant="light" prefetch="viewport">
+          {footerCta.label}
+        </Button>
       </div>
 
+      <div className="site-footer__columns">
+        {groups.map((group) => {
+          const isSocial = group.title.trim().toLowerCase() === 'social';
+          return (
+            <nav key={group.id} aria-labelledby={`footer-${group.id}`}>
+              <h2 className="site-footer__heading" id={`footer-${group.id}`}>
+                {group.title}
+              </h2>
+              <ul
+                className={
+                  isSocial ? 'site-footer__social' : 'site-footer__links'
+                }
+              >
+                {group.items.map((item) => {
+                  if (!item.url) return null;
+                  const url = toUrl(item.url);
+                  const external = isExternalUrl(url);
+                  if (isSocial) {
+                    return (
+                      <li key={item.id}>
+                        <a
+                          className="site-footer__social-link"
+                          href={url}
+                          aria-label={item.title}
+                          title={item.title}
+                          rel={external ? 'noopener noreferrer' : undefined}
+                          target={external ? '_blank' : undefined}
+                        >
+                          <SocialIcon title={item.title} />
+                        </a>
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={item.id}>
+                      {external ? (
+                        <a href={url} rel="noopener noreferrer" target="_blank">
+                          {item.title}
+                        </a>
+                      ) : (
+                        <NavLink prefetch="intent" to={url}>
+                          {item.title}
+                        </NavLink>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          );
+        })}
+      </div>
+
+      {/* Sized by character count so any shop name fills the width once. */}
+      <p
+        className="site-footer__watermark"
+        aria-hidden="true"
+        style={
+          {
+            '--watermark-chars': Math.max(4, header.shop.name.length),
+          } as React.CSSProperties
+        }
+      >
+        {header.shop.name}
+      </p>
+
       <div className="site-footer__bottom">
-        <p>
-          {/* The clock can tick over into a new year between the server render
-              and hydration; the year is not worth a hydration mismatch. */}
-          © <span suppressHydrationWarning>{year}</span> {header.shop.name}. All
-          rights reserved.
-        </p>
-        <ul className="site-footer__policies">
-          {policyLinks.length ? (
-            policyLinks.map((item) => (
-              <li key={item.id}>
-                <Link to={toUrl(item.url!)}>{item.title}</Link>
-              </li>
-            ))
-          ) : (
-            <li>
-              <Link to="/policies">Policies</Link>
-            </li>
-          )}
-        </ul>
+        <p>{copyright}</p>
       </div>
     </>
   );

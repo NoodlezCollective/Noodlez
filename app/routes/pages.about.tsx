@@ -10,7 +10,8 @@ import {ABOUT_CONTENT_QUERY, mapAboutContent} from '~/lib/content/metaobjects';
 
 export const meta: Route.MetaFunction = ({data}) => {
   const title =
-    data?.page?.seo?.title ?? 'About Mellow | Sleep Was Broken. We Fixed It.';
+    data?.page?.seo?.title ??
+    'About {AppName} | Sleep Was Broken. We Fixed It.';
   const description =
     data?.page?.seo?.description ?? data?.content.hero.subheading ?? '';
   return [

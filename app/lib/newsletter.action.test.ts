@@ -60,7 +60,7 @@ describe('/newsletter action', () => {
     expect(result.data).toEqual({
       ok: true,
       status: 'subscribed',
-      message: "You're on the list. Welcome to Mellow.",
+      message: "You're on the list. Welcome to {AppName}.",
     });
   });
 

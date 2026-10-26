@@ -398,7 +398,41 @@ describe('mapSiteSettings', () => {
       ],
       savingsNote: 'Save big',
       savingsExplanation: 'Because.',
+      cartHeading: DEFAULT_SITE_SETTINGS.cartHeading,
+      ratingLabel: DEFAULT_SITE_SETTINGS.ratingLabel,
+      footerCta: DEFAULT_SITE_SETTINGS.footerCta,
+      copyright: DEFAULT_SITE_SETTINGS.copyright,
+      freeGift: DEFAULT_SITE_SETTINGS.freeGift,
+      proofStats: DEFAULT_SITE_SETTINGS.proofStats,
     });
+  });
+
+  it('reads the cart heading, the free-gift offer and the proof stats', () => {
+    const result = settings({
+      cart_heading: 'Your bedtime kit',
+      free_gift_threshold: '150',
+      free_gift_label: 'a free eye mask',
+      free_gift_code: 'EYEMASK',
+      proof_stats: list('95|sleep cooler', '97%|would recommend', 'x|bad'),
+    });
+
+    expect(result.cartHeading).toBe('Your bedtime kit');
+    expect(result.freeGift).toEqual({
+      threshold: 150,
+      label: 'a free eye mask',
+      code: 'EYEMASK',
+    });
+    expect(result.proofStats).toEqual([
+      {id: 'stat-0', value: 95, label: 'sleep cooler'},
+      {id: 'stat-1', value: 97, label: 'would recommend'},
+    ]);
+  });
+
+  it('switches the free gift off with a threshold of 0 and keeps the default without one', () => {
+    expect(settings({free_gift_threshold: '0'}).freeGift).toBeNull();
+    expect(settings({free_gift_label: 'ignored'}).freeGift).toEqual(
+      DEFAULT_SITE_SETTINGS.freeGift,
+    );
   });
 
   it('uses the defaults for fields that are not set', () => {

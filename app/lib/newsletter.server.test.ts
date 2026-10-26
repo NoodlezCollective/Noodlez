@@ -230,7 +230,7 @@ describe('subscribeToNewsletter', () => {
       expect(result).toEqual({
         ok: true,
         status: 'subscribed',
-        message: "You're on the list. Welcome to Mellow.",
+        message: "You're on the list. Welcome to {AppName}.",
       });
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const [url, init] = fetchMock.mock.calls[0];

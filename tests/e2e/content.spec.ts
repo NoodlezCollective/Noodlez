@@ -106,7 +106,7 @@ test.describe('home page', () => {
   test('every customer video links to the product it shows', async ({page}) => {
     await gotoHydrated(page, '/');
 
-    const ugc = page.getByRole('region', {name: 'Sleep Better With Mellow'});
+    const ugc = page.getByRole('region', {name: 'Sleep Better With {AppName}'});
     const links = ugc.getByRole('link');
     await expect(links).toHaveCount(4);
     const hrefs = await links.evaluateAll((anchors) =>
@@ -134,7 +134,7 @@ test.describe('home page', () => {
 
 test.describe('FAQ', () => {
   const FIRST_QUESTION = 'How does the 30-day trial work?';
-  const FIRST_ANSWER = 'Sleep on any Mellow product for 30 nights.';
+  const FIRST_ANSWER = 'Sleep on any {AppName} product for 30 nights.';
 
   const faqRegion = (page: Page) =>
     page.getByRole('region', {name: 'Questions, Answered'});
@@ -149,7 +149,7 @@ test.describe('FAQ', () => {
     await expect(items).toHaveCount(4);
     await expect(items.locator('summary')).toHaveText([
       FIRST_QUESTION,
-      'Are Mellow comforters and pillows machine washable?',
+      'Are {AppName} comforters and pillows machine washable?',
       'Which side of the CloudCool comforter is the cool side?',
       'How long does shipping take?',
     ]);
@@ -217,9 +217,10 @@ const band = (page: Page) =>
   page.getByRole('region', {name: 'Sleep Smarter. Save More.'});
 const footer = (page: Page) => page.getByRole('contentinfo');
 
+// The footer no longer carries a form (it ends in the call-to-action card and
+// the social columns); the band is the one newsletter form on the page.
 const NEWSLETTER_FORMS: readonly NewsletterCase[] = [
   {name: 'home page band', source: 'homepage', scope: band, other: footer},
-  {name: 'footer', source: 'footer', scope: footer, other: band},
 ];
 
 const SIGNUP_EMAIL = 'shopper@example.com';
@@ -352,9 +353,13 @@ test.describe('About page', () => {
       hero.getByRole('link', {name: 'Shop Now', exact: true}),
     ).toHaveAttribute('href', collectionPath(COLLECTIONS.all));
     await expect(
-      page.getByRole('region', {name: 'About Mellow'}),
-    ).toContainText('Mellow started with a comforter that changed everything.');
-    const closing = page.getByRole('region', {name: 'Ready to sleep mellow?'});
+      page.getByRole('region', {name: 'About {AppName}'}),
+    ).toContainText(
+      '{AppName} started with a comforter that changed everything.',
+    );
+    const closing = page.getByRole('region', {
+      name: 'Ready to sleep {AppName}?',
+    });
     await expect(closing.getByRole('heading', {level: 2})).toBeVisible();
     await expect(
       closing.getByRole('link', {name: 'Shop Best Sellers', exact: true}),
@@ -447,7 +452,7 @@ test.describe('not found', () => {
     const response = await gotoHydrated(page, '/policies/subscription-policy');
 
     expect(response?.status()).toBe(404);
-    await expect(page).toHaveTitle('Policy not found | Mellow');
+    await expect(page).toHaveTitle('Policy not found | {AppName}');
     expect(await namedMeta(page, 'robots')).toContain('noindex');
     await expectSingleH1(page, COPY.notFoundH1);
   });
@@ -541,25 +546,41 @@ test.describe('policies', () => {
       title: 'Privacy Policy',
       handle: 'privacy-policy',
       blurb: 'How we collect, use and protect your personal information.',
+      headline: "Sleep Easy, Your Data's Safe",
     },
     {
       title: 'Shipping Policy',
       handle: 'shipping-policy',
       blurb: 'Processing times, delivery estimates and tracking.',
+      headline: 'From Our Door To Yours',
     },
     {
       title: 'Terms of Service',
       handle: 'terms-of-service',
-      blurb: 'The terms that apply when you shop with Mellow.',
+      blurb: 'The terms that apply when you shop with {AppName}.',
+      headline: 'Our Terms, Made Simple',
     },
     {
-      title: 'Refund Policy',
+      title: 'Return and Refund Policy',
       handle: 'refund-policy',
-      blurb: 'Our 30-night trial and how returns and refunds work.',
+      blurb: 'Our 30-day return window and how refunds and exchanges work.',
+      headline: 'Love It, Or Send It Back',
+    },
+    {
+      title: 'Contact Information',
+      handle: 'contact-information',
+      blurb: 'Business details, how to reach us and when we reply.',
+      headline: "We're Here To Help",
+    },
+    {
+      title: 'Legal Notice',
+      handle: 'legal-notice',
+      blurb: 'Who operates this website, hosting and intellectual property.',
+      headline: 'The Legal Details',
     },
   ] as const;
 
-  test('the index lists the four policies the shop has', async ({page}) => {
+  test('the index lists every policy', async ({page}) => {
     await gotoHydrated(page, '/policies');
 
     await expectSingleH1(page, 'Policies');
@@ -586,8 +607,8 @@ test.describe('policies', () => {
       .click();
 
     await expect(page).toHaveURL('/policies/shipping-policy');
-    await expectSingleH1(page, 'Shipping Policy');
-    await expect(page).toHaveTitle('Shipping Policy | Mellow');
+    await expectSingleH1(page, 'From Our Door To Yours');
+    await expect(page).toHaveTitle('Shipping Policy | {AppName}');
     const breadcrumb = main(page).getByRole('navigation', {name: 'Breadcrumb'});
     await expect(breadcrumb.getByRole('link')).toHaveText('Policies');
     await expect(breadcrumb.getByRole('link')).toHaveAttribute(
@@ -611,8 +632,10 @@ test.describe('policies', () => {
     for (const policy of POLICIES) {
       await gotoHydrated(page, `/policies/${policy.handle}`);
 
-      await expectSingleH1(page, policy.title);
-      await expect(page).toHaveTitle(`${policy.title} | Mellow`);
+      // The banner headline is the h1; the policy's formal name is its eyebrow.
+      await expectSingleH1(page, policy.headline);
+      await expect(main(page)).toContainText(policy.title);
+      await expect(page).toHaveTitle(`${policy.title} | {AppName}`);
       await expect(
         main(page).getByRole('link', {name: 'All policies', exact: true}),
       ).toHaveAttribute('href', '/policies');

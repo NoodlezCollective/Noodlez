@@ -9,7 +9,7 @@ type QueryOptions = {variables?: Record<string, unknown>} | undefined;
 
 /**
  * Replaces `storefront.query` / `storefront.mutate` with an in-process GraphQL
- * executor backed by the Mellow demo catalog. The cart service shares the
+ * executor backed by the {AppName} demo catalog. The cart service shares the
  * same storefront instance, so cart mutations are mocked as well.
  *
  * Development only. See app/lib/mock/README.md.

@@ -2033,6 +2033,54 @@ export type RedirectsQuery = {
   };
 };
 
+export type BestSellersQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type BestSellersQuery = {
+  products: {
+    nodes: Array<
+      Pick<
+        StorefrontAPI.Product,
+        | 'id'
+        | 'handle'
+        | 'title'
+        | 'vendor'
+        | 'availableForSale'
+        | 'description'
+      > & {
+        featuredImage?: StorefrontAPI.Maybe<
+          Pick<
+            StorefrontAPI.Image,
+            'id' | 'url' | 'altText' | 'width' | 'height'
+          >
+        >;
+        priceRange: {
+          minVariantPrice: Pick<
+            StorefrontAPI.MoneyV2,
+            'amount' | 'currencyCode'
+          >;
+        };
+        compareAtPriceRange: {
+          minVariantPrice: Pick<
+            StorefrontAPI.MoneyV2,
+            'amount' | 'currencyCode'
+          >;
+        };
+        badge?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+        shortDescription?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Metafield, 'value'>
+        >;
+        rating?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+        ratingCount?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Metafield, 'value'>
+        >;
+      }
+    >;
+  };
+};
+
 export type HomepageQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -2745,6 +2793,40 @@ export type ProductFragment = Pick<
   savingsNote?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Metafield, 'value' | 'type'>
   >;
+  soldRecently?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  sizeGuide?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  packTiers?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  proof?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  addonNote?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  addon?: StorefrontAPI.Maybe<{
+    reference?: StorefrontAPI.Maybe<
+      | {
+          __typename:
+            | 'Article'
+            | 'Collection'
+            | 'GenericFile'
+            | 'MediaImage'
+            | 'Metaobject'
+            | 'Model3d'
+            | 'Page'
+            | 'ProductVariant'
+            | 'Video';
+        }
+      | ({__typename: 'Product'} & Pick<
+          StorefrontAPI.Product,
+          'id' | 'handle' | 'title'
+        > & {
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
+            >;
+            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+              }
+            >;
+          })
+    >;
+  }>;
   featuredReviews?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Metafield, 'value' | 'type'> & {
       references?: StorefrontAPI.Maybe<{
@@ -2942,6 +3024,51 @@ export type ProductQuery = {
       savingsNote?: StorefrontAPI.Maybe<
         Pick<StorefrontAPI.Metafield, 'value' | 'type'>
       >;
+      soldRecently?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      sizeGuide?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+      packTiers?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+      proof?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+      addonNote?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+      addon?: StorefrontAPI.Maybe<{
+        reference?: StorefrontAPI.Maybe<
+          | {
+              __typename:
+                | 'Article'
+                | 'Collection'
+                | 'GenericFile'
+                | 'MediaImage'
+                | 'Metaobject'
+                | 'Model3d'
+                | 'Page'
+                | 'ProductVariant'
+                | 'Video';
+            }
+          | ({__typename: 'Product'} & Pick<
+              StorefrontAPI.Product,
+              'id' | 'handle' | 'title'
+            > & {
+                featuredImage?: StorefrontAPI.Maybe<
+                  Pick<
+                    StorefrontAPI.Image,
+                    'url' | 'altText' | 'width' | 'height'
+                  >
+                >;
+                selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+                  Pick<
+                    StorefrontAPI.ProductVariant,
+                    'id' | 'availableForSale'
+                  > & {
+                    price: Pick<
+                      StorefrontAPI.MoneyV2,
+                      'amount' | 'currencyCode'
+                    >;
+                  }
+                >;
+              })
+        >;
+      }>;
       featuredReviews?: StorefrontAPI.Maybe<
         Pick<StorefrontAPI.Metafield, 'value' | 'type'> & {
           references?: StorefrontAPI.Maybe<{
@@ -3307,6 +3434,10 @@ interface GeneratedQueryTypes {
     return: RedirectsQuery;
     variables: RedirectsQueryVariables;
   };
+  '#graphql\n  query BestSellers($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    products(first: 3, sortKey: BEST_SELLING) {\n      nodes {\n        ...ProductCard\n      }\n    }\n  }\n  #graphql\n  fragment MoneyProductCard on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductCard on Product {\n    id\n    handle\n    title\n    vendor\n    availableForSale\n    description(truncateAt: 200)\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductCard\n      }\n    }\n    compareAtPriceRange {\n      minVariantPrice {\n        ...MoneyProductCard\n      }\n    }\n    badge: metafield(namespace: "mellow", key: "badge") {\n      value\n    }\n    shortDescription: metafield(namespace: "mellow", key: "short_description") {\n      value\n    }\n    rating: metafield(namespace: "reviews", key: "rating") {\n      value\n    }\n    ratingCount: metafield(namespace: "reviews", key: "rating_count") {\n      value\n    }\n  }\n\n': {
+    return: BestSellersQuery;
+    variables: BestSellersQueryVariables;
+  };
   '#graphql\n  query Homepage(\n    $country: CountryCode\n    $language: LanguageCode\n    $featuredHandle: String!\n    $first: Int!\n  ) @inContext(country: $country, language: $language) {\n    featured: collection(handle: $featuredHandle) {\n      id\n      handle\n      title\n      products(first: $first) {\n        nodes {\n          ...ProductCard\n        }\n      }\n    }\n    bestSellers: products(first: $first, sortKey: BEST_SELLING) {\n      nodes {\n        ...ProductCard\n      }\n    }\n  }\n  #graphql\n  fragment MoneyProductCard on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductCard on Product {\n    id\n    handle\n    title\n    vendor\n    availableForSale\n    description(truncateAt: 200)\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductCard\n      }\n    }\n    compareAtPriceRange {\n      minVariantPrice {\n        ...MoneyProductCard\n      }\n    }\n    badge: metafield(namespace: "mellow", key: "badge") {\n      value\n    }\n    shortDescription: metafield(namespace: "mellow", key: "short_description") {\n      value\n    }\n    rating: metafield(namespace: "reviews", key: "rating") {\n      value\n    }\n    ratingCount: metafield(namespace: "reviews", key: "rating_count") {\n      value\n    }\n  }\n\n': {
     return: HomepageQuery;
     variables: HomepageQueryVariables;
@@ -3351,7 +3482,7 @@ interface GeneratedQueryTypes {
     return: PoliciesQuery;
     variables: PoliciesQueryVariables;
   };
-  '#graphql\n  query Product(\n    $country: CountryCode\n    $handle: String!\n    $language: LanguageCode\n    $selectedOptions: [SelectedOptionInput!]!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...Product\n    }\n  }\n  #graphql\n  fragment Product on Product {\n    id\n    title\n    vendor\n    handle\n    descriptionHtml\n    description\n    encodedVariantExistence\n    encodedVariantAvailability\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    media(first: 20) {\n      nodes {\n        __typename\n        id\n        alt\n        previewImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n        ... on MediaImage {\n          image {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n      }\n    }\n    options {\n      name\n      optionValues {\n        name\n        firstSelectableVariant {\n          ...ProductVariant\n        }\n        swatch {\n          color\n          image {\n            previewImage {\n              url\n            }\n          }\n        }\n      }\n    }\n    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {\n      ...ProductVariant\n    }\n    adjacentVariants (selectedOptions: $selectedOptions) {\n      ...ProductVariant\n    }\n    seo {\n      description\n      title\n    }\n    badge: metafield(namespace: "mellow", key: "badge") {\n      value\n      type\n    }\n    shortDescription: metafield(namespace: "mellow", key: "short_description") {\n      value\n      type\n    }\n    rating: metafield(namespace: "reviews", key: "rating") {\n      value\n      type\n    }\n    ratingCount: metafield(namespace: "reviews", key: "rating_count") {\n      value\n      type\n    }\n    features: metafield(namespace: "mellow", key: "features") {\n      value\n      type\n    }\n    materials: metafield(namespace: "mellow", key: "materials") {\n      value\n      type\n    }\n    care: metafield(namespace: "mellow", key: "care") {\n      value\n      type\n    }\n    swatchGroups: metafield(namespace: "mellow", key: "swatch_groups") {\n      value\n      type\n    }\n    savingsNote: metafield(namespace: "mellow", key: "savings_note") {\n      value\n      type\n    }\n    featuredReviews: metafield(namespace: "mellow", key: "featured_reviews") {\n      value\n      type\n      references(first: 10) {\n        nodes {\n          ... on Metaobject {\n            id\n            handle\n            fields {\n              key\n              value\n            }\n          }\n        }\n      }\n    }\n  }\n  #graphql\n  fragment ProductVariant on ProductVariant {\n    availableForSale\n    compareAtPrice {\n      amount\n      currencyCode\n    }\n    id\n    image {\n      __typename\n      id\n      url\n      altText\n      width\n      height\n    }\n    price {\n      amount\n      currencyCode\n    }\n    product {\n      title\n      handle\n    }\n    selectedOptions {\n      name\n      value\n    }\n    sku\n    title\n  }\n\n\n': {
+  '#graphql\n  query Product(\n    $country: CountryCode\n    $handle: String!\n    $language: LanguageCode\n    $selectedOptions: [SelectedOptionInput!]!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...Product\n    }\n  }\n  #graphql\n  fragment Product on Product {\n    id\n    title\n    vendor\n    handle\n    descriptionHtml\n    description\n    encodedVariantExistence\n    encodedVariantAvailability\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    media(first: 20) {\n      nodes {\n        __typename\n        id\n        alt\n        previewImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n        ... on MediaImage {\n          image {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n      }\n    }\n    options {\n      name\n      optionValues {\n        name\n        firstSelectableVariant {\n          ...ProductVariant\n        }\n        swatch {\n          color\n          image {\n            previewImage {\n              url\n            }\n          }\n        }\n      }\n    }\n    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {\n      ...ProductVariant\n    }\n    adjacentVariants (selectedOptions: $selectedOptions) {\n      ...ProductVariant\n    }\n    seo {\n      description\n      title\n    }\n    badge: metafield(namespace: "mellow", key: "badge") {\n      value\n      type\n    }\n    shortDescription: metafield(namespace: "mellow", key: "short_description") {\n      value\n      type\n    }\n    rating: metafield(namespace: "reviews", key: "rating") {\n      value\n      type\n    }\n    ratingCount: metafield(namespace: "reviews", key: "rating_count") {\n      value\n      type\n    }\n    features: metafield(namespace: "mellow", key: "features") {\n      value\n      type\n    }\n    materials: metafield(namespace: "mellow", key: "materials") {\n      value\n      type\n    }\n    care: metafield(namespace: "mellow", key: "care") {\n      value\n      type\n    }\n    swatchGroups: metafield(namespace: "mellow", key: "swatch_groups") {\n      value\n      type\n    }\n    savingsNote: metafield(namespace: "mellow", key: "savings_note") {\n      value\n      type\n    }\n    soldRecently: metafield(namespace: "mellow", key: "sold_recently") {\n      value\n    }\n    sizeGuide: metafield(namespace: "mellow", key: "size_guide") {\n      value\n    }\n    packTiers: metafield(namespace: "mellow", key: "pack_tiers") {\n      value\n    }\n    proof: metafield(namespace: "mellow", key: "proof") {\n      value\n    }\n    addonNote: metafield(namespace: "mellow", key: "addon_note") {\n      value\n    }\n    addon: metafield(namespace: "mellow", key: "addon") {\n      reference {\n        __typename\n        ... on Product {\n          id\n          handle\n          title\n          featuredImage {\n            url\n            altText\n            width\n            height\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n          }\n        }\n      }\n    }\n    featuredReviews: metafield(namespace: "mellow", key: "featured_reviews") {\n      value\n      type\n      references(first: 10) {\n        nodes {\n          ... on Metaobject {\n            id\n            handle\n            fields {\n              key\n              value\n            }\n          }\n        }\n      }\n    }\n  }\n  #graphql\n  fragment ProductVariant on ProductVariant {\n    availableForSale\n    compareAtPrice {\n      amount\n      currencyCode\n    }\n    id\n    image {\n      __typename\n      id\n      url\n      altText\n      width\n      height\n    }\n    price {\n      amount\n      currencyCode\n    }\n    product {\n      title\n      handle\n    }\n    selectedOptions {\n      name\n      value\n    }\n    sku\n    title\n  }\n\n\n': {
     return: ProductQuery;
     variables: ProductQueryVariables;
   };

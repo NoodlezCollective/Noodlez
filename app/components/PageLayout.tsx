@@ -64,7 +64,7 @@ export function PageLayout({
         publicStoreDomain={publicStoreDomain}
         siteSettings={siteSettings}
       />
-      <CartAside cart={cart} />
+      <CartAside cart={cart} heading={siteSettings.cartHeading} />
       <SearchAside />
       <MobileMenuAside
         header={header}
@@ -113,9 +113,15 @@ function RouteAnnouncer() {
   );
 }
 
-function CartAside({cart}: {cart: PageLayoutProps['cart']}) {
+function CartAside({
+  cart,
+  heading,
+}: {
+  cart: PageLayoutProps['cart'];
+  heading: string;
+}) {
   return (
-    <Aside type="cart" heading="Your cart">
+    <Aside type="cart" heading={heading}>
       <Suspense fallback={<p className="text-muted">Loading cart…</p>}>
         <Await resolve={cart} errorElement={<CartLoadError />}>
           {(cart) => <CartMain cart={cart} layout="aside" />}

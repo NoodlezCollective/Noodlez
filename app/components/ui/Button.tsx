@@ -2,11 +2,7 @@ import {forwardRef, type ButtonHTMLAttributes, type ReactNode} from 'react';
 import {Link, type LinkProps} from 'react-router';
 
 export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'outline'
-  | 'ghost'
-  | 'light';
+  'primary' | 'secondary' | 'outline' | 'ghost' | 'light';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 type SharedProps = {
@@ -63,7 +59,7 @@ export function buttonClassName({
 }
 
 /**
- * Pill-shaped Mellow button. Renders a `<Link>` when `to` is provided,
+ * Pill-shaped {AppName} button. Renders a `<Link>` when `to` is provided,
  * an `<a>` when `href` is provided, otherwise a `<button>`.
  */
 export const Button = forwardRef<

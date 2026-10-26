@@ -381,17 +381,17 @@ test.describe('search page', {tag: '@mobile'}, () => {
   });
 
   test('lists matching pages after the products', async ({page}) => {
-    await gotoHydrated(page, '/search?q=mellow');
+    await gotoHydrated(page, '/search?q=comfort');
 
-    // 2 products and the About page.
-    await expect(pageSummary(page)).toHaveText('3 results for mellow');
-    await expect(pageCards(page)).toHaveCount(2);
+    // 7 products and the About page.
+    await expect(pageSummary(page)).toHaveText('8 results for comfort');
+    await expect(pageCards(page)).toHaveCount(7);
     const pages = page.getByRole('region', {name: 'Pages', exact: true});
     await expect(pages.getByRole('heading', {level: 2})).toHaveText('Pages');
-    await expect(pages.getByRole('link')).toHaveText('About Mellow');
+    await expect(pages.getByRole('link')).toHaveText('About {AppName}');
     await expect(pages.getByRole('link')).toHaveAttribute(
       'href',
-      '/pages/about?q=mellow',
+      '/pages/about?q=comfort',
     );
   });
 

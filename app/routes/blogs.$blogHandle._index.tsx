@@ -75,7 +75,7 @@ export default function Blog() {
         <span aria-current="page">{blog.title}</span>
       </nav>
       <header className="page-header">
-        <p className="eyebrow page-header__eyebrow">Mellow journal</p>
+        <p className="eyebrow page-header__eyebrow">{'{AppName}'} journal</p>
         <h1>{blog.title}</h1>
         {blog.seo?.description ? (
           <p className="page-header__description">{blog.seo.description}</p>

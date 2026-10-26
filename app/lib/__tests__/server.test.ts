@@ -77,7 +77,7 @@ function createFakeContext() {
     storefront: {
       isStorefrontApiUrl,
       forward: vi.fn(async (_request: Request) =>
-        Response.json({data: {shop: {name: 'Mellow'}}}),
+        Response.json({data: {shop: {name: '{AppName}'}}}),
       ),
       setCollectedSubrequestHeaders: vi.fn((_response: Response) => {}),
     },
@@ -311,7 +311,9 @@ describe('server fetch handler: Storefront API proxy', () => {
 
       expect(context.storefront.forward).toHaveBeenCalledWith(request);
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({data: {shop: {name: 'Mellow'}}});
+      expect(await response.json()).toEqual({
+        data: {shop: {name: '{AppName}'}},
+      });
       expect(Object.fromEntries(response.headers)).toMatchObject(
         SECURITY_HEADERS,
       );

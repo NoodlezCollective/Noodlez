@@ -126,7 +126,7 @@ export async function subscribeToNewsletter({
       return {
         ok: true,
         status: 'subscribed',
-        message: "You're on the list. Welcome to Mellow.",
+        message: "You're on the list. Welcome to {AppName}.",
       };
     } catch (error) {
       console.error('[newsletter] webhook failed', error);

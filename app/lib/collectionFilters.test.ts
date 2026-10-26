@@ -154,7 +154,7 @@ describe('parseAppliedFilters', () => {
       const search = params(
         ['filter.available', 'true'],
         ['filter.productType', '"Pillow"'],
-        ['filter.productVendor', '"Mellow"'],
+        ['filter.productVendor', '"{AppName}"'],
         ['filter.tag', '"bestseller"'],
         ['filter.price', json({min: 20, max: 120})],
         ['filter.variantOption', json({name: 'Color', value: 'Blue'})],
@@ -180,7 +180,7 @@ describe('parseAppliedFilters', () => {
       expect(applied.map((filter) => filter.filter)).toEqual([
         {available: true},
         {productType: 'Pillow'},
-        {productVendor: 'Mellow'},
+        {productVendor: '{AppName}'},
         {tag: 'bestseller'},
         {price: {min: 20, max: 120}},
         {variantOption: {name: 'Color', value: 'Blue'}},

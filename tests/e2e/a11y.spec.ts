@@ -210,7 +210,7 @@ test.describe('drawers', {tag: '@mobile'}, () => {
 
     await page.getByRole('link', {name: 'Cart, 1 item', exact: true}).click();
 
-    const cart = drawer(page, 'Your cart');
+    const cart = drawer(page, 'Your Sleep Stack');
     await expectModalOpen(page, cart);
     await expect(
       cart.getByRole('link', {name: PRODUCTS.cloudAlign.title}),
@@ -223,7 +223,7 @@ test.describe('drawers', {tag: '@mobile'}, () => {
 
     await page.getByRole('link', {name: 'Cart, 0 items', exact: true}).click();
 
-    const cart = drawer(page, 'Your cart');
+    const cart = drawer(page, 'Your Sleep Stack');
     await expectModalOpen(page, cart);
     await expect(cart.getByText('Your cart is empty.').first()).toBeVisible();
     await expectNoViolations(page);

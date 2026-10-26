@@ -56,10 +56,17 @@ function groupOptionValues(
 export function VariantSelector({
   productOptions,
   swatchGroups,
+  sizeGuide,
   className,
 }: {
   productOptions: MappedProductOptions[];
   swatchGroups?: SwatchGroups | null;
+  /**
+   * One-line rule of thumb shown under the size pills ("Under 5'7\" = Regular,
+   * over 5'7\" = High"): a binary fact every shopper already knows replaces a
+   * fit decision nobody wants to measure.
+   */
+  sizeGuide?: string | null;
   className?: string;
 }) {
   const navigate = useNavigate();
@@ -94,6 +101,9 @@ export function VariantSelector({
               </span>{' '}
               <span className="product-option__value">{selected?.name}</span>
             </p>
+            {sizeGuide && option.name.toLowerCase() === 'size' ? (
+              <p className="product-option__guide">{sizeGuide}</p>
+            ) : null}
             {groups.map((group) => (
               <div className="product-option__group" key={group.label ?? 'all'}>
                 {group.label ? (

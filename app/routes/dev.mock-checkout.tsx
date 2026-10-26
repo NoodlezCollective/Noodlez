@@ -6,7 +6,7 @@ import {isMockStorefrontEnabled} from '~/lib/mock/flag';
 import {Button} from '~/components/ui/Button';
 
 export const meta: Route.MetaFunction = () => [
-  {title: 'Development checkout | Mellow'},
+  {title: 'Development checkout | {AppName}'},
   {name: 'robots', content: 'noindex'},
 ];
 

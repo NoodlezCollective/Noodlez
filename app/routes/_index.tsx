@@ -2,6 +2,7 @@ import {useLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
 import {Hero} from '~/components/home/Hero';
 import {PressBar} from '~/components/home/PressBar';
+import {StatRings} from '~/components/home/StatRings';
 import {Story} from '~/components/home/Story';
 import {FeaturedProducts} from '~/components/home/FeaturedProducts';
 import {UgcGrid} from '~/components/home/UgcGrid';
@@ -12,6 +13,7 @@ import {NewsletterBand} from '~/components/home/NewsletterBand';
 import {PRODUCT_CARD_FRAGMENT} from '~/lib/fragments';
 import {HOME_CONTENT_QUERY, mapHomeContent} from '~/lib/content/metaobjects';
 import {FEATURED_PRODUCTS_COUNT} from '~/lib/content/config';
+import {useSiteSettings} from '~/lib/content/useSiteSettings';
 import {DEFAULT_DESCRIPTION, DEFAULT_TITLE} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = ({data}) => {
@@ -74,11 +76,13 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
 
 export default function Homepage() {
   const {content, products} = useLoaderData<typeof loader>();
+  const {proofStats} = useSiteSettings();
   return (
     <div className="home">
       <Hero content={content.hero} />
       <PressBar logos={content.pressLogos} />
       <Story content={content.story} />
+      <StatRings stats={proofStats} />
       <FeaturedProducts content={content.featured} products={products} />
       <UgcGrid content={content.ugc} />
       <LifestyleGallery images={content.lifestyle} />

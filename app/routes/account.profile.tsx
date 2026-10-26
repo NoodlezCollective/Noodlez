@@ -18,7 +18,7 @@ export type ActionResponse = {
 };
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: 'Profile | Mellow'}];
+  return [{title: 'Profile | {AppName}'}];
 };
 
 export async function loader({context}: Route.LoaderArgs) {

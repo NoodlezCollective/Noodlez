@@ -83,9 +83,9 @@ describe('pages/:handle', () => {
 
   it('has Open Graph tags, an absolute canonical and the body summary as description', () => {
     expect(tags(pageMeta, {page, origin: ORIGIN})).toEqual([
-      {title: 'FAQ | Mellow'},
+      {title: 'FAQ | {AppName}'},
       {name: 'description', content: 'Answers to the questions we hear most.'},
-      {property: 'og:title', content: 'FAQ | Mellow'},
+      {property: 'og:title', content: 'FAQ | {AppName}'},
       {
         property: 'og:description',
         content: 'Answers to the questions we hear most.',
@@ -98,7 +98,7 @@ describe('pages/:handle', () => {
   it('prefers the SEO title and description over the page title and summary', () => {
     const seo = {title: 'Help centre', description: 'Find help fast.'};
     const result = tags(pageMeta, {page: {...page, seo}, origin: ORIGIN});
-    expect(result).toContainEqual({title: 'Help centre | Mellow'});
+    expect(result).toContainEqual({title: 'Help centre | {AppName}'});
     expect(result).toContainEqual({
       name: 'description',
       content: 'Find help fast.',
@@ -120,7 +120,7 @@ describe('pages/:handle', () => {
 
   it('is a noindex "not found" page when the loader threw', () => {
     expect(tags(pageMeta, undefined)).toEqual([
-      {title: 'Page not found | Mellow'},
+      {title: 'Page not found | {AppName}'},
       ...NOT_FOUND_BASE,
     ]);
   });
@@ -154,25 +154,40 @@ describe('policies', () => {
     return {promise, storefront};
   }
 
-  it('lists the available policies, including a subscription policy without an id', async () => {
+  it('lists every policy in order, with the subscription policy (id may be null) after refunds', async () => {
     const {promise, storefront} = load(policies);
 
     const result = (await promise) as {
-      policies: Array<{handle: string}>;
+      policies: Array<{handle: string; title: string}>;
       origin: string;
     };
 
     expect(result.policies.map((policy) => policy.handle)).toEqual([
       'privacy-policy',
+      'shipping-policy',
+      'terms-of-service',
+      'refund-policy',
       'subscription-policy',
+      'contact-information',
+      'legal-notice',
     ]);
+    // Shopify's title wins where the store has published the policy.
+    expect(result.policies[0].title).toBe('Privacy policy');
     expect(result.origin).toBe(ORIGIN);
     expectValidStorefrontDocument(storefront.query.mock.calls[0][0]);
   });
 
-  it('answers 404 when the store has no policies', async () => {
+  it('falls back to the storefront documents when the store has no policies', async () => {
     const {promise} = load({shop: {privacyPolicy: null}});
-    expect((await thrownResponse(promise)).status).toBe(404);
+    const result = (await promise) as {policies: Array<{handle: string}>};
+    expect(result.policies.map((policy) => policy.handle)).toEqual([
+      'privacy-policy',
+      'shipping-policy',
+      'terms-of-service',
+      'refund-policy',
+      'contact-information',
+      'legal-notice',
+    ]);
   });
 
   it('has an absolute canonical and Open Graph tags', () => {
@@ -184,14 +199,14 @@ describe('policies', () => {
     });
     expect(result).toContainEqual({
       property: 'og:title',
-      content: 'Policies | Mellow',
+      content: 'Policies | {AppName}',
     });
     expect(result).toContainEqual({property: 'og:type', content: 'website'});
   });
 
   it('is a noindex "not found" page when the loader threw', () => {
     expect(tags(policiesMeta, undefined)).toEqual([
-      {title: 'Policies not found | Mellow'},
+      {title: 'Policies not found | {AppName}'},
       ...NOT_FOUND_BASE,
     ]);
   });
@@ -220,7 +235,7 @@ describe('blogs index', () => {
     });
     expect(result).toContainEqual({
       property: 'og:title',
-      content: 'Journal | Mellow',
+      content: 'Journal | {AppName}',
     });
     expect(result).toContainEqual({property: 'og:type', content: 'website'});
     expect(
@@ -230,7 +245,7 @@ describe('blogs index', () => {
 
   it('keeps a failed load out of the index', () => {
     expect(tags(blogsMeta, undefined)).toEqual([
-      {title: 'Journal | Mellow'},
+      {title: 'Journal | {AppName}'},
       ...NOT_FOUND_BASE,
     ]);
   });
@@ -284,9 +299,9 @@ describe('blogs/:blogHandle', () => {
 
   it('has Open Graph tags and an absolute canonical', () => {
     expect(tags(blogMeta, {blog: blog(), origin: ORIGIN})).toEqual([
-      {title: 'Sleep Journal | Mellow'},
+      {title: 'Sleep Journal | {AppName}'},
       {name: 'description', content: 'Sleep science and stories.'},
-      {property: 'og:title', content: 'Sleep Journal | Mellow'},
+      {property: 'og:title', content: 'Sleep Journal | {AppName}'},
       {property: 'og:description', content: 'Sleep science and stories.'},
       {property: 'og:type', content: 'website'},
       {tagName: 'link', rel: 'canonical', href: `${ORIGIN}/blogs/journal`},
@@ -295,7 +310,7 @@ describe('blogs/:blogHandle', () => {
 
   it('is a noindex "not found" page when the loader threw', () => {
     expect(tags(blogMeta, undefined)).toEqual([
-      {title: 'Blog not found | Mellow'},
+      {title: 'Blog not found | {AppName}'},
       ...NOT_FOUND_BASE,
     ]);
   });
@@ -423,9 +438,9 @@ describe('blogs/:blogHandle/:articleHandle', () => {
 
   it('has article Open Graph tags and an absolute canonical', () => {
     expect(tags(articleMeta, metaData())).toEqual([
-      {title: 'How to sleep better | Mellow'},
+      {title: 'How to sleep better | {AppName}'},
       {name: 'description', content: 'A short editor-written teaser.'},
-      {property: 'og:title', content: 'How to sleep better | Mellow'},
+      {property: 'og:title', content: 'How to sleep better | {AppName}'},
       {property: 'og:description', content: 'A short editor-written teaser.'},
       {property: 'og:type', content: 'article'},
       {property: 'og:image', content: 'https://cdn.shopify.com/s/a.jpg'},
@@ -467,7 +482,7 @@ describe('blogs/:blogHandle/:articleHandle', () => {
 
   it('is a noindex "not found" page when the loader threw', () => {
     expect(tags(articleMeta, undefined)).toEqual([
-      {title: 'Article not found | Mellow'},
+      {title: 'Article not found | {AppName}'},
       ...NOT_FOUND_BASE,
     ]);
   });

@@ -13,7 +13,11 @@ import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
 import {AnalyticsProvider} from '~/lib/analytics';
 import {getAnalyticsConfig} from '~/lib/analytics/shop.server';
-import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
+import {
+  FOOTER_QUERY,
+  HEADER_QUERY,
+  PRODUCT_CARD_FRAGMENT,
+} from '~/lib/fragments';
 import {SITE_SETTINGS_QUERY, mapSiteSettings} from '~/lib/content/metaobjects';
 import {SHOPIFY_RESOURCES} from '~/lib/content/config';
 import {isMockStorefrontEnabled} from '~/lib/mock/flag';
@@ -33,7 +37,7 @@ import {ErrorView} from './components/ErrorView';
 export type RootLoader = typeof loader;
 
 const FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap';
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -156,6 +160,14 @@ function loadDeferredData({context}: Route.LoaderArgs) {
       return null;
     });
 
+  // Bestsellers for the empty-cart recovery panel in the drawer.
+  const bestSellers = storefront
+    .query(BEST_SELLERS_QUERY, {cache: storefront.CacheLong()})
+    .catch((error: Error) => {
+      console.error(error);
+      return null;
+    });
+
   return {
     // The header, the cart drawer and the analytics provider await this
     // promise; a rejected cart query (502 from the Storefront API guard)
@@ -167,6 +179,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
     }),
     isLoggedIn: customerAccount.isLoggedIn(),
     footer,
+    bestSellers,
   };
 }
 
@@ -179,7 +192,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="theme-color" content="#4c4184" />
-        <meta property="og:site_name" content="Mellow" />
+        <meta property="og:site_name" content="{AppName}" />
         <link rel="stylesheet" href={tokenStyles}></link>
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
@@ -242,3 +255,15 @@ export function ErrorBoundary() {
 
   return view;
 }
+
+const BEST_SELLERS_QUERY = `#graphql
+  query BestSellers($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    products(first: 3, sortKey: BEST_SELLING) {
+      nodes {
+        ...ProductCard
+      }
+    }
+  }
+  ${PRODUCT_CARD_FRAGMENT}
+` as const;

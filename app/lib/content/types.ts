@@ -1,5 +1,5 @@
 /**
- * Typed content contracts for the Mellow storefront.
+ * Typed content contracts for the {AppName} storefront.
  *
  * Everything that is not core Shopify commerce data (products, collections,
  * cart) is modelled here explicitly. Content is sourced from Shopify
@@ -7,6 +7,7 @@
  * back to the defaults in defaults.ts so the storefront renders the documented
  * design before a merchant has configured Shopify.
  */
+import type {CurrencyCode} from '@shopify/hydrogen-react/storefront-api-types';
 import type {FeatureIconKey} from '~/components/ui/Icons';
 
 export type ImageContent = {
@@ -133,11 +134,53 @@ export type ProductReview = {
   date?: string | null;
 };
 
+/** Reward unlocked once the cart subtotal reaches `threshold` (shop currency). */
+export type FreeGiftOffer = {
+  threshold: number;
+  /** What the shopper gets, e.g. "a free Silk Sleep Mask". */
+  label: string;
+  /** Discount code applied at checkout, shown once the threshold is met. */
+  code: string | null;
+};
+
+/** A percentage shown as an animated ring: "95% sleep at their ideal temperature". */
+export type ProofStat = {id: string; value: number; label: string};
+
 export type SiteSettings = {
   announcements: string[];
   trustBadges: TrustBadge[];
   savingsNote: string;
   savingsExplanation: string;
+  /** Title of the cart drawer; the blueprint frames it as "Your Sleep Stack". */
+  cartHeading: string;
+  /** Social-proof label beside five stars on banners: "124,952+ Happy Sleepers". */
+  ratingLabel: string;
+  /** The call-to-action card at the top of the footer. */
+  footerCta: {heading: string; label: string; url: string};
+  /** The footer's last line, e.g. "© Copyright {AppName} LLC". */
+  copyright: string;
+  freeGift: FreeGiftOffer | null;
+  proofStats: ProofStat[];
+};
+
+/** A quantity tier offered in the buy box ("Pair · Most popular"). */
+export type PackTier = {
+  quantity: number;
+  label: string;
+  /** Short note under the label: "Most popular", "For the whole family". */
+  note: string | null;
+};
+
+/** A one-click companion product offered inside the buy box. */
+export type ProductAddon = {
+  handle: string;
+  title: string;
+  variantId: string;
+  availableForSale: boolean;
+  price: {amount: string; currencyCode: CurrencyCode};
+  image: ImageContent | null;
+  /** Why it belongs in the box: "Ships on the pillow, already fitted." */
+  note: string | null;
 };
 
 export type HomeContent = {

@@ -29,7 +29,7 @@ type OrdersLoaderData = {
 };
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: 'Orders | Mellow'}];
+  return [{title: 'Orders | {AppName}'}];
 };
 
 export async function loader({request, context}: Route.LoaderArgs) {

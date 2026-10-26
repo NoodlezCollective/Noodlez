@@ -48,9 +48,9 @@ h5,
 h6 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
   color: var(--color-heading);
   text-wrap: balance;
 }

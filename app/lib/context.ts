@@ -92,7 +92,7 @@ export async function createAppRouterContext(
   });
 
   /**
-   * Development only: serve Mellow demo data instead of calling Shopify.
+   * Development only: serve {AppName} demo data instead of calling Shopify.
    * `import.meta.env.DEV` is replaced at build time, so production bundles
    * never include the mock module. The guard is spelled out here instead of
    * calling isMockStorefrontEnabled (app/lib/mock/flag.ts) on purpose: the

@@ -250,7 +250,7 @@ test.describe('hydration gate', {tag: '@mobile'}, () => {
 
     await page.getByRole('link', {name: CART_LINK}).click();
 
-    await expect(drawer(page, 'Your cart')).toBeVisible();
+    await expect(drawer(page, 'Your Sleep Stack')).toBeVisible();
     // Un-hydrated, the link would have navigated to /cart natively.
     expect(new URL(page.url()).pathname).toBe('/');
   });
@@ -267,10 +267,17 @@ test.describe('dialog helpers', {tag: '@mobile'}, () => {
     const opener = page.getByRole('link', {name: CART_LINK});
     await opener.click();
 
-    const cart = drawer(page, 'Your cart');
+    const cart = drawer(page, 'Your Sleep Stack');
     await expectModalOpen(page, cart);
     const stops = await expectFocusTrapped(page, cart);
-    expect(stops).toEqual(['Close', 'Shop best sellers', 'Continue shopping']);
+    expect(stops).toEqual([
+      'Close',
+      'Shop best sellers',
+      'Continue shopping',
+      'CloudAlign Pillow',
+      'MarshMellow Comforter',
+      'CloudCool Cooling Comforter',
+    ]);
 
     await page.keyboard.press('Escape');
     await expectModalClosed(page, cart, opener);
@@ -316,7 +323,7 @@ test.describe('dialog helpers', {tag: '@mobile'}, () => {
     await gotoHydrated(page, '/');
     const opener = page.getByRole('link', {name: CART_LINK});
     await opener.click();
-    const cart = drawer(page, 'Your cart');
+    const cart = drawer(page, 'Your Sleep Stack');
     await expectModalOpen(page, cart);
 
     await clickBackdrop(page);
@@ -332,7 +339,7 @@ test(
     await gotoHydrated(page, '/'); // reducedMotion: 'reduce', the suite default
     await page.getByRole('link', {name: CART_LINK}).click();
 
-    await expectModalOpen(page, drawer(page, 'Your cart'));
+    await expectModalOpen(page, drawer(page, 'Your Sleep Stack'));
   },
 );
 

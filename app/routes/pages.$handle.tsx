@@ -1,5 +1,6 @@
-import {useLoaderData} from 'react-router';
+import {redirect, useLoaderData} from 'react-router';
 import type {Route} from './+types/pages.$handle';
+import {getStorefrontPolicy} from '~/lib/content/policies';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
 
@@ -35,6 +36,13 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
     throw new Error('Missing page handle');
   }
 
+  // Policy pages live at /policies/<handle>; the `mellow-` page handles the
+  // reference store uses (/pages/mellow-privacy-policy) redirect there.
+  if (params.handle.startsWith('mellow-')) {
+    const policy = getStorefrontPolicy(params.handle.slice('mellow-'.length));
+    if (policy) throw redirect(`/policies/${policy.handle}`, 301);
+  }
+
   const {page} = await context.storefront.query(PAGE_QUERY, {
     variables: {
       handle: params.handle,
@@ -59,7 +67,7 @@ export default function Page() {
   return (
     <article className="content-page container container--text">
       <header className="page-header">
-        <p className="eyebrow page-header__eyebrow">Mellow</p>
+        <p className="eyebrow page-header__eyebrow">{'{AppName}'}</p>
         <h1>{page.title}</h1>
       </header>
       <div className="prose" dangerouslySetInnerHTML={{__html: page.body}} />

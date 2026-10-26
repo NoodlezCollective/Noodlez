@@ -15,8 +15,8 @@ export const meta: Route.MetaFunction = ({data}) => {
   return [
     {
       title: data?.order?.name
-        ? `Order ${data.order.name} | Mellow`
-        : 'Order | Mellow',
+        ? `Order ${data.order.name} | {AppName}`
+        : 'Order | {AppName}',
     },
   ];
 };

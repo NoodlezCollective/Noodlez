@@ -81,6 +81,26 @@ export const METAOBJECT_SEEDS: MetaobjectSeed[] = [
         settings.savingsExplanation,
         'multi_line_text_field',
       ),
+      text('cart_heading', settings.cartHeading),
+      text('rating_label', settings.ratingLabel),
+      text('footer_cta_heading', settings.footerCta.heading),
+      text('footer_cta_label', settings.footerCta.label),
+      text('footer_cta_url', settings.footerCta.url),
+      text('copyright', settings.copyright),
+      text(
+        'free_gift_threshold',
+        settings.freeGift ? String(settings.freeGift.threshold) : null,
+        'number_decimal',
+      ),
+      text('free_gift_label', settings.freeGift?.label),
+      text('free_gift_code', settings.freeGift?.code),
+      text(
+        'proof_stats',
+        JSON.stringify(
+          settings.proofStats.map((stat) => `${stat.value}|${stat.label}`),
+        ),
+        'list.single_line_text_field',
+      ),
       text('featured_heading', home.featured.heading),
       text(
         'featured_subheading',

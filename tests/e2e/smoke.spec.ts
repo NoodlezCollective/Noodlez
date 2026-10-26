@@ -113,7 +113,11 @@ const ROUTES: readonly SmokeRoute[] = [
   {path: '/cart', status: 200, h1: 'Your cart'},
   {path: '/pages/about', status: 200, h1: COPY.aboutH1},
   {path: '/policies', status: 200, h1: 'Policies'},
-  {path: '/policies/privacy-policy', status: 200, h1: 'Privacy Policy'},
+  {
+    path: '/policies/privacy-policy',
+    status: 200,
+    h1: "Sleep Easy, Your Data's Safe",
+  },
   {path: '/blogs', status: 200, h1: 'Journal'},
   {path: '/dev/mock-checkout', status: 200, h1: COPY.mockCheckoutH1},
   notFound('/this-page-does-not-exist'),

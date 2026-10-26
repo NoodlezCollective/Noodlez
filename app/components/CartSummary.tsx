@@ -10,12 +10,75 @@ import {useAside} from '~/components/Aside';
 import {Button} from '~/components/ui/Button';
 import {ChevronDownIcon, CloseIcon, FeatureIcon} from '~/components/ui/Icons';
 import {useSiteSettings} from '~/lib/content/useSiteSettings';
+import type {FreeGiftOffer} from '~/lib/content/types';
 import type {CartActionData} from '~/routes/cart';
 
 type CartSummaryProps = {
   cart: OptimisticCart<CartApiQueryFragment | null>;
   layout: CartLayout;
 };
+
+/**
+ * Progress toward the free-gift threshold ("Add $11.02 more for a free Silk
+ * Sleep Mask"). The gap is the nudge: a pair of pillows lands just under the
+ * line, so one small add-on unlocks the reward. Once met it shows the code.
+ */
+function FreeGiftBar({
+  offer,
+  subtotal,
+}: {
+  offer: FreeGiftOffer;
+  subtotal: MoneyLike;
+}) {
+  const current = Number(subtotal.amount);
+  if (!Number.isFinite(current)) return null;
+  const remaining = Math.max(0, offer.threshold - current);
+  const unlocked = remaining <= 0;
+  const percent = Math.min(100, Math.round((current / offer.threshold) * 100));
+  const remainingMoney: MoneyLike = {
+    amount: remaining.toFixed(2),
+    currencyCode: subtotal.currencyCode,
+  };
+  return (
+    <div
+      className={`gift-bar ${unlocked ? 'is-unlocked' : ''}`.trim()}
+      role="status"
+      aria-live="polite"
+    >
+      <p className="gift-bar__text">
+        {unlocked ? (
+          <>
+            You unlocked {offer.label}
+            {offer.code ? (
+              <>
+                {' '}
+                – use code{' '}
+                <strong className="gift-bar__code">{offer.code}</strong> at
+                checkout
+              </>
+            ) : null}
+            .
+          </>
+        ) : (
+          <>
+            Add <Money as="strong" data={remainingMoney} /> more for{' '}
+            {offer.label}.
+          </>
+        )}
+      </p>
+      <div
+        className="gift-bar__track"
+        role="progressbar"
+        aria-label="Progress to your free gift"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+      >
+        <span className="gift-bar__fill" style={{width: `${percent}%`}} />
+      </div>
+    </div>
+  );
+}
 
 /** User-facing messages (userErrors + GraphQL errors) from a cart action. */
 function getActionErrors(data: CartActionData | undefined) {
@@ -69,6 +132,16 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
       <h2 id={summaryId} className="cart-summary__title">
         Order summary
       </h2>
+
+      {siteSettings.freeGift && subtotal?.amount && subtotal.currencyCode ? (
+        <FreeGiftBar
+          offer={siteSettings.freeGift}
+          subtotal={{
+            amount: subtotal.amount,
+            currencyCode: subtotal.currencyCode,
+          }}
+        />
+      ) : null}
 
       <dl className="cart-summary__rows">
         <div className="cart-summary__row">

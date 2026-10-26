@@ -14,7 +14,9 @@ import {expect, type Page} from '@playwright/test';
  * Exactly one `<h1>` in the DOM (visible or not), optionally with `text`.
  * Text is compared against `innerText` with whitespace collapsed, so headings
  * that contain `<br>` (the home hero, the About hero) match their one-line
- * form: "Sleep Was Broken. We Fixed It.".
+ * form: "Sleep Was Broken. We Fixed It.". The comparison ignores case because
+ * the theme sets page titles uppercase with `text-transform`, which
+ * `innerText` reflects; the content itself stays sentence case.
  */
 export async function expectSingleH1(
   page: Page,
@@ -24,7 +26,11 @@ export async function expectSingleH1(
   const h1 = page.locator('h1');
   await expect(h1, 'exactly one <h1> per page').toHaveCount(1, options);
   if (text !== undefined) {
-    await expect(h1).toHaveText(text, {useInnerText: true, ...options});
+    await expect(h1).toHaveText(text, {
+      useInnerText: true,
+      ignoreCase: true,
+      ...options,
+    });
   }
 }
 

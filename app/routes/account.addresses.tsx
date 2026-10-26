@@ -32,7 +32,7 @@ export type ActionResponse = {
 };
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: 'Addresses | Mellow'}];
+  return [{title: 'Addresses | {AppName}'}];
 };
 
 export async function loader({context}: Route.LoaderArgs) {
