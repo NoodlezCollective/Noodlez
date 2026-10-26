@@ -139,23 +139,23 @@ describe('Storefront API errors', () => {
 
   it('returns partial data together with errors, so pages can still render', async () => {
     stubStorefrontApi({
-      data: {shop: {name: 'Mellow'}},
+      data: {shop: {name: '{AppName}'}},
       errors: [{message: 'menu failed'}],
     });
     const context = await createContext();
 
     const result = await context.storefront.query(OPERATION);
 
-    expect(result.shop).toEqual({name: 'Mellow'});
+    expect(result.shop).toEqual({name: '{AppName}'});
     expect(result.errors).toHaveLength(1);
   });
 
   it('returns ordinary results untouched', async () => {
-    stubStorefrontApi({data: {shop: {name: 'Mellow'}}});
+    stubStorefrontApi({data: {shop: {name: '{AppName}'}}});
     const context = await createContext();
 
     expect(await context.storefront.query(OPERATION)).toEqual({
-      shop: {name: 'Mellow'},
+      shop: {name: '{AppName}'},
     });
   });
 });
@@ -179,7 +179,7 @@ describe('Storefront cache', () => {
     async (_name, cachesStub, logged) => {
       // Arrange
       vi.stubGlobal('caches', cachesStub);
-      const fetchMock = stubStorefrontApi({data: {shop: {name: 'Mellow'}}});
+      const fetchMock = stubStorefrontApi({data: {shop: {name: '{AppName}'}}});
 
       // Act
       const context = await createContext();
@@ -187,8 +187,8 @@ describe('Storefront cache', () => {
       const second = await context.storefront.query(OPERATION);
 
       // Assert: both queries reach the API, as with the cache bypassed.
-      expect(first).toEqual({shop: {name: 'Mellow'}});
-      expect(second).toEqual({shop: {name: 'Mellow'}});
+      expect(first).toEqual({shop: {name: '{AppName}'}});
+      expect(second).toEqual({shop: {name: '{AppName}'}});
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(console.error).toHaveBeenCalledTimes(1);
       expect(String(vi.mocked(console.error).mock.calls[0][0])).toContain(
@@ -219,7 +219,7 @@ describe('tracking cookies and visitor tokens (D-9)', () => {
 
   it('reach the Storefront API, without our session cookie, once analytics is configured and the mock is off', async () => {
     // Arrange: ENV sets PUBLIC_CHECKOUT_DOMAIN and PUBLIC_STOREFRONT_ID.
-    const fetchMock = stubStorefrontApi({data: {shop: {name: 'Mellow'}}}, [
+    const fetchMock = stubStorefrontApi({data: {shop: {name: '{AppName}'}}}, [
       '_shopify_y=y2; Path=/',
     ]);
     const context = await createContextWithCookie(ENV);
@@ -239,7 +239,7 @@ describe('tracking cookies and visitor tokens (D-9)', () => {
 
   it('stay in the browser while PUBLIC_STOREFRONT_ID is unset', async () => {
     // Arrange
-    const fetchMock = stubStorefrontApi({data: {shop: {name: 'Mellow'}}}, [
+    const fetchMock = stubStorefrontApi({data: {shop: {name: '{AppName}'}}}, [
       '_shopify_y=y2; Path=/',
     ]);
     const context = await createContextWithCookie({
@@ -273,7 +273,7 @@ describe('development mock', () => {
       'query Shop { shop { name } }',
     );
 
-    expect(result).toEqual({shop: {name: 'Mellow'}});
+    expect(result).toEqual({shop: {name: '{AppName}'}});
   });
 
   it('answers {errors} like the live API, which the guard turns into a 502', async () => {

@@ -17,12 +17,12 @@ import {DEFAULT_DESCRIPTION} from '~/lib/seo';
 export const meta: Route.MetaFunction = ({data}) => {
   if (!data?.collection) {
     return [
-      {title: 'Collection not found | Mellow'},
+      {title: 'Collection not found | {AppName}'},
       {name: 'robots', content: 'noindex'},
     ];
   }
   const collection = data?.collection;
-  const title = `${collection?.seo?.title || collection?.title || 'Collection'} | Mellow`;
+  const title = `${collection?.seo?.title || collection?.title || 'Collection'} | {AppName}`;
   const description =
     collection?.seo?.description ||
     collection?.description ||

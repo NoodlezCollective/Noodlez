@@ -24,7 +24,7 @@
  * Only Pebble Pillow's Charcoal variant is sold out; no product is fully sold out.
  */
 
-export const SHOP_NAME = 'Mellow';
+export const SHOP_NAME = '{AppName}';
 
 /** Products per listing page (collections, search, "all"). */
 export const PAGE_SIZE = 12;
@@ -436,24 +436,24 @@ export const DISCOUNT_CODES = {
 
 /** Page titles (<title>), also announced by the route announcer. */
 export const TITLES = {
-  home: 'Mellow | Premium Cooling Comforters & Pillows For Better Sleep',
-  collections: 'Collections | Mellow',
-  shopAll: 'Shop All | Mellow',
-  mostLoved: 'Most Loved | Mellow',
-  pillows: 'Pillows | Mellow',
-  cart: 'Cart | Mellow',
-  search: 'Search | Mellow',
-  about: 'About Mellow | Sleep Was Broken. We Fixed It.',
-  policies: 'Policies | Mellow',
-  privacyPolicy: 'Privacy Policy | Mellow',
-  journal: 'Journal | Mellow',
-  signIn: 'Sign in | Mellow',
-  mockCheckout: 'Development checkout | Mellow',
-  pageNotFound: 'Page not found | Mellow',
-  productNotFound: 'Product not found | Mellow',
-  collectionNotFound: 'Collection not found | Mellow',
-  product: (product: {title: string}) => `${product.title} | Mellow`,
-  searchResults: (term: string) => `Search results for “${term}” | Mellow`,
+  home: '{AppName} | Premium Cooling Comforters & Pillows For Better Sleep',
+  collections: 'Collections | {AppName}',
+  shopAll: 'Shop All | {AppName}',
+  mostLoved: 'Most Loved | {AppName}',
+  pillows: 'Pillows | {AppName}',
+  cart: 'Cart | {AppName}',
+  search: 'Search | {AppName}',
+  about: 'About {AppName} | Sleep Was Broken. We Fixed It.',
+  policies: 'Policies | {AppName}',
+  privacyPolicy: 'Privacy Policy | {AppName}',
+  journal: 'Journal | {AppName}',
+  signIn: 'Sign in | {AppName}',
+  mockCheckout: 'Development checkout | {AppName}',
+  pageNotFound: 'Page not found | {AppName}',
+  productNotFound: 'Product not found | {AppName}',
+  collectionNotFound: 'Collection not found | {AppName}',
+  product: (product: {title: string}) => `${product.title} | {AppName}`,
+  searchResults: (term: string) => `Search results for “${term}” | {AppName}`,
 } as const;
 
 /**
@@ -469,7 +469,7 @@ export const COPY = {
   signInUnavailableH1: 'Sign-in isn’t available yet',
   mockCheckoutH1: 'Checkout is not available in mock mode',
   accountDeveloperSummary: 'For developers: enabling customer accounts',
-  logoLink: 'Mellow – home',
+  logoLink: '{AppName} – home',
   searchPlaceholder: 'Search pillows, comforters, bundles…',
   sortAlphabetical: 'Alphabetically: A–Z',
   aboutValueTested: 'Tested by 124,952+ sleepers',

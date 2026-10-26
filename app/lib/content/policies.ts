@@ -358,7 +358,7 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
       'From checkout to sweet dreams, we keep your details private, never shared, always protected.',
     heroImage: {
       url: '/images/placeholders/lifestyle-1.svg',
-      altText: 'Customer hugging a Mellow pillow',
+      altText: 'Customer hugging a {AppName} pillow',
       width: 1376,
       height: 760,
     },
@@ -374,7 +374,7 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
       'Where we deliver, how long it takes and what it costs, in plain language.',
     heroImage: {
       url: '/images/placeholders/lifestyle-2.svg',
-      altText: 'A Mellow parcel ready to ship',
+      altText: 'A {AppName} parcel ready to ship',
       width: 1376,
       height: 760,
     },
@@ -384,12 +384,12 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
   {
     handle: 'terms-of-service',
     title: 'Terms of Service',
-    description: 'The terms that apply when you shop with Mellow.',
+    description: 'The terms that apply when you shop with {AppName}.',
     heroHeadline: 'Our Terms, Made Simple',
     heroSubheadline: 'Because clarity matters as much as comfort.',
     heroImage: {
       url: '/images/placeholders/lifestyle-1.svg',
-      altText: 'Customer hugging a Mellow pillow',
+      altText: 'Customer hugging a {AppName} pillow',
       width: 1376,
       height: 760,
     },
@@ -405,7 +405,7 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
       '30 days to decide, no restocking fees and real people to help if anything is wrong.',
     heroImage: {
       url: '/images/placeholders/about-hero.svg',
-      altText: 'A stack of Mellow pillows',
+      altText: 'A stack of {AppName} pillows',
       width: 1376,
       height: 760,
     },
@@ -421,7 +421,7 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
       'Real people, real replies: how to reach us and when we are around.',
     heroImage: {
       url: '/images/placeholders/lifestyle-2.svg',
-      altText: 'The Mellow customer service team',
+      altText: 'The {AppName} customer service team',
       width: 1376,
       height: 760,
     },
@@ -438,7 +438,7 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
       'Who operates this website and how your rights are protected.',
     heroImage: {
       url: '/images/placeholders/about-hero.svg',
-      altText: 'A stack of Mellow pillows',
+      altText: 'A stack of {AppName} pillows',
       width: 1376,
       height: 760,
     },

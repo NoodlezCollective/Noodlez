@@ -73,7 +73,7 @@ describe('notFoundMeta', () => {
 
   it('uses the subject it is given', () => {
     expect(notFoundMeta('Article')[0]).toEqual({
-      title: 'Article not found | Mellow',
+      title: 'Article not found | {AppName}',
     });
   });
 });

@@ -166,8 +166,17 @@ function FooterContent({
         })}
       </div>
 
-      <p className="site-footer__watermark" aria-hidden="true">
-        {header.shop.name.toLowerCase()}
+      {/* Sized by character count so any shop name fills the width once. */}
+      <p
+        className="site-footer__watermark"
+        aria-hidden="true"
+        style={
+          {
+            '--watermark-chars': Math.max(4, header.shop.name.length),
+          } as React.CSSProperties
+        }
+      >
+        {header.shop.name}
       </p>
 
       <div className="site-footer__bottom">

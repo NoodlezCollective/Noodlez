@@ -67,7 +67,7 @@ export default function Page() {
   return (
     <article className="content-page container container--text">
       <header className="page-header">
-        <p className="eyebrow page-header__eyebrow">Mellow</p>
+        <p className="eyebrow page-header__eyebrow">{'{AppName}'}</p>
         <h1>{page.title}</h1>
       </header>
       <div className="prose" dangerouslySetInnerHTML={{__html: page.body}} />

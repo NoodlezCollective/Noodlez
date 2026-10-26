@@ -26,14 +26,14 @@ import type {
 export const meta: Route.MetaFunction = ({data}) => {
   const term = data?.type === 'regular' ? data.term : '';
   const title = term
-    ? `Search results for “${term}” | Mellow`
-    : 'Search | Mellow';
+    ? `Search results for “${term}” | {AppName}`
+    : 'Search | {AppName}';
   return [
     {title},
     {
       name: 'description',
       content:
-        'Search Mellow pillows, comforters, bath essentials and bundles.',
+        'Search {AppName} pillows, comforters, bath essentials and bundles.',
     },
     {name: 'robots', content: 'noindex'},
   ];

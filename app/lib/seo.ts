@@ -2,14 +2,14 @@
  * SEO helpers shared by the content routes (`meta` exports) and the sitemap.
  */
 
-export const SITE_NAME = 'Mellow';
+export const SITE_NAME = '{AppName}';
 
 /**
  * Site-wide `<title>` and description: the root `meta` and the fallback for
  * routes that have nothing better.
  */
 export const DEFAULT_TITLE =
-  'Mellow | Premium Cooling Comforters & Pillows For Better Sleep';
+  '{AppName} | Premium Cooling Comforters & Pillows For Better Sleep';
 export const DEFAULT_DESCRIPTION =
   'Pillows that align. Comforters that adapt. Smarter sleep essentials, designed for every night. Shop award-winning cooling comforters and ergonomic pillows.';
 
@@ -42,7 +42,7 @@ export function canonicalLink(origin: string, path: string): CanonicalLink {
  * Meta for a page whose resource does not exist: a "not found" title instead
  * of the site-wide one, and `noindex` so the 404 is never indexed.
  *
- * @example notFoundMeta('Page') // "Page not found | Mellow"
+ * @example notFoundMeta('Page') // "Page not found | {AppName}"
  */
 export function notFoundMeta(subject: string) {
   return [

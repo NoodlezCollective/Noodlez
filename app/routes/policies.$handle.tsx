@@ -146,7 +146,7 @@ export default function Policy() {
           />
         ) : (
           <header className="page-header">
-            <p className="eyebrow page-header__eyebrow">Mellow</p>
+            <p className="eyebrow page-header__eyebrow">{'{AppName}'}</p>
             <h1>{policy.title}</h1>
           </header>
         )}

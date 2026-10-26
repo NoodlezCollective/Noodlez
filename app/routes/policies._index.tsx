@@ -14,9 +14,9 @@ const SUBSCRIPTION_DESCRIPTION = 'How subscriptions renew, pause and cancel.';
 export const meta: Route.MetaFunction = ({data}) => {
   if (!data) return notFoundMeta('Policies');
 
-  const title = 'Policies | Mellow';
+  const title = 'Policies | {AppName}';
   const description =
-    'Shipping, returns, privacy and terms of service for the Mellow store.';
+    'Shipping, returns, privacy and terms of service for the {AppName} store.';
   return [
     {title},
     {name: 'description', content: description},
@@ -68,13 +68,13 @@ export default function Policies() {
     <div className="content-page policy-page">
       <div className="container">
         <PolicyHero
-          eyebrow="Mellow"
+          eyebrow="{AppName}"
           headline="Policies"
           subheadline="The fine print, in plain language: how we ship, how returns work and how we look after your information."
           ratingLabel={ratingLabel}
           image={{
             url: '/images/placeholders/about-hero.svg',
-            altText: 'A stack of Mellow pillows',
+            altText: 'A stack of {AppName} pillows',
             width: 1376,
             height: 760,
           }}

@@ -254,20 +254,37 @@ export function buildCatalog() {
   const shop = {
     __typename: 'Shop',
     id: 'gid://shopify/Shop/68817551382',
-    name: 'Mellow',
+    name: '{AppName}',
     description: 'Premium cooling comforters and pillows for better sleep.',
-    primaryDomain: {__typename: 'Domain', url: STORE_URL, host: 'mellow.mock', sslEnabled: true},
+    primaryDomain: {
+      __typename: 'Domain',
+      url: STORE_URL,
+      host: 'mellow.mock',
+      sslEnabled: true,
+    },
     brand: {
       __typename: 'Brand',
       logo: null,
       squareLogo: null,
       coverImage: null,
-      slogan: 'Sleep Better. Sleep Mellow.',
+      slogan: 'Sleep Better. Sleep {AppName}.',
       shortDescription: 'Premium cooling comforters and pillows.',
       colors: {
         __typename: 'BrandColors',
-        primary: [{__typename: 'BrandColorGroup', background: '#4c4184', foreground: '#ffffff'}],
-        secondary: [{__typename: 'BrandColorGroup', background: '#e1e1fe', foreground: '#4c4184'}],
+        primary: [
+          {
+            __typename: 'BrandColorGroup',
+            background: '#4c4184',
+            foreground: '#ffffff',
+          },
+        ],
+        secondary: [
+          {
+            __typename: 'BrandColorGroup',
+            background: '#e1e1fe',
+            foreground: '#4c4184',
+          },
+        ],
       },
     },
     moneyFormat: '${{amount}}',
@@ -296,15 +313,36 @@ export function buildCatalog() {
 
   const localization = {
     __typename: 'Localization',
-    language: {__typename: 'Language', isoCode: 'EN', name: 'English', endonymName: 'English'},
+    language: {
+      __typename: 'Language',
+      isoCode: 'EN',
+      name: 'English',
+      endonymName: 'English',
+    },
     country: {
       __typename: 'Country',
       isoCode: 'US',
       name: 'United States',
       unitSystem: 'IMPERIAL_SYSTEM',
-      currency: {__typename: 'Currency', isoCode: 'USD', name: 'United States Dollar', symbol: '$'},
-      availableLanguages: [{__typename: 'Language', isoCode: 'EN', name: 'English', endonymName: 'English'}],
-      market: {__typename: 'Market', id: 'gid://shopify/Market/1', handle: 'us'},
+      currency: {
+        __typename: 'Currency',
+        isoCode: 'USD',
+        name: 'United States Dollar',
+        symbol: '$',
+      },
+      availableLanguages: [
+        {
+          __typename: 'Language',
+          isoCode: 'EN',
+          name: 'English',
+          endonymName: 'English',
+        },
+      ],
+      market: {
+        __typename: 'Market',
+        id: 'gid://shopify/Market/1',
+        handle: 'us',
+      },
     },
     market: {__typename: 'Market', id: 'gid://shopify/Market/1', handle: 'us'},
     availableCountries: [],
@@ -427,10 +465,20 @@ function buildCollection(seed: CollectionSeed, registry: Registry): GqlObject {
     metafield: () => null,
     metafields: () => [],
     __products: [] as GqlObject[],
-    products: (args: PaginationArgs & {sortKey?: string; reverse?: boolean; filters?: GqlObject[]}) => {
+    products: (
+      args: PaginationArgs & {
+        sortKey?: string;
+        reverse?: boolean;
+        filters?: GqlObject[];
+      },
+    ) => {
       const all = collection.__products as GqlObject[];
       const filtered = applyProductFilters(all, args.filters);
-      const sorted = sortProducts(filtered, args.sortKey ?? 'COLLECTION_DEFAULT', args.reverse ?? false);
+      const sorted = sortProducts(
+        filtered,
+        args.sortKey ?? 'COLLECTION_DEFAULT',
+        args.reverse ?? false,
+      );
       return connection(sorted, args, {filters: buildFilters(all)});
     },
   };
@@ -466,7 +514,11 @@ function buildProduct(
     requiresSellingPlan: false,
     trackingParameters: null,
     category: null,
-    seo: {__typename: 'SEO', title: `${seed.title} | Mellow`, description: seed.description},
+    seo: {
+      __typename: 'SEO',
+      title: `${seed.title} | {AppName}`,
+      description: seed.description,
+    },
     featuredImage: images[0] ?? null,
     images: (args: PaginationArgs) => connection(images, args),
     media: (args: PaginationArgs) => connection(mediaImages, args),
@@ -483,7 +535,9 @@ function buildProduct(
   };
 
   const variants: GqlObject[] = seed.variants.map((variantSeed) => {
-    const title = variantSeed.selectedOptions.map((o) => o.value).join(' / ') || 'Default Title';
+    const title =
+      variantSeed.selectedOptions.map((o) => o.value).join(' / ') ||
+      'Default Title';
     const variant: GqlObject = {
       __typename: 'ProductVariant',
       id: variantSeed.id,
@@ -500,7 +554,9 @@ function buildProduct(
       weightUnit: 'KILOGRAMS',
       price: money(variantSeed.price),
       compareAtPrice:
-        variantSeed.compareAtPrice != null ? money(variantSeed.compareAtPrice) : null,
+        variantSeed.compareAtPrice != null
+          ? money(variantSeed.compareAtPrice)
+          : null,
       unitPrice: null,
       unitPriceMeasurement: null,
       selectedOptions: variantSeed.selectedOptions.map((option) => ({
@@ -516,7 +572,12 @@ function buildProduct(
       sellingPlanAllocations: (args: PaginationArgs) => connection([], args),
       storeAvailability: (args: PaginationArgs) => connection([], args),
       quantityPriceBreaks: (args: PaginationArgs) => connection([], args),
-      quantityRule: {__typename: 'QuantityRule', minimum: 1, maximum: null, increment: 1},
+      quantityRule: {
+        __typename: 'QuantityRule',
+        minimum: 1,
+        maximum: null,
+        increment: 1,
+      },
       shopPayInstallmentsPricing: null,
       trackingParameters: null,
       __price: variantSeed.price,
@@ -550,7 +611,11 @@ function buildProduct(
       id: `gid://shopify/ProductOptionValue/${seed.handle}-${optionIndex + 1}-${valueIndex + 1}`,
       name: value.name,
       swatch: value.swatchColor
-        ? {__typename: 'ProductOptionValueSwatch', color: value.swatchColor, image: null}
+        ? {
+            __typename: 'ProductOptionValueSwatch',
+            color: value.swatchColor,
+            image: null,
+          }
         : null,
       firstSelectableVariant: () => findVariantFor(option.name, value.name),
     })),
@@ -558,11 +623,15 @@ function buildProduct(
 
   const combos = variants.map((variant) =>
     seed.options.map((option) => {
-      const selected = variant.selectedOptions.find((o: GqlObject) => o.name === option.name);
+      const selected = variant.selectedOptions.find(
+        (o: GqlObject) => o.name === option.name,
+      );
       return option.values.findIndex((value) => value.name === selected?.value);
     }),
   );
-  const availableCombos = combos.filter((_, index) => variants[index].availableForSale);
+  const availableCombos = combos.filter(
+    (_, index) => variants[index].availableForSale,
+  );
 
   const prices = variants.map((variant) => variant.__price as number);
   const comparePrices = variants
@@ -586,14 +655,19 @@ function buildProduct(
       ? variants.find((variant) =>
           selected.every((option) =>
             variant.selectedOptions.some(
-              (o: GqlObject) => equals(o.name, option.name) && equals(o.value, option.value),
+              (o: GqlObject) =>
+                equals(o.name, option.name) && equals(o.value, option.value),
             ),
           ),
         )
       : undefined;
     if (exact) return exact;
     if (!fallbackToAvailable) return null;
-    return variants.find((variant) => variant.availableForSale) ?? variants[0] ?? null;
+    return (
+      variants.find((variant) => variant.availableForSale) ??
+      variants[0] ??
+      null
+    );
   };
 
   Object.assign(product, {
@@ -603,7 +677,11 @@ function buildProduct(
       (sum, variant) => sum + (variant.quantityAvailable as number),
       0,
     ),
-    variantsCount: {__typename: 'Count', count: variants.length, precision: 'EXACT'},
+    variantsCount: {
+      __typename: 'Count',
+      count: variants.length,
+      precision: 'EXACT',
+    },
     options: () => options,
     variants: (args: PaginationArgs) => connection(variants, args),
     priceRange: {
@@ -613,12 +691,17 @@ function buildProduct(
     },
     compareAtPriceRange: {
       __typename: 'ProductPriceRange',
-      minVariantPrice: money(comparePrices.length ? Math.min(...comparePrices) : 0),
-      maxVariantPrice: money(comparePrices.length ? Math.max(...comparePrices) : 0),
+      minVariantPrice: money(
+        comparePrices.length ? Math.min(...comparePrices) : 0,
+      ),
+      maxVariantPrice: money(
+        comparePrices.length ? Math.max(...comparePrices) : 0,
+      ),
     },
     encodedVariantExistence: encodeVariantCombos(combos),
     encodedVariantAvailability: encodeVariantCombos(availableCombos),
-    selectedOrFirstAvailableVariant: (args: GqlObject) => matchVariant(args, true),
+    selectedOrFirstAvailableVariant: (args: GqlObject) =>
+      matchVariant(args, true),
     variantBySelectedOptions: (args: GqlObject) => matchVariant(args, false),
     adjacentVariants: (args: GqlObject) => {
       const selected = matchVariant(args, true);
@@ -628,16 +711,24 @@ function buildProduct(
       const metafieldSeed = seed.metafields.find(
         (m) => m.key === key && (!namespace || m.namespace === namespace),
       );
-      return metafieldSeed ? buildMetafield(metafieldSeed, seed.id, product, registry) : null;
+      return metafieldSeed
+        ? buildMetafield(metafieldSeed, seed.id, product, registry)
+        : null;
     },
-    metafields: ({identifiers}: {identifiers: Array<{namespace?: string | null; key: string}>}) =>
+    metafields: ({
+      identifiers,
+    }: {
+      identifiers: Array<{namespace?: string | null; key: string}>;
+    }) =>
       identifiers.map((identifier) => {
         const metafieldSeed = seed.metafields.find(
           (m) =>
             m.key === identifier.key &&
             (!identifier.namespace || m.namespace === identifier.namespace),
         );
-        return metafieldSeed ? buildMetafield(metafieldSeed, seed.id, product, registry) : null;
+        return metafieldSeed
+          ? buildMetafield(metafieldSeed, seed.id, product, registry)
+          : null;
       }),
   });
 
@@ -648,7 +739,11 @@ function buildProduct(
 /* Sorting, filtering, search                                                  */
 /* -------------------------------------------------------------------------- */
 
-export function sortProducts(products: GqlObject[], sortKey: string, reverse: boolean) {
+export function sortProducts(
+  products: GqlObject[],
+  sortKey: string,
+  reverse: boolean,
+) {
   const sorted = [...products];
   const by = (fn: (p: GqlObject) => number | string) =>
     sorted.sort((a, b) => {
@@ -688,7 +783,10 @@ export function sortProducts(products: GqlObject[], sortKey: string, reverse: bo
   return reverse ? sorted.reverse() : sorted;
 }
 
-export function applyProductFilters(products: GqlObject[], filters?: GqlObject[] | null) {
+export function applyProductFilters(
+  products: GqlObject[],
+  filters?: GqlObject[] | null,
+) {
   if (!filters?.length) return products;
   const groups = new Map<string, GqlObject[]>();
   for (const filter of filters) {
@@ -709,7 +807,9 @@ function matchesFilter(product: GqlObject, key: string, value: any): boolean {
   const variants = product.__variants as GqlObject[];
   switch (key) {
     case 'available':
-      return value ? product.availableForSale === true : product.availableForSale === false;
+      return value
+        ? product.availableForSale === true
+        : product.availableForSale === false;
     case 'price': {
       const min = Number(product.priceRange.minVariantPrice.amount);
       const max = Number(product.priceRange.maxVariantPrice.amount);
@@ -722,7 +822,9 @@ function matchesFilter(product: GqlObject, key: string, value: any): boolean {
     case 'productVendor':
       return normalize(product.vendor) === normalize(String(value));
     case 'tag':
-      return (product.tags as string[]).some((tag) => normalize(tag) === normalize(String(value)));
+      return (product.tags as string[]).some(
+        (tag) => normalize(tag) === normalize(String(value)),
+      );
     case 'variantOption':
       return variants.some((variant) =>
         variant.selectedOptions.some(
@@ -737,30 +839,45 @@ function matchesFilter(product: GqlObject, key: string, value: any): boolean {
 }
 
 export function buildFilters(products: GqlObject[]) {
-  const count = (predicate: (p: GqlObject) => boolean) => products.filter(predicate).length;
-  const prices = products.map((p) => Number(p.priceRange.maxVariantPrice.amount));
-  const types = [...new Set(products.map((p) => p.productType as string))].sort();
+  const count = (predicate: (p: GqlObject) => boolean) =>
+    products.filter(predicate).length;
+  const prices = products.map((p) =>
+    Number(p.priceRange.maxVariantPrice.amount),
+  );
+  const types = [
+    ...new Set(products.map((p) => p.productType as string)),
+  ].sort();
   const optionValues = new Map<string, Map<string, string | null>>();
   for (const product of products) {
     for (const variant of product.__variants as GqlObject[]) {
       for (const option of variant.selectedOptions as GqlObject[]) {
-        if (!optionValues.has(option.name)) optionValues.set(option.name, new Map());
+        if (!optionValues.has(option.name))
+          optionValues.set(option.name, new Map());
         const swatch =
           (product.options() as GqlObject[])
             .find((o) => o.name === option.name)
-            ?.optionValues.find((v: GqlObject) => v.name === option.value)?.swatch?.color ?? null;
+            ?.optionValues.find((v: GqlObject) => v.name === option.value)
+            ?.swatch?.color ?? null;
         optionValues.get(option.name)!.set(option.value, swatch);
       }
     }
   }
-  const filterValue = (id: string, label: string, n: number, input: GqlObject, swatchColor?: string | null) => ({
+  const filterValue = (
+    id: string,
+    label: string,
+    n: number,
+    input: GqlObject,
+    swatchColor?: string | null,
+  ) => ({
     __typename: 'FilterValue',
     id,
     label,
     count: n,
     input: JSON.stringify(input),
     image: null,
-    swatch: swatchColor ? {__typename: 'Swatch', color: swatchColor, image: null} : null,
+    swatch: swatchColor
+      ? {__typename: 'Swatch', color: swatchColor, image: null}
+      : null,
   });
   return [
     {
@@ -770,8 +887,18 @@ export function buildFilters(products: GqlObject[]) {
       type: 'LIST',
       presentation: null,
       values: [
-        filterValue('filter.v.availability.1', 'In stock', count((p) => p.availableForSale), {available: true}),
-        filterValue('filter.v.availability.0', 'Out of stock', count((p) => !p.availableForSale), {available: false}),
+        filterValue(
+          'filter.v.availability.1',
+          'In stock',
+          count((p) => p.availableForSale),
+          {available: true},
+        ),
+        filterValue(
+          'filter.v.availability.0',
+          'Out of stock',
+          count((p) => !p.availableForSale),
+          {available: false},
+        ),
       ],
     },
     {
@@ -793,7 +920,12 @@ export function buildFilters(products: GqlObject[]) {
       type: 'LIST',
       presentation: null,
       values: types.map((type) =>
-        filterValue(`filter.p.product_type.${normalize(type)}`, type, count((p) => p.productType === type), {productType: type}),
+        filterValue(
+          `filter.p.product_type.${normalize(type)}`,
+          type,
+          count((p) => p.productType === type),
+          {productType: type},
+        ),
       ),
     },
     ...[...optionValues.entries()].map(([name, values]) => ({
@@ -808,7 +940,9 @@ export function buildFilters(products: GqlObject[]) {
           value,
           count((p) =>
             (p.__variants as GqlObject[]).some((v) =>
-              v.selectedOptions.some((o: GqlObject) => o.name === name && o.value === value),
+              v.selectedOptions.some(
+                (o: GqlObject) => o.name === name && o.value === value,
+              ),
             ),
           ),
           {variantOption: {name, value}},

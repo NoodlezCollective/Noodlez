@@ -388,7 +388,7 @@ test.describe('search page', {tag: '@mobile'}, () => {
     await expect(pageCards(page)).toHaveCount(2);
     const pages = page.getByRole('region', {name: 'Pages', exact: true});
     await expect(pages.getByRole('heading', {level: 2})).toHaveText('Pages');
-    await expect(pages.getByRole('link')).toHaveText('About Mellow');
+    await expect(pages.getByRole('link')).toHaveText('About {AppName}');
     await expect(pages.getByRole('link')).toHaveAttribute(
       'href',
       '/pages/about?q=mellow',

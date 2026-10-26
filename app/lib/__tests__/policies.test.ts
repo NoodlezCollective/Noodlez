@@ -195,12 +195,12 @@ describe('policies/:handle meta', () => {
     const tags = callRoute(meta, {data: {policy, origin: ORIGIN}}) as unknown[];
 
     expect(tags).toEqual([
-      {title: 'Refund policy | Mellow'},
-      {name: 'description', content: 'Refund policy for the Mellow store.'},
-      {property: 'og:title', content: 'Refund policy | Mellow'},
+      {title: 'Refund policy | {AppName}'},
+      {name: 'description', content: 'Refund policy for the {AppName} store.'},
+      {property: 'og:title', content: 'Refund policy | {AppName}'},
       {
         property: 'og:description',
-        content: 'Refund policy for the Mellow store.',
+        content: 'Refund policy for the {AppName} store.',
       },
       {property: 'og:type', content: 'website'},
       {
@@ -213,7 +213,7 @@ describe('policies/:handle meta', () => {
 
   it('is a noindex "not found" page when the loader threw', () => {
     expect(callRoute(meta, {data: undefined})).toEqual([
-      {title: 'Policy not found | Mellow'},
+      {title: 'Policy not found | {AppName}'},
       {name: 'robots', content: 'noindex'},
     ]);
   });

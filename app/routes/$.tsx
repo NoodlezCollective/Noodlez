@@ -2,7 +2,7 @@ import type {Route} from './+types/$';
 
 export const meta: Route.MetaFunction = () => {
   return [
-    {title: 'Page not found | Mellow'},
+    {title: 'Page not found | {AppName}'},
     {name: 'robots', content: 'noindex'},
   ];
 };

@@ -8,9 +8,9 @@ import {canonicalLink} from '~/lib/seo';
 
 type BlogNode = BlogsQuery['blogs']['nodes'][0];
 
-const TITLE = 'Journal | Mellow';
+const TITLE = 'Journal | {AppName}';
 const DESCRIPTION =
-  'Sleep science, product care and stories from the Mellow team.';
+  'Sleep science, product care and stories from the {AppName} team.';
 
 export const meta: Route.MetaFunction = ({data}) => {
   // No data means the loader failed: keep the error page out of the index.
@@ -55,10 +55,10 @@ export default function Blogs() {
   return (
     <div className="content-page container">
       <header className="page-header page-header--center">
-        <p className="eyebrow page-header__eyebrow">Mellow</p>
+        <p className="eyebrow page-header__eyebrow">{'{AppName}'}</p>
         <h1>Journal</h1>
         <p className="page-header__description">
-          Sleep science, product care and stories from the Mellow team.
+          Sleep science, product care and stories from the {'{AppName}'} team.
         </p>
       </header>
 

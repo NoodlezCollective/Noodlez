@@ -1,7 +1,7 @@
 /**
  * Fallback storefront content.
  *
- * Copy is transcribed from the Mellow design references. Imagery uses local
+ * Copy is transcribed from the {AppName} design references. Imagery uses local
  * placeholder artwork (public/images/placeholders) because the reference
  * photography is not part of this repository; merchants replace it by
  * creating the metaobjects documented in docs/shopify-setup.md.
@@ -30,15 +30,15 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   trustBadges: DEFAULT_TRUST_BADGES,
   savingsNote: 'Savings based on comparable value.',
   savingsExplanation:
-    'Compare-at prices reflect the comparable retail value of similar bedding sold at full price. Your savings are the difference between that value and the Mellow price.',
+    'Compare-at prices reflect the comparable retail value of similar bedding sold at full price. Your savings are the difference between that value and the {AppName} price.',
   cartHeading: 'Your Sleep Stack',
   ratingLabel: '124,952+ Happy Sleepers',
   footerCta: {
-    heading: 'Cloud-like comfort is just a click away. Try mellow today.',
+    heading: 'Cloud-like comfort is just a click away. Try {AppName} today.',
     label: 'Sleep Better',
     url: '/collections/all',
   },
-  copyright: '© Copyright MELLOW LLC',
+  copyright: '© Copyright {AppName} LLC',
   freeGift: {
     threshold: 120,
     label: 'a free Silk Sleep Mask',
@@ -49,7 +49,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
     {
       id: 'recommend',
       value: 97,
-      label: 'would recommend Mellow to family and friends',
+      label: 'would recommend {AppName} to family and friends',
     },
     {id: 'five-star', value: 99, label: 'have left a 5-star review'},
   ],
@@ -66,7 +66,7 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
     image: {
       url: `${PLACEHOLDER}/hero.svg`,
       altText:
-        'Three friends relaxing on a bed layered with Mellow pillows and comforters',
+        'Three friends relaxing on a bed layered with {AppName} pillows and comforters',
       width: 1600,
       height: 900,
     },
@@ -81,12 +81,12 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
   ],
   story: {
     heading: 'Redefining Sleep. One Innovation At A Time.',
-    body: "Mellow started with a comforter that changed everything. Now, we're building a new standard for sleep with more innovative fabrics, dual-sided cooling, cloud-like pillows and effortless design. Sleep shouldn't be complicated. It should just feel right.",
+    body: "{AppName} started with a comforter that changed everything. Now, we're building a new standard for sleep with more innovative fabrics, dual-sided cooling, cloud-like pillows and effortless design. Sleep shouldn't be complicated. It should just feel right.",
     video: {
       sources: [],
       poster: {
         url: `${PLACEHOLDER}/story-poster.svg`,
-        altText: 'Mellow brand film',
+        altText: '{AppName} brand film',
         width: 1336,
         height: 750,
       },
@@ -96,13 +96,13 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
   featured: {
     heading: 'Explore Our Most Loved Sleep Products',
     subheading:
-      'From adaptive comforters to cloud-like pillows, every Mellow product is designed to make sleep effortless.',
+      'From adaptive comforters to cloud-like pillows, every {AppName} product is designed to make sleep effortless.',
     collectionHandle: SHOPIFY_RESOURCES.featuredCollectionHandle,
     ctaLabel: 'Shop Now',
   },
   ugc: {
-    heading: 'Sleep Better With Mellow',
-    subheading: 'Watch why everyone is making the switch to mellow!',
+    heading: 'Sleep Better With {AppName}',
+    subheading: 'Watch why everyone is making the switch to {AppName}!',
     videos: [
       {
         id: 'ugc-1',
@@ -130,11 +130,11 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
       },
       {
         id: 'ugc-3',
-        title: 'I kept my mellow pillow.',
+        title: 'I kept my {AppName} pillow.',
         video: null,
         poster: {
           url: `${PLACEHOLDER}/ugc-3.svg`,
-          altText: 'Customer holding a Mellow pillow',
+          altText: 'Customer holding a {AppName} pillow',
           width: 670,
           height: 1114,
         },
@@ -158,7 +158,7 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
     {
       id: 'lifestyle-1',
       url: `${PLACEHOLDER}/lifestyle-1.svg`,
-      altText: 'Woman smiling while resting on a stack of Mellow pillows',
+      altText: 'Woman smiling while resting on a stack of {AppName} pillows',
       width: 1376,
       height: 760,
       caption: null,
@@ -214,11 +214,11 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
         id: 'faq-1',
         question: 'How does the 30-day trial work?',
         answer:
-          'Sleep on any Mellow product for 30 nights. If it is not the best sleep you have had, start a return from your account and we will make it right.',
+          'Sleep on any {AppName} product for 30 nights. If it is not the best sleep you have had, start a return from your account and we will make it right.',
       },
       {
         id: 'faq-2',
-        question: 'Are Mellow comforters and pillows machine washable?',
+        question: 'Are {AppName} comforters and pillows machine washable?',
         answer:
           'Yes. Every comforter and pillow cover is designed to be washed at home on a gentle cycle and tumble dried low.',
       },
@@ -238,7 +238,7 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
   },
   newsletter: {
     heading: 'Sleep Smarter. Save More.',
-    body: 'Join the Mellow list for early access to launches, bundle savings and sleep tips.',
+    body: 'Join the {AppName} list for early access to launches, bundle savings and sleep tips.',
     placeholder: 'Enter your email',
     ctaLabel: 'Sign Up',
   },
@@ -252,25 +252,25 @@ export const DEFAULT_ABOUT_CONTENT: AboutContent = {
     cta: {label: 'Shop Now', url: '/collections/all'},
     image: {
       url: `${PLACEHOLDER}/about-hero.svg`,
-      altText: 'Woman resting on a Mellow pillow',
+      altText: 'Woman resting on a {AppName} pillow',
       width: 900,
       height: 450,
     },
   },
   story: {
-    heading: 'How mellow was created to redefine sleep',
+    heading: 'How {AppName} was created to redefine sleep',
     body: 'Most comforters make you choose: too hot or too cold, too heavy or too light, impossible to wash or just plain uncomfortable.',
     highlight: "It shouldn't be this complicated.",
   },
   imageLeft: {
     url: `${PLACEHOLDER}/about-left.svg`,
-    altText: 'Woman smiling while resting on Mellow pillows',
+    altText: 'Woman smiling while resting on {AppName} pillows',
     width: 688,
     height: 560,
   },
   imageBottom: {
     url: `${PLACEHOLDER}/about-bottom.svg`,
-    altText: 'Hand pressing into a Mellow comforter',
+    altText: 'Hand pressing into a {AppName} comforter',
     width: 688,
     height: 300,
   },
@@ -295,7 +295,7 @@ export const DEFAULT_ABOUT_CONTENT: AboutContent = {
     },
   ],
   closing: {
-    heading: 'Ready to sleep mellow?',
+    heading: 'Ready to sleep {AppName}?',
     body: 'Try any product for 30 nights. If you do not sleep better, returns are on us.',
     cta: {label: 'Shop Best Sellers', url: '/collections/all'},
   },

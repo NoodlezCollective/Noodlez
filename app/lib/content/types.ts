@@ -1,5 +1,5 @@
 /**
- * Typed content contracts for the Mellow storefront.
+ * Typed content contracts for the {AppName} storefront.
  *
  * Everything that is not core Shopify commerce data (products, collections,
  * cart) is modelled here explicitly. Content is sourced from Shopify
@@ -157,7 +157,7 @@ export type SiteSettings = {
   ratingLabel: string;
   /** The call-to-action card at the top of the footer. */
   footerCta: {heading: string; label: string; url: string};
-  /** The footer's last line, e.g. "© Copyright MELLOW LLC". */
+  /** The footer's last line, e.g. "© Copyright {AppName} LLC". */
   copyright: string;
   freeGift: FreeGiftOffer | null;
   proofStats: ProofStat[];

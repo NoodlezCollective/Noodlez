@@ -1,7 +1,7 @@
 /**
  * Storefront configuration constants.
  *
- * These map the Mellow UI onto resources the merchant creates in Shopify.
+ * These map the {AppName} UI onto resources the merchant creates in Shopify.
  * Keep in sync with docs/shopify-setup.md.
  */
 export const SHOPIFY_RESOURCES = {

@@ -6,7 +6,7 @@ import {Link} from 'react-router';
  */
 export function Logo({
   logoUrl,
-  shopName = 'mellow',
+  shopName = '{AppName}',
   className,
 }: {
   logoUrl?: string | null;
@@ -24,7 +24,7 @@ export function Logo({
         <img className="logo__image" src={logoUrl} alt={shopName} />
       ) : (
         <span className="logo__wordmark" aria-hidden="true">
-          mel<span className="logo__accent">l</span>ow
+          {shopName}
         </span>
       )}
     </Link>

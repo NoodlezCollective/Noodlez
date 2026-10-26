@@ -167,8 +167,8 @@ describe('getOperationName', () => {
 
 describe('parseJson', () => {
   it('parses JSON like JSON.parse', () => {
-    expect(parseJson('{"data":{"shop":{"name":"Mellow"}}}')).toEqual({
-      data: {shop: {name: 'Mellow'}},
+    expect(parseJson('{"data":{"shop":{"name":"{AppName}"}}}')).toEqual({
+      data: {shop: {name: '{AppName}'}},
     });
     expect(parseJson('[1,"two",null]')).toEqual([1, 'two', null]);
     expect(parseJson('42')).toBe(42);

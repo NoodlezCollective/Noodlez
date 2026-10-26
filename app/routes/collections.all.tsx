@@ -6,9 +6,9 @@ import {ProductListing} from '~/components/collection/ProductListing';
 import {CATALOG_SORT_OPTIONS, getSortVariables} from '~/lib/collectionFilters';
 import {PRODUCT_CARD_FRAGMENT} from '~/lib/fragments';
 
-const TITLE = 'Shop All | Mellow';
+const TITLE = 'Shop All | {AppName}';
 const DESCRIPTION =
-  'Every Mellow pillow, comforter, bath essential and bundle in one place.';
+  'Every {AppName} pillow, comforter, bath essential and bundle in one place.';
 
 export const meta: Route.MetaFunction = ({data}) => {
   return [

@@ -80,7 +80,7 @@ const PILLOW: AnalyticsProduct = {
   id: 'gid://shopify/Product/9',
   title: 'Cloud Pillow',
   price: '49.0',
-  vendor: 'Mellow',
+  vendor: '{AppName}',
   variantId: 'gid://shopify/ProductVariant/99',
   variantTitle: 'Queen',
   quantity: 1,
@@ -117,7 +117,7 @@ function cartWith(updatedAt: string, keys: readonly string[]): CartData {
       product: {
         id: `gid://shopify/Product/${key}`,
         title: `Pillow ${key}`,
-        vendor: 'Mellow',
+        vendor: '{AppName}',
       },
     },
   }));

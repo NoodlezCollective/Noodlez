@@ -883,7 +883,9 @@ test.describe('input validation', () => {
     const payload = '<img/src=x/onerror=window.__xss=1>';
     await gotoHydrated(page, `/search?q=${encodeURIComponent(payload)}`);
 
-    await expect(page).toHaveTitle(`Search results for “${payload}” | Mellow`);
+    await expect(page).toHaveTitle(
+      `Search results for “${payload}” | {AppName}`,
+    );
     await expect(page.getByRole('main').locator('img[src="x"]')).toHaveCount(0);
     expect(
       await page.evaluate(() => (window as unknown as {__xss?: number}).__xss),

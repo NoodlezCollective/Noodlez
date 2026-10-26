@@ -6,9 +6,9 @@ import {CollectionCard} from '~/components/collection/CollectionCard';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {Button} from '~/components/ui/Button';
 
-const TITLE = 'Collections | Mellow';
+const TITLE = 'Collections | {AppName}';
 const DESCRIPTION =
-  'Browse Mellow by category: ergonomic pillows, adaptive comforters, plush bath essentials and money-saving bundles.';
+  'Browse {AppName} by category: ergonomic pillows, adaptive comforters, plush bath essentials and money-saving bundles.';
 
 export const meta: Route.MetaFunction = ({data}) => {
   return [

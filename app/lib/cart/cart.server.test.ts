@@ -482,7 +482,7 @@ describe('addLines', () => {
     const line = {
       merchandiseId: VARIANT_ID,
       quantity: 1,
-      attributes: [{key: 'engraving', value: 'Mellow'}],
+      attributes: [{key: 'engraving', value: '{AppName}'}],
       sellingPlanId: 'gid://shopify/SellingPlan/1',
       parent: {lineId: LINE_ID},
       selectedVariant: {id: VARIANT_ID, title: 'Queen'},
@@ -498,7 +498,7 @@ describe('addLines', () => {
     expect(sent).toEqual({
       merchandiseId: VARIANT_ID,
       quantity: 1,
-      attributes: [{key: 'engraving', value: 'Mellow'}],
+      attributes: [{key: 'engraving', value: '{AppName}'}],
       sellingPlanId: 'gid://shopify/SellingPlan/1',
       parent: {lineId: LINE_ID},
     });

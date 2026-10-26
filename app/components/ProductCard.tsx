@@ -36,7 +36,7 @@ export function truncate(text: string | null | undefined, max = 200) {
 }
 
 /**
- * Mellow product card: square image with optional badge, star rating,
+ * {AppName} product card: square image with optional badge, star rating,
  * title, short description, price with compare-at and a "Shop Now" button.
  * Driven entirely by the `ProductCard` Storefront API fragment.
  */

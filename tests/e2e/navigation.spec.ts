@@ -9,7 +9,7 @@
  * - `@mobile-only` tests run on mobile-390 only (the menu behind "Open menu"
  *   exists below 64em).
  *
- * Strict-mode traps handled below: two "Mellow – home" links (banner and
+ * Strict-mode traps handled below: two "{AppName} – home" links (banner and
  * footer), two "Close" buttons per drawer (the helpers in
  * ./support/dialogs.ts), and a second "Search" button on /search.
  */
