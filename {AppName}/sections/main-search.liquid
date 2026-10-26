@@ -5,6 +5,7 @@
 {%- endcomment -%}
 {%- liquid
   assign term = search.terms | strip
+  assign term_param = term | url_param_escape
   assign has_term = false
   if term != blank
     assign has_term = true
@@ -55,7 +56,7 @@
                     if paginate.current_offset == 0 and forloop.index0 < 6
                       assign loading = 'eager'
                     endif
-                    assign item_url = item.url | append: '?q=' | append: term | url_param_escape
+                    assign item_url = item.url | append: '?q=' | append: term_param
                   -%}
                   {%- render 'product-card', product: item, heading_level: 3, loading: loading, sizes: card_sizes, url: item_url -%}
                 {%- endif -%}

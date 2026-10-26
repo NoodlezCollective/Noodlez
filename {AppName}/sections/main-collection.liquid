@@ -49,6 +49,8 @@
     assign clear_url = collection.url | append: '?sort_by=' | append: sort_by
   endif
   assign uid = 'filters-' | append: section.id
+  assign heading_id = uid | append: '-heading'
+  assign sort_id = uid | append: '-sort'
   assign symbol = 0 | money | remove: '0' | remove: '.' | remove: ',' | strip
   assign card_sizes = '(min-width: 64em) 30vw, (min-width: 40em) 50vw, 100vw'
 -%}
@@ -83,7 +85,7 @@
     <div class="collection-layout{% if show_filters %} collection-layout--with-filters{% endif %}">
       {%- if show_filters -%}
         <div id="{{ uid }}-panel" class="collection-layout__sidebar" aria-labelledby="{{ uid }}-heading" role="complementary">
-          {%- render 'filter-panel', filters: collection.filters, action: collection.url, uid: uid, heading_id: uid | append: '-heading', sort_by: sort_by, clear_url: clear_url, active_count: active_count, symbol: symbol -%}
+          {%- render 'filter-panel', filters: collection.filters, action: collection.url, uid: uid, heading_id: heading_id, sort_by: sort_by, clear_url: clear_url, active_count: active_count, symbol: symbol -%}
         </div>
       {%- endif -%}
       <div class="collection-layout__main">
@@ -94,7 +96,7 @@
               {%- if show_filters -%}
                 <button class="btn btn--outline btn--sm filters-toggle" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="{{ uid }}-panel">{% render 'icon', name: 'filter', size: 18 %}Filters{% if active_count > 0 %}<span class="filters-toggle__count">{{ active_count }}<span class="sr-only"> active</span></span>{% endif %}</button>
               {%- endif -%}
-              {%- render 'filter-sort', current: collection.sort_by, default: collection.default_sort_by, catalog: is_all, id: uid | append: '-sort' -%}
+              {%- render 'filter-sort', current: collection.sort_by, default_sort: collection.default_sort_by, catalog: is_all, id: sort_id -%}
             </div>
           </div>
           {%- if show_filters -%}
