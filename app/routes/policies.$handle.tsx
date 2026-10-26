@@ -1,6 +1,7 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/policies.$handle';
 import {Button} from '~/components/ui/Button';
+import {getStorefrontPolicy} from '~/lib/content/policies';
 import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
 
 type PolicyField =
@@ -40,25 +41,49 @@ export const meta: Route.MetaFunction = ({data}) => {
   ];
 };
 
+/** What the page renders, whether the policy came from Shopify or the storefront. */
+type PolicyDocument = {handle: string; title: string; body: string};
+
+/**
+ * Shopify's policy for the handle when the store has published one, else the
+ * storefront's own document (app/lib/content/policies.ts). Contact information
+ * and the legal notice are not exposed by the Storefront API, so they always
+ * come from the storefront. A handle with neither is a 404.
+ */
 export async function loader({params, context, request}: Route.LoaderArgs) {
   const field = params.handle ? POLICY_FIELDS.get(params.handle) : undefined;
+  const local = getStorefrontPolicy(params.handle);
 
-  if (!field) {
+  if (!field && !local) {
     throw new Response('Could not find the policy', {status: 404});
   }
 
-  const data = await context.storefront.query(POLICY_CONTENT_QUERY, {
-    variables: {
-      privacyPolicy: field === 'privacyPolicy',
-      shippingPolicy: field === 'shippingPolicy',
-      termsOfService: field === 'termsOfService',
-      refundPolicy: field === 'refundPolicy',
-      subscriptionPolicy: field === 'subscriptionPolicy',
-      language: context.storefront.i18n?.language,
-    },
-  });
+  let policy: PolicyDocument | null = null;
 
-  const policy = data.shop?.[field];
+  if (field) {
+    const data = await context.storefront.query(POLICY_CONTENT_QUERY, {
+      variables: {
+        privacyPolicy: field === 'privacyPolicy',
+        shippingPolicy: field === 'shippingPolicy',
+        termsOfService: field === 'termsOfService',
+        refundPolicy: field === 'refundPolicy',
+        subscriptionPolicy: field === 'subscriptionPolicy',
+        language: context.storefront.i18n?.language,
+      },
+    });
+    const shopPolicy = data.shop?.[field];
+    if (shopPolicy) {
+      policy = {
+        handle: shopPolicy.handle,
+        title: shopPolicy.title,
+        body: shopPolicy.body,
+      };
+    }
+  }
+
+  if (!policy && local) {
+    policy = {handle: local.handle, title: local.title, body: local.body};
+  }
 
   if (!policy) {
     throw new Response('Could not find the policy', {status: 404});

@@ -4,6 +4,7 @@
  * Products, prices, badges and review counts mirror the design references.
  * Imagery is local placeholder artwork (public/images/placeholders).
  */
+import {getStorefrontPolicy} from '~/lib/content/policies';
 import type {
   CollectionSeed,
   ImageSeed,
@@ -833,6 +834,8 @@ export const MENU_SEEDS: MenuSeed[] = [
           {id: 'gid://shopify/MenuItem/footer-support-3', title: 'Refund Policy', url: `${STORE_URL}/policies/refund-policy`, type: 'SHOP_POLICY'},
           {id: 'gid://shopify/MenuItem/footer-support-4', title: 'Privacy Policy', url: `${STORE_URL}/policies/privacy-policy`, type: 'SHOP_POLICY'},
           {id: 'gid://shopify/MenuItem/footer-support-5', title: 'Terms of Service', url: `${STORE_URL}/policies/terms-of-service`, type: 'SHOP_POLICY'},
+          {id: 'gid://shopify/MenuItem/footer-support-6', title: 'Contact Information', url: `${STORE_URL}/policies/contact-information`, type: 'SHOP_POLICY'},
+          {id: 'gid://shopify/MenuItem/footer-support-7', title: 'Legal Notice', url: `${STORE_URL}/policies/legal-notice`, type: 'SHOP_POLICY'},
         ],
       },
     ],
@@ -852,29 +855,16 @@ export const PAGE_SEEDS: PageSeed[] = [
   },
 ];
 
-export const POLICY_SEEDS: PolicySeed[] = [
-  {
-    id: 'gid://shopify/ShopPolicy/privacy',
-    handle: 'privacy-policy',
-    title: 'Privacy Policy',
-    body: '<p>This development placeholder describes how Mellow collects and uses personal information. Replace it with your store policy in Shopify admin under Settings &gt; Policies.</p>',
-  },
-  {
-    id: 'gid://shopify/ShopPolicy/refund',
-    handle: 'refund-policy',
-    title: 'Refund Policy',
-    body: '<p>Try any Mellow product for 30 nights. If you are not sleeping better, start a return from your account for a full refund.</p>',
-  },
-  {
-    id: 'gid://shopify/ShopPolicy/shipping',
-    handle: 'shipping-policy',
-    title: 'Shipping Policy',
-    body: '<p>Orders ship within 1-2 business days and arrive in 3-6 business days within the continental US.</p>',
-  },
-  {
-    id: 'gid://shopify/ShopPolicy/terms',
-    handle: 'terms-of-service',
-    title: 'Terms of Service',
-    body: '<p>Development placeholder terms of service. Configure the real policy in Shopify admin.</p>',
-  },
-];
+/** The four Shopify shop policies, seeded from the storefront's own documents. */
+export const POLICY_SEEDS: PolicySeed[] = (
+  ['privacy-policy', 'refund-policy', 'shipping-policy', 'terms-of-service'] as const
+).map((handle) => {
+  const policy = getStorefrontPolicy(handle);
+  if (!policy) throw new Error(`No storefront policy for ${handle}`);
+  return {
+    id: `gid://shopify/ShopPolicy/${handle}`,
+    handle,
+    title: policy.title,
+    body: policy.body,
+  };
+});

@@ -553,13 +553,23 @@ test.describe('policies', () => {
       blurb: 'The terms that apply when you shop with Mellow.',
     },
     {
-      title: 'Refund Policy',
+      title: 'Return and Refund Policy',
       handle: 'refund-policy',
-      blurb: 'Our 30-night trial and how returns and refunds work.',
+      blurb: 'Our 30-day return window and how refunds and exchanges work.',
+    },
+    {
+      title: 'Contact Information',
+      handle: 'contact-information',
+      blurb: 'Business details, how to reach us and when we reply.',
+    },
+    {
+      title: 'Legal Notice',
+      handle: 'legal-notice',
+      blurb: 'Who operates this website, hosting and intellectual property.',
     },
   ] as const;
 
-  test('the index lists the four policies the shop has', async ({page}) => {
+  test('the index lists every policy', async ({page}) => {
     await gotoHydrated(page, '/policies');
 
     await expectSingleH1(page, 'Policies');

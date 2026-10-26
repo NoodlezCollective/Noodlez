@@ -2,17 +2,12 @@ import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/policies._index';
 import type {PoliciesQuery, PolicyItemFragment} from 'storefrontapi.generated';
 import {ArrowRightIcon} from '~/components/ui/Icons';
+import {STOREFRONT_POLICIES} from '~/lib/content/policies';
 import {canonicalLink, notFoundMeta} from '~/lib/seo';
 
-/** Short blurbs for the standard Shopify policies, keyed by handle. */
-const POLICY_DESCRIPTIONS: Record<string, string> = {
-  'privacy-policy':
-    'How we collect, use and protect your personal information.',
-  'shipping-policy': 'Processing times, delivery estimates and tracking.',
-  'refund-policy': 'Our 30-night trial and how returns and refunds work.',
-  'terms-of-service': 'The terms that apply when you shop with Mellow.',
-  'subscription-policy': 'How subscriptions renew, pause and cancel.',
-};
+type PolicyListItem = {handle: string; title: string; description: string};
+
+const SUBSCRIPTION_DESCRIPTION = 'How subscriptions renew, pause and cancel.';
 
 export const meta: Route.MetaFunction = ({data}) => {
   if (!data) return notFoundMeta('Policies');
@@ -30,20 +25,34 @@ export const meta: Route.MetaFunction = ({data}) => {
   ];
 };
 
+/**
+ * Lists the storefront's policies in a fixed order. A policy the store has
+ * published in Shopify takes its title from there; otherwise the storefront's
+ * own document stands in. The subscription policy is listed only when Shopify
+ * has one; contact information and the legal notice always come from the
+ * storefront (the Storefront API does not expose them).
+ */
 export async function loader({context, request}: Route.LoaderArgs) {
   const data: PoliciesQuery = await context.storefront.query(POLICIES_QUERY);
+  const shop = data.shop;
 
-  const shopPolicies = data.shop;
-  const policies: PolicyItemFragment[] = [
-    shopPolicies?.privacyPolicy,
-    shopPolicies?.shippingPolicy,
-    shopPolicies?.termsOfService,
-    shopPolicies?.refundPolicy,
-    shopPolicies?.subscriptionPolicy,
-  ].filter((policy): policy is PolicyItemFragment => policy != null);
-
-  if (!policies.length) {
-    throw new Response('No policies found', {status: 404});
+  const policies: PolicyListItem[] = [];
+  for (const local of STOREFRONT_POLICIES) {
+    const fromShop: PolicyItemFragment | null | undefined = local.shopField
+      ? shop?.[local.shopField]
+      : null;
+    policies.push({
+      handle: fromShop?.handle ?? local.handle,
+      title: fromShop?.title ?? local.title,
+      description: local.description,
+    });
+    if (local.shopField === 'refundPolicy' && shop?.subscriptionPolicy) {
+      policies.push({
+        handle: shop.subscriptionPolicy.handle,
+        title: shop.subscriptionPolicy.title,
+        description: SUBSCRIPTION_DESCRIPTION,
+      });
+    }
   }
 
   return {policies, origin: new URL(request.url).origin};
@@ -73,8 +82,7 @@ export default function Policies() {
               <span className="policy-card__body">
                 <span className="policy-card__title">{policy.title}</span>
                 <span className="policy-card__description">
-                  {POLICY_DESCRIPTIONS[policy.handle] ??
-                    'Read the full policy.'}
+                  {policy.description}
                 </span>
               </span>
               <ArrowRightIcon className="policy-card__arrow" size={20} />

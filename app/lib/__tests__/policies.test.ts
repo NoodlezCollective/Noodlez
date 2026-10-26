@@ -1,5 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {loader, meta} from '../../routes/policies.$handle';
+import {getStorefrontPolicy} from '../content/policies';
 import {
   ORIGIN,
   callRoute,
@@ -45,8 +46,11 @@ describe('policies/:handle loader', () => {
     // Act
     const result = await promise;
 
-    // Assert
-    expect(result).toEqual({policy, origin: ORIGIN});
+    // Assert: the page gets the handle, title and body of Shopify's policy.
+    expect(result).toEqual({
+      policy: {handle, title: 'A policy', body: '<p>Text</p>'},
+      origin: ORIGIN,
+    });
     expect(storefront.query).toHaveBeenCalledTimes(1);
     const [document, options] = storefront.query.mock.calls[0] as [
       string,
@@ -70,8 +74,51 @@ describe('policies/:handle loader', () => {
     const {promise} = policyLoader('subscription-policy', {
       shop: {subscriptionPolicy: policy},
     });
-    expect(await promise).toEqual({policy, origin: ORIGIN});
+    expect(await promise).toEqual({
+      policy: {
+        handle: 'subscription-policy',
+        title: 'Subscription policy',
+        body: '<p>Default</p>',
+      },
+      origin: ORIGIN,
+    });
   });
+
+  it.each([
+    'privacy-policy',
+    'shipping-policy',
+    'terms-of-service',
+    'refund-policy',
+  ])(
+    'serves the storefront document for %s when the store has not published one',
+    async (handle) => {
+      const {promise, storefront} = policyLoader(handle, {shop: {}});
+
+      const result = (await promise) as {
+        policy: {handle: string; body: string};
+      };
+
+      expect(storefront.query).toHaveBeenCalledTimes(1);
+      expect(result.policy).toEqual({
+        handle,
+        title: getStorefrontPolicy(handle)?.title,
+        body: getStorefrontPolicy(handle)?.body,
+      });
+      expect(result.policy.body).toContain('<h2>');
+    },
+  );
+
+  it.each(['contact-information', 'legal-notice'])(
+    'serves %s from the storefront without calling the API',
+    async (handle) => {
+      const {promise, storefront} = policyLoader(handle, {shop: {}});
+
+      const result = (await promise) as {policy: {handle: string}};
+
+      expect(storefront.query).not.toHaveBeenCalled();
+      expect(result.policy.handle).toBe(handle);
+    },
+  );
 
   it.each([
     'constructor',
@@ -101,9 +148,9 @@ describe('policies/:handle loader', () => {
     expect(storefront.query).not.toHaveBeenCalled();
   });
 
-  it('answers 404 when the store has no such policy', async () => {
-    const {promise} = policyLoader('privacy-policy', {
-      shop: {privacyPolicy: null},
+  it('answers 404 for the subscription policy when the store has none (no storefront fallback)', async () => {
+    const {promise} = policyLoader('subscription-policy', {
+      shop: {subscriptionPolicy: null},
     });
     expect((await thrownResponse(promise)).status).toBe(404);
   });

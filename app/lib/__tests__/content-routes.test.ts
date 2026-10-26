@@ -154,25 +154,40 @@ describe('policies', () => {
     return {promise, storefront};
   }
 
-  it('lists the available policies, including a subscription policy without an id', async () => {
+  it('lists every policy in order, with the subscription policy (id may be null) after refunds', async () => {
     const {promise, storefront} = load(policies);
 
     const result = (await promise) as {
-      policies: Array<{handle: string}>;
+      policies: Array<{handle: string; title: string}>;
       origin: string;
     };
 
     expect(result.policies.map((policy) => policy.handle)).toEqual([
       'privacy-policy',
+      'shipping-policy',
+      'terms-of-service',
+      'refund-policy',
       'subscription-policy',
+      'contact-information',
+      'legal-notice',
     ]);
+    // Shopify's title wins where the store has published the policy.
+    expect(result.policies[0].title).toBe('Privacy policy');
     expect(result.origin).toBe(ORIGIN);
     expectValidStorefrontDocument(storefront.query.mock.calls[0][0]);
   });
 
-  it('answers 404 when the store has no policies', async () => {
+  it('falls back to the storefront documents when the store has no policies', async () => {
     const {promise} = load({shop: {privacyPolicy: null}});
-    expect((await thrownResponse(promise)).status).toBe(404);
+    const result = (await promise) as {policies: Array<{handle: string}>};
+    expect(result.policies.map((policy) => policy.handle)).toEqual([
+      'privacy-policy',
+      'shipping-policy',
+      'terms-of-service',
+      'refund-policy',
+      'contact-information',
+      'legal-notice',
+    ]);
   });
 
   it('has an absolute canonical and Open Graph tags', () => {

@@ -108,6 +108,8 @@ const FOOTER_NAVS: readonly FooterNav[] = [
       ['Refund Policy', '/policies/refund-policy'],
       ['Privacy Policy', '/policies/privacy-policy'],
       ['Terms of Service', '/policies/terms-of-service'],
+      ['Contact Information', '/policies/contact-information'],
+      ['Legal Notice', '/policies/legal-notice'],
     ],
   },
 ];

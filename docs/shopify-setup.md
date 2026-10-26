@@ -110,10 +110,15 @@ access checkbox) or the queries return nothing and the fallbacks are used.
 - `/pages/about` uses the designed About template; a Shopify page with handle
   `about` adds its body (and SEO title/description) to the template.
 - Other Shopify pages render at `/pages/<handle>`.
-- Policies render from **Settings → Policies** at `/policies/<handle>`. The
-  storefront serves five handles: `privacy-policy`, `shipping-policy`,
-  `terms-of-service`, `refund-policy` and `subscription-policy`. Any other
-  handle returns 404, and so does a handle for which Shopify has no policy.
+- Policies render at `/policies/<handle>`. `privacy-policy`,
+  `shipping-policy`, `terms-of-service` and `refund-policy` come from
+  **Settings → Policies** when the store has published them; until then the
+  storefront serves its own documents from `app/lib/content/policies.ts`
+  (paste the same texts into Shopify so checkout and emails link to them).
+  `contact-information` and `legal-notice` are not exposed by the Storefront
+  API, so they always come from that file. `subscription-policy` is served
+  only when Shopify has one. Fill in the bracketed placeholders ([Store
+  Name], [Email], [Phone], [Business Address] and so on) before launch.
 
 ## 7. Customer accounts
 
