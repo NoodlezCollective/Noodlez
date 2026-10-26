@@ -82,6 +82,11 @@ export const METAOBJECT_SEEDS: MetaobjectSeed[] = [
         'multi_line_text_field',
       ),
       text('cart_heading', settings.cartHeading),
+      text('rating_label', settings.ratingLabel),
+      text('footer_cta_heading', settings.footerCta.heading),
+      text('footer_cta_label', settings.footerCta.label),
+      text('footer_cta_url', settings.footerCta.url),
+      text('copyright', settings.copyright),
       text(
         'free_gift_threshold',
         settings.freeGift ? String(settings.freeGift.threshold) : null,

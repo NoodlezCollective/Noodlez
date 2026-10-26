@@ -1,6 +1,23 @@
 import {describe, expect, it} from 'vitest';
 import {loader, meta} from '../../routes/policies.$handle';
-import {getStorefrontPolicy} from '../content/policies';
+import {
+  getStorefrontPolicy,
+  getStorefrontPolicyForField,
+} from '../content/policies';
+
+/** The banner the loader attaches from the storefront document, if any. */
+function heroFor(field: string) {
+  const doc = getStorefrontPolicyForField(
+    field as Parameters<typeof getStorefrontPolicyForField>[0],
+  );
+  return doc
+    ? {
+        headline: doc.heroHeadline,
+        subheadline: doc.heroSubheadline,
+        image: doc.heroImage,
+      }
+    : null;
+}
 import {
   ORIGIN,
   callRoute,
@@ -48,7 +65,12 @@ describe('policies/:handle loader', () => {
 
     // Assert: the page gets the handle, title and body of Shopify's policy.
     expect(result).toEqual({
-      policy: {handle, title: 'A policy', body: '<p>Text</p>'},
+      policy: {
+        handle,
+        title: 'A policy',
+        body: '<p>Text</p>',
+        hero: heroFor(field),
+      },
       origin: ORIGIN,
     });
     expect(storefront.query).toHaveBeenCalledTimes(1);
@@ -79,6 +101,7 @@ describe('policies/:handle loader', () => {
         handle: 'subscription-policy',
         title: 'Subscription policy',
         body: '<p>Default</p>',
+        hero: null,
       },
       origin: ORIGIN,
     });
@@ -99,10 +122,12 @@ describe('policies/:handle loader', () => {
       };
 
       expect(storefront.query).toHaveBeenCalledTimes(1);
+      const doc = getStorefrontPolicy(handle);
       expect(result.policy).toEqual({
         handle,
-        title: getStorefrontPolicy(handle)?.title,
-        body: getStorefrontPolicy(handle)?.body,
+        title: doc?.title,
+        body: doc?.body,
+        hero: doc ? heroFor(doc.shopField ?? '') : null,
       });
       expect(result.policy.body).toContain('<h2>');
     },

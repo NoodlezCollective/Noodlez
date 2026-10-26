@@ -1,7 +1,12 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/policies.$handle';
 import {Button} from '~/components/ui/Button';
-import {getStorefrontPolicy} from '~/lib/content/policies';
+import {PolicyHero} from '~/components/PolicyHero';
+import {
+  getStorefrontPolicy,
+  getStorefrontPolicyForField,
+} from '~/lib/content/policies';
+import {useSiteSettings} from '~/lib/content/useSiteSettings';
 import {SITE_NAME, canonicalLink, notFoundMeta} from '~/lib/seo';
 
 type PolicyField =
@@ -42,7 +47,16 @@ export const meta: Route.MetaFunction = ({data}) => {
 };
 
 /** What the page renders, whether the policy came from Shopify or the storefront. */
-type PolicyDocument = {handle: string; title: string; body: string};
+type PolicyDocument = {
+  handle: string;
+  title: string;
+  body: string;
+  hero: {
+    headline: string;
+    subheadline: string;
+    image: {url: string; altText: string; width: number; height: number};
+  } | null;
+};
 
 /**
  * Shopify's policy for the handle when the store has published one, else the
@@ -73,16 +87,27 @@ export async function loader({params, context, request}: Route.LoaderArgs) {
     });
     const shopPolicy = data.shop?.[field];
     if (shopPolicy) {
+      // The banner copy stays the storefront's even when the text is Shopify's.
+      const banner =
+        field === 'subscriptionPolicy'
+          ? undefined
+          : getStorefrontPolicyForField(field);
       policy = {
         handle: shopPolicy.handle,
         title: shopPolicy.title,
         body: shopPolicy.body,
+        hero: banner ? heroOf(banner) : null,
       };
     }
   }
 
   if (!policy && local) {
-    policy = {handle: local.handle, title: local.title, body: local.body};
+    policy = {
+      handle: local.handle,
+      title: local.title,
+      body: local.body,
+      hero: heroOf(local),
+    };
   }
 
   if (!policy) {
@@ -92,31 +117,61 @@ export async function loader({params, context, request}: Route.LoaderArgs) {
   return {policy, origin: new URL(request.url).origin};
 }
 
+function heroOf(doc: {
+  heroHeadline: string;
+  heroSubheadline: string;
+  heroImage: {url: string; altText: string; width: number; height: number};
+}) {
+  return {
+    headline: doc.heroHeadline,
+    subheadline: doc.heroSubheadline,
+    image: doc.heroImage,
+  };
+}
+
 export default function Policy() {
   const {policy} = useLoaderData<typeof loader>();
+  const {ratingLabel} = useSiteSettings();
 
   return (
-    <article className="content-page container container--text">
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <Link to="/policies" prefetch="intent">
-          Policies
-        </Link>
-        <span aria-hidden="true">/</span>
-        <span aria-current="page">{policy.title}</span>
-      </nav>
-      <header className="page-header">
-        <p className="eyebrow page-header__eyebrow">Mellow</p>
-        <h1>{policy.title}</h1>
-      </header>
-      <div className="prose" dangerouslySetInnerHTML={{__html: policy.body}} />
-      <footer className="policy__footer">
-        <Button to="/policies" variant="outline" size="sm">
-          All policies
-        </Button>
-        <Button to="/collections/all" variant="ghost" size="sm">
-          Continue shopping
-        </Button>
-      </footer>
+    <article className="content-page policy-page">
+      <div className="container">
+        {policy.hero ? (
+          <PolicyHero
+            eyebrow={policy.title}
+            headline={policy.hero.headline}
+            subheadline={policy.hero.subheadline}
+            ratingLabel={ratingLabel}
+            image={policy.hero.image}
+          />
+        ) : (
+          <header className="page-header">
+            <p className="eyebrow page-header__eyebrow">Mellow</p>
+            <h1>{policy.title}</h1>
+          </header>
+        )}
+      </div>
+      <div className="container container--text policy-page__body">
+        <nav className="breadcrumbs" aria-label="Breadcrumb">
+          <Link to="/policies" prefetch="intent">
+            Policies
+          </Link>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{policy.title}</span>
+        </nav>
+        <div
+          className="prose"
+          dangerouslySetInnerHTML={{__html: policy.body}}
+        />
+        <footer className="policy__footer">
+          <Button to="/policies" variant="outline" size="sm">
+            All policies
+          </Button>
+          <Button to="/collections/all" variant="ghost" size="sm">
+            Continue shopping
+          </Button>
+        </footer>
+      </div>
     </article>
   );
 }

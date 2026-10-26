@@ -153,6 +153,12 @@ export type SiteSettings = {
   savingsExplanation: string;
   /** Title of the cart drawer; the blueprint frames it as "Your Sleep Stack". */
   cartHeading: string;
+  /** Social-proof label beside five stars on banners: "124,952+ Happy Sleepers". */
+  ratingLabel: string;
+  /** The call-to-action card at the top of the footer. */
+  footerCta: {heading: string; label: string; url: string};
+  /** The footer's last line, e.g. "© Copyright MELLOW LLC". */
+  copyright: string;
   freeGift: FreeGiftOffer | null;
   proofStats: ProofStat[];
 };

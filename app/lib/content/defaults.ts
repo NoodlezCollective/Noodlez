@@ -32,6 +32,13 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   savingsExplanation:
     'Compare-at prices reflect the comparable retail value of similar bedding sold at full price. Your savings are the difference between that value and the Mellow price.',
   cartHeading: 'Your Sleep Stack',
+  ratingLabel: '124,952+ Happy Sleepers',
+  footerCta: {
+    heading: 'Cloud-like comfort is just a click away. Try mellow today.',
+    label: 'Sleep Better',
+    url: '/collections/all',
+  },
+  copyright: '© Copyright MELLOW LLC',
   freeGift: {
     threshold: 120,
     label: 'a free Silk Sleep Mask',

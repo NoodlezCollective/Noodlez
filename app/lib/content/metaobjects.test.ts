@@ -399,6 +399,9 @@ describe('mapSiteSettings', () => {
       savingsNote: 'Save big',
       savingsExplanation: 'Because.',
       cartHeading: DEFAULT_SITE_SETTINGS.cartHeading,
+      ratingLabel: DEFAULT_SITE_SETTINGS.ratingLabel,
+      footerCta: DEFAULT_SITE_SETTINGS.footerCta,
+      copyright: DEFAULT_SITE_SETTINGS.copyright,
       freeGift: DEFAULT_SITE_SETTINGS.freeGift,
       proofStats: DEFAULT_SITE_SETTINGS.proofStats,
     });

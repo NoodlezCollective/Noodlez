@@ -1,8 +1,10 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/policies._index';
 import type {PoliciesQuery, PolicyItemFragment} from 'storefrontapi.generated';
+import {PolicyHero} from '~/components/PolicyHero';
 import {ArrowRightIcon} from '~/components/ui/Icons';
 import {STOREFRONT_POLICIES} from '~/lib/content/policies';
+import {useSiteSettings} from '~/lib/content/useSiteSettings';
 import {canonicalLink, notFoundMeta} from '~/lib/seo';
 
 type PolicyListItem = {handle: string; title: string; description: string};
@@ -60,36 +62,45 @@ export async function loader({context, request}: Route.LoaderArgs) {
 
 export default function Policies() {
   const {policies} = useLoaderData<typeof loader>();
+  const {ratingLabel} = useSiteSettings();
 
   return (
-    <div className="content-page container container--text">
-      <header className="page-header">
-        <p className="eyebrow page-header__eyebrow">Mellow</p>
-        <h1>Policies</h1>
-        <p className="page-header__description">
-          The fine print, in plain language: how we ship, how returns work and
-          how we look after your information.
-        </p>
-      </header>
-      <ul className="policy-list">
-        {policies.map((policy) => (
-          <li key={policy.handle}>
-            <Link
-              className="policy-card"
-              prefetch="intent"
-              to={`/policies/${policy.handle}`}
-            >
-              <span className="policy-card__body">
-                <span className="policy-card__title">{policy.title}</span>
-                <span className="policy-card__description">
-                  {policy.description}
+    <div className="content-page policy-page">
+      <div className="container">
+        <PolicyHero
+          eyebrow="Mellow"
+          headline="Policies"
+          subheadline="The fine print, in plain language: how we ship, how returns work and how we look after your information."
+          ratingLabel={ratingLabel}
+          image={{
+            url: '/images/placeholders/about-hero.svg',
+            altText: 'A stack of Mellow pillows',
+            width: 1376,
+            height: 760,
+          }}
+        />
+      </div>
+      <div className="container container--text policy-page__body">
+        <ul className="policy-list">
+          {policies.map((policy) => (
+            <li key={policy.handle}>
+              <Link
+                className="policy-card"
+                prefetch="intent"
+                to={`/policies/${policy.handle}`}
+              >
+                <span className="policy-card__body">
+                  <span className="policy-card__title">{policy.title}</span>
+                  <span className="policy-card__description">
+                    {policy.description}
+                  </span>
                 </span>
-              </span>
-              <ArrowRightIcon className="policy-card__arrow" size={20} />
-            </Link>
-          </li>
-        ))}
-      </ul>
+                <ArrowRightIcon className="policy-card__arrow" size={20} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

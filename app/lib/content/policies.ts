@@ -17,6 +17,12 @@ export type StorefrontPolicy = {
   title: string;
   /** Short blurb shown on the policies index. */
   description: string;
+  /** Friendly headline of the page banner, e.g. "Sleep Easy, Your Data's Safe". */
+  heroHeadline: string;
+  /** One line of reassurance under the headline. */
+  heroSubheadline: string;
+  /** Banner photo (placeholder art until the merchant uploads imagery). */
+  heroImage: {url: string; altText: string; width: number; height: number};
   /** HTML body. */
   body: string;
   /** Shopify field this document stands in for; `null` when Shopify has none. */
@@ -347,6 +353,15 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
     handle: 'privacy-policy',
     title: 'Privacy Policy',
     description: 'How we collect, use and protect your personal information.',
+    heroHeadline: "Sleep Easy, Your Data's Safe",
+    heroSubheadline:
+      'From checkout to sweet dreams, we keep your details private, never shared, always protected.',
+    heroImage: {
+      url: '/images/placeholders/lifestyle-1.svg',
+      altText: 'Customer hugging a Mellow pillow',
+      width: 1376,
+      height: 760,
+    },
     body: PRIVACY_POLICY.trim(),
     shopField: 'privacyPolicy',
   },
@@ -354,6 +369,15 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
     handle: 'shipping-policy',
     title: 'Shipping Policy',
     description: 'Processing times, delivery estimates and tracking.',
+    heroHeadline: 'From Our Door To Yours',
+    heroSubheadline:
+      'Where we deliver, how long it takes and what it costs, in plain language.',
+    heroImage: {
+      url: '/images/placeholders/lifestyle-2.svg',
+      altText: 'A Mellow parcel ready to ship',
+      width: 1376,
+      height: 760,
+    },
     body: SHIPPING_POLICY.trim(),
     shopField: 'shippingPolicy',
   },
@@ -361,6 +385,14 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
     handle: 'terms-of-service',
     title: 'Terms of Service',
     description: 'The terms that apply when you shop with Mellow.',
+    heroHeadline: 'Our Terms, Made Simple',
+    heroSubheadline: 'Because clarity matters as much as comfort.',
+    heroImage: {
+      url: '/images/placeholders/lifestyle-1.svg',
+      altText: 'Customer hugging a Mellow pillow',
+      width: 1376,
+      height: 760,
+    },
     body: TERMS_OF_SERVICE.trim(),
     shopField: 'termsOfService',
   },
@@ -368,6 +400,15 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
     handle: 'refund-policy',
     title: 'Return and Refund Policy',
     description: 'Our 30-day return window and how refunds and exchanges work.',
+    heroHeadline: 'Love It, Or Send It Back',
+    heroSubheadline:
+      '30 days to decide, no restocking fees and real people to help if anything is wrong.',
+    heroImage: {
+      url: '/images/placeholders/about-hero.svg',
+      altText: 'A stack of Mellow pillows',
+      width: 1376,
+      height: 760,
+    },
     body: REFUND_POLICY.trim(),
     shopField: 'refundPolicy',
   },
@@ -375,6 +416,15 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
     handle: 'contact-information',
     title: 'Contact Information',
     description: 'Business details, how to reach us and when we reply.',
+    heroHeadline: "We're Here To Help",
+    heroSubheadline:
+      'Real people, real replies: how to reach us and when we are around.',
+    heroImage: {
+      url: '/images/placeholders/lifestyle-2.svg',
+      altText: 'The Mellow customer service team',
+      width: 1376,
+      height: 760,
+    },
     body: CONTACT_INFORMATION.trim(),
     shopField: null,
   },
@@ -383,10 +433,28 @@ export const STOREFRONT_POLICIES: readonly StorefrontPolicy[] = [
     title: 'Legal Notice',
     description:
       'Who operates this website, hosting and intellectual property.',
+    heroHeadline: 'The Legal Details',
+    heroSubheadline:
+      'Who operates this website and how your rights are protected.',
+    heroImage: {
+      url: '/images/placeholders/about-hero.svg',
+      altText: 'A stack of Mellow pillows',
+      width: 1376,
+      height: 760,
+    },
     body: LEGAL_NOTICE.trim(),
     shopField: null,
   },
 ];
+
+/** The storefront document that stands behind a Shopify shop policy field. */
+export function getStorefrontPolicyForField(
+  field: StorefrontPolicy['shopField'],
+): StorefrontPolicy | undefined {
+  return field
+    ? STOREFRONT_POLICIES.find((policy) => policy.shopField === field)
+    : undefined;
+}
 
 export function getStorefrontPolicy(
   handle: string | undefined,

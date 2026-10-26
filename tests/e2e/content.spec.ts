@@ -217,9 +217,10 @@ const band = (page: Page) =>
   page.getByRole('region', {name: 'Sleep Smarter. Save More.'});
 const footer = (page: Page) => page.getByRole('contentinfo');
 
+// The footer no longer carries a form (it ends in the call-to-action card and
+// the social columns); the band is the one newsletter form on the page.
 const NEWSLETTER_FORMS: readonly NewsletterCase[] = [
   {name: 'home page band', source: 'homepage', scope: band, other: footer},
-  {name: 'footer', source: 'footer', scope: footer, other: band},
 ];
 
 const SIGNUP_EMAIL = 'shopper@example.com';
@@ -541,31 +542,37 @@ test.describe('policies', () => {
       title: 'Privacy Policy',
       handle: 'privacy-policy',
       blurb: 'How we collect, use and protect your personal information.',
+      headline: "Sleep Easy, Your Data's Safe",
     },
     {
       title: 'Shipping Policy',
       handle: 'shipping-policy',
       blurb: 'Processing times, delivery estimates and tracking.',
+      headline: 'From Our Door To Yours',
     },
     {
       title: 'Terms of Service',
       handle: 'terms-of-service',
       blurb: 'The terms that apply when you shop with Mellow.',
+      headline: 'Our Terms, Made Simple',
     },
     {
       title: 'Return and Refund Policy',
       handle: 'refund-policy',
       blurb: 'Our 30-day return window and how refunds and exchanges work.',
+      headline: 'Love It, Or Send It Back',
     },
     {
       title: 'Contact Information',
       handle: 'contact-information',
       blurb: 'Business details, how to reach us and when we reply.',
+      headline: "We're Here To Help",
     },
     {
       title: 'Legal Notice',
       handle: 'legal-notice',
       blurb: 'Who operates this website, hosting and intellectual property.',
+      headline: 'The Legal Details',
     },
   ] as const;
 
@@ -596,7 +603,7 @@ test.describe('policies', () => {
       .click();
 
     await expect(page).toHaveURL('/policies/shipping-policy');
-    await expectSingleH1(page, 'Shipping Policy');
+    await expectSingleH1(page, 'From Our Door To Yours');
     await expect(page).toHaveTitle('Shipping Policy | Mellow');
     const breadcrumb = main(page).getByRole('navigation', {name: 'Breadcrumb'});
     await expect(breadcrumb.getByRole('link')).toHaveText('Policies');
@@ -621,7 +628,9 @@ test.describe('policies', () => {
     for (const policy of POLICIES) {
       await gotoHydrated(page, `/policies/${policy.handle}`);
 
-      await expectSingleH1(page, policy.title);
+      // The banner headline is the h1; the policy's formal name is its eyebrow.
+      await expectSingleH1(page, policy.headline);
+      await expect(main(page)).toContainText(policy.title);
       await expect(page).toHaveTitle(`${policy.title} | Mellow`);
       await expect(
         main(page).getByRole('link', {name: 'All policies', exact: true}),

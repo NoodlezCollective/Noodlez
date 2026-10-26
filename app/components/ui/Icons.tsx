@@ -282,6 +282,33 @@ export function FilterIcon(props: IconProps) {
  * Maps an icon key (as stored in Shopify metafields) to a feature icon.
  * Unknown keys fall back to a sparkle so content never renders without an icon.
  */
+export function InstagramIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="0.75" fill="currentColor" />
+    </Svg>
+  );
+}
+
+export function FacebookIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M14 8h2.5V4.5H14A3.5 3.5 0 0 0 10.5 8v2.5H8V14h2.5v6.5H14V14h2.5l.5-3.5h-3V8.5a.5.5 0 0 1 0 0Z" />
+    </Svg>
+  );
+}
+
+export function TikTokIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5" />
+      <path d="M14 4c.4 2.6 2 4.2 4.5 4.5" />
+    </Svg>
+  );
+}
+
 export const FEATURE_ICONS = {
   snowflake: SnowflakeIcon,
   heat: HeatIcon,

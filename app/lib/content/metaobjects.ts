@@ -447,6 +447,14 @@ export function mapSiteSettings(
     savingsExplanation:
       fieldText(record, 'savings_explanation') ?? defaults.savingsExplanation,
     cartHeading: fieldText(record, 'cart_heading') ?? defaults.cartHeading,
+    ratingLabel: fieldText(record, 'rating_label') ?? defaults.ratingLabel,
+    footerCta: {
+      heading:
+        fieldText(record, 'footer_cta_heading') ?? defaults.footerCta.heading,
+      label: fieldText(record, 'footer_cta_label') ?? defaults.footerCta.label,
+      url: fieldText(record, 'footer_cta_url') ?? defaults.footerCta.url,
+    },
+    copyright: fieldText(record, 'copyright') ?? defaults.copyright,
     freeGift,
     proofStats: proofStats.length ? proofStats : defaults.proofStats,
   };

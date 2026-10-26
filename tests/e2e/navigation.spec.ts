@@ -85,7 +85,6 @@ const FOOTER_NAVS: readonly FooterNav[] = [
   {
     title: 'Shop',
     links: [
-      ['Shop All', '/collections/all'],
       ['Pillows', '/collections/pillows'],
       ['Comforters', '/collections/comforters'],
       ['Bath', '/collections/bath'],
@@ -93,23 +92,32 @@ const FOOTER_NAVS: readonly FooterNav[] = [
     ],
   },
   {
-    title: 'Company',
+    title: 'Learn',
     links: [
-      ['About Mellow', '/pages/about'],
+      ['About Us', '/pages/about'],
+      ['Blog', '/blogs'],
       ['Reviews', '/#reviews'],
-      ['Search', '/search'],
+      ['FAQ', '/#faq'],
     ],
   },
   {
     title: 'Support',
     links: [
-      ['FAQ', '/#faq'],
-      ['Shipping Policy', '/policies/shipping-policy'],
-      ['Refund Policy', '/policies/refund-policy'],
+      ['Contact Us', '/policies/contact-information'],
+      ['Account', '/account'],
       ['Privacy Policy', '/policies/privacy-policy'],
       ['Terms of Service', '/policies/terms-of-service'],
-      ['Contact Information', '/policies/contact-information'],
+      ['Returns', '/policies/refund-policy'],
+      ['Shipping Policy', '/policies/shipping-policy'],
       ['Legal Notice', '/policies/legal-notice'],
+    ],
+  },
+  {
+    title: 'Social',
+    links: [
+      ['Instagram', 'https://www.instagram.com/'],
+      ['Facebook', 'https://www.facebook.com/'],
+      ['TikTok', 'https://www.tiktok.com/'],
     ],
   },
 ];
@@ -153,13 +161,13 @@ test.describe('header', () => {
     }
   });
 
-  test('both logos link to the home page', async ({page}) => {
+  test('the logo links to the home page', async ({page}) => {
     await gotoHydrated(page, '/pages/about');
 
-    // The footer carries a second "Mellow – home" link: scope to a landmark.
+    // The footer's wordmark is a decorative watermark, not a link.
     await expect(
       footer(page).getByRole('link', {name: COPY.logoLink, exact: true}),
-    ).toHaveAttribute('href', '/');
+    ).toHaveCount(0);
     const logo = header(page).getByRole('link', {
       name: COPY.logoLink,
       exact: true,
@@ -269,7 +277,18 @@ test.describe('footer', () => {
         name: group.title,
         exact: true,
       });
-      await expect(nav.getByRole('link'), `${group.title} links`).toHaveText(
+      // Social links are icons named by their label; the others show the label.
+      const names = await nav
+        .getByRole('link')
+        .evaluateAll((anchors) =>
+          anchors.map(
+            (anchor) =>
+              anchor.getAttribute('aria-label') ??
+              anchor.textContent?.trim() ??
+              '',
+          ),
+        );
+      expect(names, `${group.title} links`).toEqual(
         group.links.map(([label]) => label),
       );
       for (const [label, href] of group.links) {
@@ -281,14 +300,18 @@ test.describe('footer', () => {
     }
 
     // The mock menus store absolute URLs on the fake store domain; the footer
-    // (policy list included) must turn every one into a path.
+    // must turn every one into a path. Only the social links stay external.
     const hrefs = await footer(page)
       .getByRole('link')
       .evaluateAll((anchors) =>
         anchors.map((anchor) => anchor.getAttribute('href') ?? ''),
       );
     expect(hrefs.length, 'footer links').toBeGreaterThan(10);
-    expect(hrefs.filter((href) => !href.startsWith('/'))).toEqual([]);
+    expect(
+      hrefs.filter(
+        (href) => !href.startsWith('/') && !/^https:\/\/www\./.test(href),
+      ),
+    ).toEqual([]);
     expect(hrefs.filter((href) => href.includes('mellow.mock'))).toEqual([]);
   });
 
