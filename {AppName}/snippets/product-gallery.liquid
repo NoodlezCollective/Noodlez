@@ -47,7 +47,7 @@
         {%- endfor -%}
       {%- else -%}
         {%- assign alt = product.featured_image.alt | default: product.title -%}
-        <div class="gallery__slide is-active" role="group" aria-roledescription="slide" aria-label="1 of 1" data-media-id="{{ product.featured_image.media_id | default: product.featured_image.id }}">
+        <div class="gallery__slide is-active" role="group" aria-roledescription="slide" aria-label="1 of 1" data-media-id="{{ product.featured_image.id }}">
           <div class="product-image">{% render 'image', image: product.featured_image, alt: alt, aspect_ratio: '1/1', loading: 'eager', sizes: '(min-width: 64em) 600px, 100vw' %}</div>
         </div>
       {%- endif -%}
