@@ -9,6 +9,16 @@ reviews, FAQ, About page) is modelled as Shopify metaobjects and metafields so
 merchants can edit it in Shopify admin. Everything below has a documented
 fallback so the site renders before configuration is complete.
 
+## 0. Liquid theme instead of the headless storefront
+
+`{AppName}/` is a Shopify theme that reproduces this storefront one to one
+(same stylesheet, markup and copy). Upload it as a zip (Online Store → Themes →
+Add theme) when the shop should run inside Shopify without a Worker, secrets or
+a custom domain. Its README lists the menus, collection, product metafields,
+pages and theme settings it expects; sections 2 to 6 below apply to it as well,
+except that the storefront's metaobjects are theme sections there and policies
+are Pages with the `page.policy` template.
+
 ## 1. Environment variables
 
 Development: copy `.dev.vars.example` to `.dev.vars` (gitignored) and fill it in.

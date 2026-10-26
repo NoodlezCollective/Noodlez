@@ -36,6 +36,7 @@ export default [
       '**/blob-report/',
       '**/coverage/',
       '**/.claude/',
+      'scripts/theme-preview/.build/',
     ],
   },
   ...fixupConfigRules(
@@ -262,5 +263,10 @@ export default [
     rules: {
       'react-hooks/rules-of-hooks': 'off',
     },
+  },
+  {
+    // Command-line tools print their reports.
+    files: ['scripts/**'],
+    rules: {'no-console': 'off'},
   },
 ];

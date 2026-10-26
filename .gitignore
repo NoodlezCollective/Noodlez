@@ -29,3 +29,6 @@ tsconfig.tsbuildinfo
 /coverage
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Local theme preview bundles and captures (scripts/theme-preview)
+scripts/theme-preview/.build

@@ -24,7 +24,26 @@
   assign badge = product.metafields.mellow.badge.value | strip
   assign description = product.metafields.mellow.short_description.value | strip
   if description == blank
-    assign description = product.description | strip_html | strip_newlines | truncate: 200
+    comment
+      ProductCard.tsx truncate(): collapse whitespace, cut at 200 characters on
+      the last space (never before character 60) and add an ellipsis.
+    endcomment
+    assign clean = product.description | replace: '</p>', ' </p>' | strip_html | newline_to_br | replace: '<br />', ' ' | replace: '<br>', ' ' | strip_newlines | replace: '  ', ' ' | replace: '  ', ' ' | strip
+    if clean.size <= 200
+      assign description = clean
+    else
+      assign cut = clean | slice: 0, 200
+      assign last_word = cut | split: ' ' | last
+      assign keep = 200 | minus: last_word.size | minus: 1
+      if cut contains ' '
+        if keep < 60
+          assign keep = 60
+        endif
+      else
+        assign keep = 60
+      endif
+      assign description = cut | slice: 0, keep | append: '…'
+    endif
   endif
   assign price = product.price_min
   assign compare_at = product.compare_at_price_min
