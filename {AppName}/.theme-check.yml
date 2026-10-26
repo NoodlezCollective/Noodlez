@@ -1,0 +1,9 @@
+# Theme check for the {AppName} theme. UI strings are literal English on
+# purpose (they are copied from the storefront), so translation checks are off.
+extends: theme-check:recommended
+MatchingTranslations:
+  enabled: false
+TranslationKeyExists:
+  enabled: false
+RemoteAsset:
+  enabled: false
