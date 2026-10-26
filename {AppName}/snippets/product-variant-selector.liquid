@@ -43,7 +43,7 @@
     <div class="product-option" role="group" aria-labelledby="{{ label_id }}" data-option-index="{{ option_index }}">
       <p class="product-option__label" id="{{ label_id }}"><span class="product-option__prefix">Select {{ option.name }}:</span> <span class="product-option__value" data-option-selected>{{ selected_name }}</span></p>
       {%- if size_guide != blank and option_name_down == 'size' -%}
-        <p class="product-option__guide">{{ size_guide }}</p>
+        <p class="product-option__guide">{{ size_guide | escape }}</p>
       {%- endif -%}
       {%- liquid
         assign groups_rendered = 0
@@ -71,7 +71,7 @@
           {%- if group_values != blank -%}
             {%- assign groups_rendered = groups_rendered | plus: 1 -%}
             <div class="product-option__group">
-              <p class="product-option__group-label">{{ group_label }}</p>
+              <p class="product-option__group-label">{{ group_label | escape }}</p>
               <div class="{{ values_class }}">{{ group_values }}</div>
             </div>
           {%- endif -%}

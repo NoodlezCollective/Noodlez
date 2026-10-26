@@ -21,8 +21,8 @@
     <img class="addon__image" src="{{ addon.featured_image | image_url: width: 112, height: 112, crop: 'center' }}" alt="" width="56" height="56" loading="lazy">
   {%- endif -%}
   <span class="addon__body">
-    <span class="addon__title">Add {{ addon.title }} <span class="addon__price">{{ addon_variant.price | money }}</span></span>
-    {%- if note != blank -%}<span class="addon__note">{{ note }}</span>{%- endif -%}
+    <span class="addon__title">Add {{ addon.title | escape }} <span class="addon__price">{{ addon_variant.price | money }}</span></span>
+    {%- if note != blank -%}<span class="addon__note">{{ note | escape }}</span>{%- endif -%}
   </span>
 </label>
 {%- endif -%}

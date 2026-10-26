@@ -14,6 +14,11 @@
 (function () {
   'use strict';
 
+  // Three sections load this file; run it once.
+  if (window.theme && window.theme.productScriptLoaded) return;
+  window.theme = window.theme || {};
+  window.theme.productScriptLoaded = true;
+
   var DESKTOP_MEDIA_QUERY = '(min-width: 64em)';
   var REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
   var FALLBACK_ERROR =

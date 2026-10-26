@@ -16,6 +16,6 @@
   assign note = note | replace: '{AppName}', settings.brand_name
 -%}
 <div class="savings-note" data-savings-note{% unless on_sale %} hidden{% endunless %}>
-  <p class="savings-note__text">{{ note }} <button type="button" class="savings-note__toggle" aria-expanded="false" aria-controls="{{ id }}" data-savings-toggle>Learn more</button></p>
-  <div id="{{ id }}" class="savings-note__panel" role="note" hidden data-savings-panel><p>{{ explanation }}</p></div>
+  <p class="savings-note__text">{{ note | escape }} <button type="button" class="savings-note__toggle" aria-expanded="false" aria-controls="{{ id }}" data-savings-toggle>Learn more</button></p>
+  <div id="{{ id }}" class="savings-note__panel" role="note" hidden data-savings-panel><p>{{ explanation | escape }}</p></div>
 </div>

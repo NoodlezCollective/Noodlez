@@ -36,7 +36,7 @@
 -%}
 {%- capture content -%}
   {%- if is_swatch -%}
-    <span class="swatch__dot"{% if value.swatch.color != blank %} style="background-color:{{ value.swatch.color }}"{% endif %}>{% if value.swatch.image != blank %}<img src="{{ value.swatch.image | image_url: width: 72 }}" alt="">{% endif %}</span>
+    <span class="swatch__dot"{% if value.swatch.color != blank %} style="background-color:{{ value.swatch.color }}"{% endif %}>{% if value.swatch.image != blank %}<img src="{{ value.swatch.image | image_url: width: 72, height: 72, crop: 'center' }}" alt="" width="36" height="36" loading="lazy">{% endif %}</span>
   {%- else -%}
     <span class="option-pill__label">{{ value.name }}</span>
   {%- endif -%}

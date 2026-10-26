@@ -33,8 +33,8 @@
       <label class="pack-tier{% if qty == quantity %} is-selected{% endif %}" for="{{ input_id }}" data-pack-tier>
         <input class="pack-tier__input" id="{{ input_id }}" type="radio" name="{{ id_prefix }}-pack" value="{{ qty }}"{% if qty == quantity %} checked{% endif %}>
         <span class="pack-tier__body">
-          <span class="pack-tier__label">{{ label }}</span>
-          {%- if note != blank -%}<span class="pack-tier__note">{{ note }}</span>{%- endif -%}
+          <span class="pack-tier__label">{{ label | escape }}</span>
+          {%- if note != blank -%}<span class="pack-tier__note">{{ note | escape }}</span>{%- endif -%}
         </span>
         <span class="pack-tier__price">
           <span class="pack-tier__total" data-pack-total>{{ total | money }}</span>

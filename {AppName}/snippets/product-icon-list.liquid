@@ -38,7 +38,7 @@
         assign stroke_width = 2.25
       endif
     -%}
-    <li{% if item_class %} class="{{ item_class }}"{% endif %}>{% render 'icon', name: icon, size: size, stroke_width: stroke_width, feature: true %}<span>{{ text }}</span></li>
+    <li{% if item_class %} class="{{ item_class }}"{% endif %}>{% render 'icon', name: icon, size: size, stroke_width: stroke_width, feature: true %}<span>{{ text | escape }}</span></li>
   {%- endfor -%}
 {%- endcapture -%}
 {%- if rows != blank -%}

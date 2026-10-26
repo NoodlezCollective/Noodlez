@@ -58,6 +58,11 @@
     url = url || fallback;
     return /\.js$/.test(url) ? url : url + '.js';
   }
+  /* The section id of the .shopify-section wrapper around `element`. */
+  function sectionIdOf(element) {
+    var wrapper = element && element.closest('.shopify-section');
+    return wrapper && wrapper.id ? wrapper.id.replace(/^shopify-section-/, '') : null;
+  }
   function getFocusable(root) {
     return qsa(FOCUSABLE, root).filter(function (element) {
       return element.offsetParent !== null || element === document.activeElement;
@@ -246,13 +251,25 @@
     removed: null,
     queue: Promise.resolve(),
 
+    /*
+      Sections re-rendered after a cart change: every [data-cart-render]
+      element's section file, plus the section wrapper (#shopify-section-<id>)
+      of any cart section that has no such hook (the cart page), so it is
+      re-rendered by its template section id.
+    */
     sectionIds: function () {
       var ids = [];
       qsa('[data-cart-render]').forEach(function (element) {
         var id = element.getAttribute('data-cart-render');
         if (id && ids.indexOf(id) === -1) ids.push(id);
       });
-      return ids.length ? ids : DEFAULT_SECTIONS.slice();
+      if (!ids.length) ids = DEFAULT_SECTIONS.slice();
+      qsa('.cart, [data-cart-main]').forEach(function (element) {
+        if (element.closest('[data-cart-render]')) return;
+        var id = sectionIdOf(element);
+        if (id && ids.indexOf(id) === -1) ids.push(id);
+      });
+      return ids;
     },
 
     enqueue: function (task) {
@@ -401,15 +418,21 @@
         if (!html) return;
         var doc = parser.parseFromString(html, 'text/html');
         var replacement = qs('[data-cart-render="' + id + '"]', doc);
-        if (!replacement) return;
-        qsa('[data-cart-render="' + id + '"]').forEach(function (target) {
-          var copy = replacement.cloneNode(true);
-          if (cart.pulseUntil > Date.now()) {
-            var count = qs('.cart-toggle__count', copy);
-            if (count) count.classList.add('is-pulsing');
-          }
-          target.replaceWith(copy);
-        });
+        if (replacement) {
+          qsa('[data-cart-render="' + id + '"]').forEach(function (target) {
+            var copy = replacement.cloneNode(true);
+            if (cart.pulseUntil > Date.now()) {
+              var count = qs('.cart-toggle__count', copy);
+              if (count) count.classList.add('is-pulsing');
+            }
+            target.replaceWith(copy);
+          });
+          return;
+        }
+        // A section without a hook (the cart page): swap the wrapper's content.
+        var wrapper = document.getElementById('shopify-section-' + id);
+        var rendered = doc.getElementById('shopify-section-' + id);
+        if (wrapper && rendered) wrapper.innerHTML = rendered.innerHTML;
       });
       cart.restoreFocus(focus);
     },
@@ -422,7 +445,10 @@
         // The focused "remove" button disappeared with its line: move focus to
         // the remove button of the line that took its place, the one before it
         // when the last line was removed, or the heading of the empty cart.
-        var scope = qs('[data-cart-main="' + cart.removed.scope + '"]') || qs('.cart');
+        var scope =
+          (cart.removed.scope && qs('[data-cart-main="' + cart.removed.scope + '"]')) ||
+          (cart.removed.sectionId && document.getElementById('shopify-section-' + cart.removed.sectionId)) ||
+          qs('.cart');
         if (scope) {
           var buttons = qsa('.cart-lines > .cart-line > .cart-line__body .cart-line__remove', scope);
           target = buttons.length
@@ -489,7 +515,8 @@
         var rootLines = qsa('.cart-lines > .cart-line', item.closest('.cart') || document);
         cart.removed = {
           index: Math.max(0, rootLines.indexOf(item)),
-          scope: main ? main.getAttribute('data-cart-main') : 'aside',
+          scope: main ? main.getAttribute('data-cart-main') : null,
+          sectionId: sectionIdOf(item),
         };
         item.remove();
       } else {
