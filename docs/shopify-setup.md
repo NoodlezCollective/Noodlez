@@ -33,6 +33,13 @@ across deploys).
 | `MOCK_STOREFRONT`                                                                     | Development only. `true` serves the demo catalog from `app/lib/mock` instead of Shopify. Production builds never load the mock. Remove the variable once the store is linked.           |
 | `NEWSLETTER_WEBHOOK_URL`                                                              | Optional endpoint that receives newsletter signups as JSON.                                                                                                                             |
 
+`npm run store:check` reads the variables (process environment first, then
+`.dev.vars`), calls the Storefront API with them and prints, section by
+section, what the store provides and what still uses the storefront's built-in
+copy. It changes nothing in Shopify. `npm run store:check -- --write-dev-vars`
+also writes `.dev.vars` from the environment with `MOCK_STOREFRONT=false`, for
+hosts that hold the values as environment variables.
+
 The browser never receives a private token. The public token reaches the browser
 only in the analytics consent configuration, and only while analytics are on. The
 Storefront API proxy adds the public token on the server.

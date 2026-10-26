@@ -29,30 +29,35 @@ npm run dev                      # http://localhost:3000
   in-memory demo catalog. This is for development only (see
   `app/lib/mock/README.md`).
 - To connect a store, copy the storefront values from the Hydrogen sales channel's
-  storefront settings in the Shopify admin into `.dev.vars`. Then follow
-  [docs/shopify-setup.md](docs/shopify-setup.md) for the variables and for the
-  menus, collections, metafields and metaobjects the storefront reads.
+  storefront settings in the Shopify admin into `.dev.vars` and set
+  `MOCK_STOREFRONT=false`. `npm run store:check` then confirms the connection
+  and lists which menus, collections, metafields, metaobjects and policies the
+  store already has (with `-- --write-dev-vars` it writes `.dev.vars` from
+  variables in the environment). Follow
+  [docs/shopify-setup.md](docs/shopify-setup.md) for everything it reports as
+  missing.
 
 ## Scripts
 
-| Command                      | What it does                                                                                                                                                      |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`                | Vite dev server with the Worker in workerd, on port 3000                                                                                                          |
-| `npm run dev:e2e`            | The same server on port 3100 with `CLOUDFLARE_ENV=e2e`, which loads the committed `.dev.vars.e2e` (mock mode). Playwright starts this server when none is running |
-| `npm run build`              | Production build of the Worker and the client assets (`dist/`)                                                                                                    |
-| `npm run preview`            | Build, then `vite preview`, which runs the built Worker in the Workers runtime                                                                                    |
-| `npm run deploy`             | Build, then `wrangler deploy` (see Deployment)                                                                                                                    |
-| `npm run typecheck`          | `react-router typegen`, then `tsc --noEmit`                                                                                                                       |
-| `npm run lint`               | ESLint                                                                                                                                                            |
-| `npm run format`             | Prettier, writing the files                                                                                                                                       |
-| `npm run codegen`            | Regenerates the Storefront and Customer Account API types from `codegen.ts`                                                                                       |
-| `npm test`                   | Unit tests, then the end-to-end suite                                                                                                                             |
-| `npm run test:unit`          | Vitest over `app/**/*.test.ts(x)`                                                                                                                                 |
-| `npm run test:unit:coverage` | Vitest with coverage; 80% thresholds on `app/lib/**/*.ts`                                                                                                         |
-| `npm run test:watch`         | Vitest in watch mode                                                                                                                                              |
-| `npm run test:e2e`           | Playwright end-to-end suite (Chromium only)                                                                                                                       |
-| `npm run test:e2e:ui`        | Playwright UI mode                                                                                                                                                |
-| `npm run test:e2e:report`    | Opens the last Playwright HTML report                                                                                                                             |
+| Command                      | What it does                                                                                                                                                                                    |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                | Vite dev server with the Worker in workerd, on port 3000                                                                                                                                        |
+| `npm run dev:e2e`            | The same server on port 3100 with `CLOUDFLARE_ENV=e2e`, which loads the committed `.dev.vars.e2e` (mock mode). Playwright starts this server when none is running                               |
+| `npm run build`              | Production build of the Worker and the client assets (`dist/`)                                                                                                                                  |
+| `npm run preview`            | Build, then `vite preview`, which runs the built Worker in the Workers runtime                                                                                                                  |
+| `npm run deploy`             | Build, then `wrangler deploy` (see Deployment)                                                                                                                                                  |
+| `npm run store:check`        | Checks the Storefront API connection with the variables in the environment or `.dev.vars` and reports which store content the storefront still needs (`-- --write-dev-vars` writes `.dev.vars`) |
+| `npm run typecheck`          | `react-router typegen`, then `tsc --noEmit`                                                                                                                                                     |
+| `npm run lint`               | ESLint                                                                                                                                                                                          |
+| `npm run format`             | Prettier, writing the files                                                                                                                                                                     |
+| `npm run codegen`            | Regenerates the Storefront and Customer Account API types from `codegen.ts`                                                                                                                     |
+| `npm test`                   | Unit tests, then the end-to-end suite                                                                                                                                                           |
+| `npm run test:unit`          | Vitest over `app/**/*.test.ts(x)`                                                                                                                                                               |
+| `npm run test:unit:coverage` | Vitest with coverage; 80% thresholds on `app/lib/**/*.ts`                                                                                                                                       |
+| `npm run test:watch`         | Vitest in watch mode                                                                                                                                                                            |
+| `npm run test:e2e`           | Playwright end-to-end suite (Chromium only)                                                                                                                                                     |
+| `npm run test:e2e:ui`        | Playwright UI mode                                                                                                                                                                              |
+| `npm run test:e2e:report`    | Opens the last Playwright HTML report                                                                                                                                                           |
 
 The generated types (`storefrontapi.generated.d.ts` and
 `customer-accountapi.generated.d.ts`) are committed. To check for drift, run
